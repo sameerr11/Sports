@@ -1,0 +1,11 @@
+.navbar {
+    background-color: #1976d2 !important;
+}
+
+.navbar .MuiToolbar-root {
+    min-height: 64px;
+}
+
+.navbar .MuiTypography-root {
+    font-weight: 600;
+} 

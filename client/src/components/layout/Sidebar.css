@@ -1,0 +1,27 @@
+.sidebar {
+    margin-top: 64px;
+}
+
+.sidebar-header {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+}
+
+.sidebar .MuiListItem-root {
+    padding: 12px 16px;
+}
+
+.sidebar .MuiListItem-root:hover {
+    background-color: #e3f2fd;
+}
+
+.sidebar .MuiListItemIcon-root {
+    min-width: 40px;
+    color: #1976d2;
+}
+
+.sidebar .MuiListItemText-root {
+    color: #333;
+} 

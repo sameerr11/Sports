@@ -1,24 +1,30 @@
-import logo from './logo.svg';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import MainLayout from './components/layout/MainLayout';
 import './App.css';
+
+// Placeholder components for routes
+const Dashboard = () => <div>Dashboard Page</div>;
+const Players = () => <div>Players Page</div>;
+const Teams = () => <div>Teams Page</div>;
+const Tournaments = () => <div>Tournaments Page</div>;
+const Venues = () => <div>Venues Page</div>;
+const Payments = () => <div>Payments Page</div>;
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <MainLayout>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/players" element={<Players />} />
+          <Route path="/teams" element={<Teams />} />
+          <Route path="/tournaments" element={<Tournaments />} />
+          <Route path="/venues" element={<Venues />} />
+          <Route path="/payments" element={<Payments />} />
+        </Routes>
+      </MainLayout>
+    </Router>
   );
 }
 
