@@ -1,0 +1,24 @@
+{
+  "name": "sports-management-system",
+  "version": "1.0.0",
+  "description": "Sports Management System",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "create-admin": "cd server && node scripts/createAdminUser.js",
+    "create-test-users": "cd server && node scripts/createTestUsers.js"
+  },
+  "keywords": [
+    "sports",
+    "management",
+    "system"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+} 

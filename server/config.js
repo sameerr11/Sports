@@ -8,7 +8,8 @@ const config = {
             useUnifiedTopology: true,
             dbName: 'sports'
         }
-    }
+    },
+    jwtSecret: process.env.JWT_SECRET || 'sportsmanagement_secret_key'
 };
 
 module.exports = config; 
