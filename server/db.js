@@ -15,15 +15,7 @@ const connectDB = async () => {
         console.log(`MongoDB Atlas Connected Successfully: ${conn.connection.host}`);
         console.log(`Database Name: ${conn.connection.name}`);
 
-        // Create a test document to ensure the database is created
-        try {
-            const testDoc = await Test.create({
-                name: 'Test Document'
-            });
-            console.log('Test document created successfully:', testDoc);
-        } catch (err) {
-            console.log('Test document might already exist:', err.message);
-        }
+        return conn;
     } catch (error) {
         console.error('MongoDB Connection Error:', error);
         process.exit(1);
