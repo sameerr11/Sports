@@ -55,6 +55,22 @@ exports.coach = (req, res, next) => {
   next();
 };
 
+// Middleware to check if user has player role
+exports.player = (req, res, next) => {
+  if (req.user.role !== 'player' && req.user.role !== 'coach' && req.user.role !== 'supervisor' && req.user.role !== 'admin') {
+    return res.status(403).json({ msg: 'Access denied. Player privileges required.' });
+  }
+  next();
+};
+
+// Middleware to check if user has parent role
+exports.parent = (req, res, next) => {
+  if (req.user.role !== 'parent' && req.user.role !== 'coach' && req.user.role !== 'supervisor' && req.user.role !== 'admin') {
+    return res.status(403).json({ msg: 'Access denied. Parent privileges required.' });
+  }
+  next();
+};
+
 // Middleware to check if user has accounting role
 exports.accounting = (req, res, next) => {
   if (req.user.role !== 'accounting' && req.user.role !== 'admin') {

@@ -84,4 +84,19 @@ export const isSupervisor = () => {
 // Check if user is coach
 export const isCoach = () => {
   return hasRole(['admin', 'supervisor', 'coach']);
+};
+
+// Check if user is player
+export const isPlayer = () => {
+  return hasRole(['admin', 'supervisor', 'coach', 'player']);
+};
+
+// Check if user is parent
+export const isParent = () => {
+  return hasRole(['admin', 'supervisor', 'coach', 'parent']);
+};
+
+// Check if user is guest
+export const isGuest = () => {
+  return hasRole('guest');
 }; 

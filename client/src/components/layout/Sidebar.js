@@ -10,7 +10,9 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import { isAdmin } from '../../services/authService';
+import EventIcon from '@mui/icons-material/Event';
+import PersonIcon from '@mui/icons-material/Person';
+import { isAdmin, isSupervisor } from '../../services/authService';
 import './Sidebar.css';
 
 const drawerWidth = 240;
@@ -18,15 +20,21 @@ const drawerWidth = 240;
 const Sidebar = () => {
     const location = useLocation();
     const admin = isAdmin();
+    const supervisor = isSupervisor();
 
     const menuItems = [
         { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-        { text: 'Players', icon: <PeopleIcon />, path: '/players' },
+        { text: 'Courts', icon: <LocationOnIcon />, path: '/courts' },
         { text: 'Teams', icon: <SportsSoccerIcon />, path: '/teams' },
+        { text: 'My Bookings', icon: <EventIcon />, path: '/bookings/me' },
         { text: 'Tournaments', icon: <EmojiEventsIcon />, path: '/tournaments' },
-        { text: 'Venues', icon: <LocationOnIcon />, path: '/venues' },
         { text: 'Payments', icon: <PaymentIcon />, path: '/payments' },
+        { text: 'Profile', icon: <PersonIcon />, path: '/profile' },
         { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications' },
+    ];
+
+    const supervisorItems = [
+        { text: 'All Bookings', icon: <EventIcon />, path: '/bookings' },
     ];
 
     const adminItems = [
@@ -66,6 +74,37 @@ const Sidebar = () => {
                     </ListItem>
                 ))}
             </List>
+            
+            {supervisor && (
+                <>
+                    <Divider />
+                    <List>
+                        <ListItem>
+                            <ListItemText 
+                                primary="Management" 
+                                primaryTypographyProps={{ 
+                                    variant: 'overline',
+                                    color: 'text.secondary'
+                                }} 
+                            />
+                        </ListItem>
+                        {supervisorItems.map((item) => (
+                            <ListItem 
+                                button 
+                                key={item.text} 
+                                component={Link} 
+                                to={item.path}
+                                selected={location.pathname === item.path}
+                            >
+                                <ListItemIcon>
+                                    {item.icon}
+                                </ListItemIcon>
+                                <ListItemText primary={item.text} />
+                            </ListItem>
+                        ))}
+                    </List>
+                </>
+            )}
             
             {admin && (
                 <>

@@ -5,15 +5,22 @@ import Login from './components/auth/Login';
 import UserList from './components/users/UserList';
 import UserForm from './components/users/UserForm';
 import NotificationList from './components/notifications/NotificationList';
-import { isAuthenticated, isAdmin } from './services/authService';
+import CourtList from './components/courts/CourtList';
+import CourtForm from './components/courts/CourtForm';
+import CourtDetail from './components/courts/CourtDetail';
+import TeamList from './components/teams/TeamList';
+import TeamForm from './components/teams/TeamForm';
+import TeamDetail from './components/teams/TeamDetail';
+import BookingList from './components/bookings/BookingList';
+import { 
+  isAuthenticated, isAdmin, isSupervisor, 
+  isCoach, isPlayer, isParent 
+} from './services/authService';
 import './App.css';
 
 // Placeholder components for routes
 const Dashboard = () => <div>Dashboard Page</div>;
-const Players = () => <div>Players Page</div>;
-const Teams = () => <div>Teams Page</div>;
 const Tournaments = () => <div>Tournaments Page</div>;
-const Venues = () => <div>Venues Page</div>;
 const Payments = () => <div>Payments Page</div>;
 const Profile = () => <div>User Profile Page</div>;
 
@@ -23,7 +30,23 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/login" />;
   }
 
-  if (requiredRole && !isAdmin()) {
+  if (requiredRole === 'admin' && !isAdmin()) {
+    return <Navigate to="/" />;
+  }
+
+  if (requiredRole === 'supervisor' && !isSupervisor()) {
+    return <Navigate to="/" />;
+  }
+
+  if (requiredRole === 'coach' && !isCoach()) {
+    return <Navigate to="/" />;
+  }
+
+  if (requiredRole === 'player' && !isPlayer()) {
+    return <Navigate to="/" />;
+  }
+
+  if (requiredRole === 'parent' && !isParent()) {
     return <Navigate to="/" />;
   }
 
@@ -44,18 +67,85 @@ function App() {
           </ProtectedRoute>
         } />
         
-        <Route path="/players" element={
+        {/* Court Routes */}
+        <Route path="/courts" element={
           <ProtectedRoute>
             <MainLayout>
-              <Players />
+              <CourtList />
             </MainLayout>
           </ProtectedRoute>
         } />
         
+        <Route path="/courts/new" element={
+          <ProtectedRoute requiredRole="supervisor">
+            <MainLayout>
+              <CourtForm />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/courts/edit/:id" element={
+          <ProtectedRoute requiredRole="supervisor">
+            <MainLayout>
+              <CourtForm />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/courts/:id" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <CourtDetail />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        {/* Team Routes */}
         <Route path="/teams" element={
           <ProtectedRoute>
             <MainLayout>
-              <Teams />
+              <TeamList />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/teams/new" element={
+          <ProtectedRoute requiredRole="supervisor">
+            <MainLayout>
+              <TeamForm />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/teams/edit/:id" element={
+          <ProtectedRoute requiredRole="supervisor">
+            <MainLayout>
+              <TeamForm />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/teams/:id" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <TeamDetail />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        {/* Booking Routes */}
+        <Route path="/bookings" element={
+          <ProtectedRoute requiredRole="supervisor">
+            <MainLayout>
+              <BookingList />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/bookings/me" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <BookingList userOnly={true} />
             </MainLayout>
           </ProtectedRoute>
         } />
@@ -64,14 +154,6 @@ function App() {
           <ProtectedRoute>
             <MainLayout>
               <Tournaments />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/venues" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Venues />
             </MainLayout>
           </ProtectedRoute>
         } />
