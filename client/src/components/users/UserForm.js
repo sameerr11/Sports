@@ -63,13 +63,36 @@ const UserForm = () => {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (!formData.address) {
+      setFormData(prevData => ({
+        ...prevData,
+        address: {
+          street: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          country: ''
+        }
+      }));
+    }
+  }, []);
+
   const fetchUser = async (userId) => {
     setFetchLoading(true);
     try {
       const userData = await getUserById(userId);
       setFormData({
         ...userData,
-        password: '' // Don't populate password field
+        password: '', // Don't populate password field
+        // Ensure address is always initialized
+        address: userData.address || {
+          street: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          country: ''
+        }
       });
     } catch (err) {
       setError('Failed to load user data. Please try again.');
@@ -84,13 +107,22 @@ const UserForm = () => {
     
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
-      setFormData({
-        ...formData,
-        [parent]: {
-          ...formData[parent],
-          [child]: value
-        }
-      });
+      
+      // Ensure the parent object exists
+      if (!formData[parent]) {
+        setFormData({
+          ...formData,
+          [parent]: { [child]: value }
+        });
+      } else {
+        setFormData({
+          ...formData,
+          [parent]: {
+            ...formData[parent],
+            [child]: value
+          }
+        });
+      }
     } else {
       setFormData({
         ...formData,
@@ -235,7 +267,7 @@ const UserForm = () => {
                 fullWidth
                 label="Street Address"
                 name="address.street"
-                value={formData.address.street}
+                value={formData.address?.street || ''}
                 onChange={handleChange}
               />
             </Grid>
@@ -244,7 +276,7 @@ const UserForm = () => {
                 fullWidth
                 label="City"
                 name="address.city"
-                value={formData.address.city}
+                value={formData.address?.city || ''}
                 onChange={handleChange}
               />
             </Grid>
@@ -253,7 +285,7 @@ const UserForm = () => {
                 fullWidth
                 label="State/Province"
                 name="address.state"
-                value={formData.address.state}
+                value={formData.address?.state || ''}
                 onChange={handleChange}
               />
             </Grid>
@@ -262,7 +294,7 @@ const UserForm = () => {
                 fullWidth
                 label="Zip/Postal Code"
                 name="address.zipCode"
-                value={formData.address.zipCode}
+                value={formData.address?.zipCode || ''}
                 onChange={handleChange}
               />
             </Grid>
@@ -271,7 +303,7 @@ const UserForm = () => {
                 fullWidth
                 label="Country"
                 name="address.country"
-                value={formData.address.country}
+                value={formData.address?.country || ''}
                 onChange={handleChange}
               />
             </Grid>

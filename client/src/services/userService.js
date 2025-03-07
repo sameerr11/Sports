@@ -1,120 +1,111 @@
-import axios from 'axios';
-import { getToken } from './authService';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
-// Configure axios with auth token
-const authAxios = () => {
-    const token = getToken();
-    return axios.create({
-        baseURL: API_URL,
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-};
+import api from './api';
 
 // Get all users
 export const getAllUsers = async () => {
     try {
-        const response = await authAxios().get('/users');
+        const response = await api.get('/users');
         return response.data;
     } catch (error) {
-        throw error.response?.data || { message: 'Failed to fetch users' };
+        throw error.response?.data?.msg || 'Failed to fetch users';
     }
 };
 
 // Get user by ID
 export const getUserById = async (id) => {
     try {
-        const response = await authAxios().get(`/users/${id}`);
+        const response = await api.get(`/users/${id}`);
         return response.data;
     } catch (error) {
-        throw error.response?.data || { message: 'Failed to fetch user' };
+        throw error.response?.data?.msg || 'Failed to fetch user';
     }
 };
 
 // Create new user
 export const createUser = async (userData) => {
     try {
-        const response = await authAxios().post('/users', userData);
+        const response = await api.post('/users', userData);
         return response.data;
     } catch (error) {
-        throw error.response?.data || { message: 'Failed to create user' };
+        throw error.response?.data?.msg || 'Failed to create user';
     }
 };
 
 // Update user
 export const updateUser = async (id, userData) => {
     try {
-        const response = await authAxios().put(`/users/${id}`, userData);
+        const response = await api.put(`/users/${id}`, userData);
         return response.data;
     } catch (error) {
-        throw error.response?.data || { message: 'Failed to update user' };
+        throw error.response?.data?.msg || 'Failed to update user';
     }
 };
 
 // Delete user
 export const deleteUser = async (id) => {
     try {
-        const response = await authAxios().delete(`/users/${id}`);
+        const response = await api.delete(`/users/${id}`);
         return response.data;
     } catch (error) {
-        throw error.response?.data || { message: 'Failed to delete user' };
+        throw error.response?.data?.msg || 'Failed to delete user';
     }
 };
 
 // Get current user profile
 export const getCurrentUserProfile = async () => {
     try {
-        const response = await authAxios().get('/users/profile');
+        const response = await api.get('/users/profile');
         return response.data;
     } catch (error) {
-        throw error.response?.data || { message: 'Failed to fetch profile' };
+        console.error('Error fetching profile:', error);
+        throw error.response?.data?.msg || 'Failed to fetch profile';
     }
 };
 
 // Update user profile
 export const updateUserProfile = async (profileData) => {
     try {
-        const response = await authAxios().put('/users/profile', profileData);
+        const response = await api.put('/users/profile', profileData);
         return response.data;
     } catch (error) {
-        throw error.response?.data || { message: 'Failed to update profile' };
+        console.error('Error updating profile:', error);
+        throw error.response?.data?.msg || 'Failed to update profile';
     }
 };
 
 // Change password
 export const changePassword = async (passwordData) => {
     try {
-        const response = await authAxios().put('/users/change-password', passwordData);
+        const response = await api.put('/users/change-password', passwordData);
         return response.data;
     } catch (error) {
-        throw error.response?.data || { message: 'Failed to change password' };
+        console.error('Error changing password:', error);
+        throw error.response?.data?.msg || 'Failed to change password';
     }
 };
 
 // Upload profile picture
 export const uploadProfilePicture = async (formData) => {
     try {
-        const response = await authAxios().post('/users/profile/picture', formData, {
+        const response = await api.post('/users/profile/picture', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
         });
         return response.data;
     } catch (error) {
-        throw error.response?.data || { message: 'Failed to upload profile picture' };
+        console.error('Error uploading profile picture:', error);
+        throw error.response?.data?.msg || 'Failed to upload profile picture';
     }
 };
 
 // Get user activity
 export const getUserActivity = async () => {
     try {
-        const response = await authAxios().get('/users/activity');
+        const response = await api.get('/users/activity');
         return response.data;
     } catch (error) {
-        throw error.response?.data || { message: 'Failed to fetch user activity' };
+        console.error('Error fetching user activity:', error);
+        throw error.response?.data?.msg || 'Failed to fetch user activity';
     }
 };
 

@@ -20,6 +20,7 @@ api.interceptors.request.use(
         return config;
     },
     (error) => {
+        console.error('Request error:', error);
         return Promise.reject(error);
     }
 );
@@ -28,11 +29,20 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
-            // Handle unauthorized access
-            localStorage.removeItem('token');
-            window.location.href = '/login';
+        if (error.response) {
+            console.error('Response error:', error.response.status, error.response.data);
+            
+            if (error.response.status === 401) {
+                // Handle unauthorized access
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+            }
+        } else if (error.request) {
+            console.error('No response received:', error.request);
+        } else {
+            console.error('Error setting up request:', error.message);
         }
+        
         return Promise.reject(error);
     }
 );

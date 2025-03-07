@@ -27,7 +27,8 @@ import {
     getMockUserActivity, 
     getCurrentUserProfile, 
     updateUserProfile,
-    uploadProfilePicture
+    uploadProfilePicture,
+    getUserActivity
 } from '../../services/userService';
 import { getStoredUser } from '../../services/authService';
 import PersonalInfoForm from './PersonalInfoForm';
@@ -51,15 +52,35 @@ const Profile = () => {
         const fetchProfileData = async () => {
             try {
                 setLoading(true);
-                // In a real app, you would use getCurrentUserProfile()
-                // For now, using mock data for demonstration
-                const profileData = getMockUserProfile();
-                const activityData = getMockUserActivity();
                 
-                setProfile(profileData);
-                setActivity(activityData);
+                // Try to get user data from the API first
+                try {
+                    // Get user profile from API
+                    const profileData = await getCurrentUserProfile();
+                    setProfile(profileData);
+                    
+                    // Get user activity from API
+                    const activityData = await getUserActivity();
+                    setActivity(activityData);
+                } catch (apiError) {
+                    console.warn('Could not fetch from API, using stored/mock data', apiError);
+                    
+                    // Fallback to stored user data
+                    const storedUser = getStoredUser();
+                    if (storedUser) {
+                        setProfile(storedUser);
+                    } else {
+                        // Last resort: use mock data
+                        setProfile(getMockUserProfile());
+                    }
+                    
+                    // Use mock activity data
+                    setActivity(getMockUserActivity());
+                }
+                
                 setLoading(false);
             } catch (err) {
+                console.error('Error loading profile data:', err);
                 setError('Failed to load profile data. Please try again.');
                 setLoading(false);
             }
@@ -80,10 +101,15 @@ const Profile = () => {
     const handleProfileUpdate = async (updatedData) => {
         try {
             setLoading(true);
-            // In a real app, you would use updateUserProfile(updatedData)
-            // For now, simulating an API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
             
+            // Try to update profile via API
+            try {
+                await updateUserProfile(updatedData);
+            } catch (apiError) {
+                console.warn('Could not update via API, updating local state only', apiError);
+            }
+            
+            // Update local state
             setProfile({
                 ...profile,
                 ...updatedData
@@ -98,6 +124,7 @@ const Profile = () => {
                 setSuccess(null);
             }, 3000);
         } catch (err) {
+            console.error('Error updating profile:', err);
             setError('Failed to update profile. Please try again.');
             setLoading(false);
         }
@@ -112,13 +139,19 @@ const Profile = () => {
 
         try {
             setUploadLoading(true);
-            // In a real app, you would use uploadProfilePicture(formData)
-            // For now, simulating an API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
             
-            // Create a temporary URL for the uploaded file
-            const imageUrl = URL.createObjectURL(file);
+            // Try to upload via API
+            let imageUrl;
+            try {
+                const response = await uploadProfilePicture(formData);
+                imageUrl = response.imageUrl; // Assuming the API returns the image URL
+            } catch (apiError) {
+                console.warn('Could not upload via API, using local file URL', apiError);
+                // Create a temporary URL for the uploaded file as fallback
+                imageUrl = URL.createObjectURL(file);
+            }
             
+            // Update profile with new image URL
             setProfile({
                 ...profile,
                 profilePicture: imageUrl
@@ -132,6 +165,7 @@ const Profile = () => {
                 setSuccess(null);
             }, 3000);
         } catch (err) {
+            console.error('Error uploading profile picture:', err);
             setError('Failed to upload profile picture. Please try again.');
             setUploadLoading(false);
         }
