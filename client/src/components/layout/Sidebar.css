@@ -1,12 +1,60 @@
 .sidebar {
-    margin-top: 64px;
+    transition: width 0.3s ease-in-out;
+}
+
+.sidebar.closed {
+    width: 0;
+}
+
+.sidebar.open {
+    width: 240px;
 }
 
 .sidebar-header {
-    height: 64px;
     display: flex;
     align-items: center;
-    padding: 0 16px;
+    justify-content: flex-end;
+    padding: 0;
+    height: auto;
+    position: relative;
+}
+
+.close-sidebar-btn {
+    transition: transform 0.2s ease-in-out;
+}
+
+.close-sidebar-btn:hover {
+    transform: rotate(180deg);
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.sidebar-nav {
+    padding-top: 8px;
+}
+
+/* Custom scrollbar for sidebar */
+.MuiDrawer-paper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.MuiDrawer-paper::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.MuiDrawer-paper::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.MuiDrawer-paper::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* Mobile sidebar overlay */
+@media (max-width: 600px) {
+    .sidebar.open .MuiDrawer-paper {
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
 }
 
 .sidebar .MuiListItem-root {
@@ -24,4 +72,4 @@
 
 .sidebar .MuiListItemText-root {
     color: #333;
-} 
+}

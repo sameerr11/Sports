@@ -12,6 +12,7 @@ import TeamList from './components/teams/TeamList';
 import TeamForm from './components/teams/TeamForm';
 import TeamDetail from './components/teams/TeamDetail';
 import BookingList from './components/bookings/BookingList';
+import Dashboard from './components/dashboard/Dashboard';
 import { 
   isAuthenticated, isAdmin, isSupervisor, 
   isCoach, isPlayer, isParent 
@@ -19,7 +20,6 @@ import {
 import './App.css';
 
 // Placeholder components for routes
-const Dashboard = () => <div>Dashboard Page</div>;
 const Tournaments = () => <div>Tournaments Page</div>;
 const Payments = () => <div>Payments Page</div>;
 const Profile = () => <div>User Profile Page</div>;

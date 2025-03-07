@@ -1,0 +1,143 @@
+.dashboard-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard-welcome {
+  margin-bottom: 32px;
+}
+
+.dashboard-stats {
+  margin-bottom: 32px;
+}
+
+.stats-card {
+  height: 100%;
+  padding: 16px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.stats-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.stats-icon {
+  width: 56px;
+  height: 56px;
+}
+
+.booking-icon {
+  background-color: rgba(25, 118, 210, 0.1);
+  color: #1976d2;
+}
+
+.upcoming-icon {
+  background-color: rgba(156, 39, 176, 0.1);
+  color: #9c27b0;
+}
+
+.team-icon {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
+}
+
+.tournament-icon {
+  background-color: rgba(255, 152, 0, 0.1);
+  color: #ff9800;
+}
+
+.stats-footer {
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-card {
+  height: 100%;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.booking-avatar, .activity-avatar {
+  background-color: rgba(25, 118, 210, 0.1);
+  color: #1976d2;
+}
+
+.team-card {
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.team-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.team-card-header {
+  margin-bottom: 16px;
+}
+
+.team-card-content {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-grow: 1;
+}
+
+.team-stat {
+  text-align: center;
+  flex: 1;
+}
+
+.team-card-footer {
+  margin-top: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .dashboard-container {
+    padding: 16px;
+  }
+  
+  .dashboard-welcome {
+    margin-bottom: 24px;
+  }
+  
+  .dashboard-stats {
+    margin-bottom: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-container {
+    padding: 12px;
+  }
+  
+  .team-card-content {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .team-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+} 
