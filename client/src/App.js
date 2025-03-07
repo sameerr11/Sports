@@ -13,6 +13,7 @@ import TeamForm from './components/teams/TeamForm';
 import TeamDetail from './components/teams/TeamDetail';
 import BookingList from './components/bookings/BookingList';
 import Dashboard from './components/dashboard/Dashboard';
+import Profile from './components/profile/Profile';
 import { 
   isAuthenticated, isAdmin, isSupervisor, 
   isCoach, isPlayer, isParent 
@@ -22,7 +23,6 @@ import './App.css';
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
 const Payments = () => <div>Payments Page</div>;
-const Profile = () => <div>User Profile Page</div>;
 
 // Protected route component
 const ProtectedRoute = ({ children, requiredRole }) => {

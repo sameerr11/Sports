@@ -13,7 +13,8 @@ import {
   Avatar,
   Badge,
   useTheme,
-  alpha
+  alpha,
+  Container
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircle from '@mui/icons-material/AccountCircle';
@@ -58,36 +59,35 @@ const Navbar = ({ toggleSidebar }) => {
                 borderBottom: `1px solid ${alpha(theme.palette.common.white, 0.1)}`
             }}
         >
-            <Toolbar>
-                <IconButton
-                    size="large"
-                    edge="start"
-                    color="inherit"
-                    aria-label="menu"
-                    sx={{ mr: 2 }}
-                    onClick={toggleSidebar}
-                    className="menu-button"
-                >
-                    <MenuIcon />
-                </IconButton>
-                
+            <Toolbar sx={{ px: { xs: 1, sm: 2 }, justifyContent: 'space-between' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <SportsSoccerIcon sx={{ mr: 1, fontSize: 28 }} />
-                    <Typography 
-                        variant="h6" 
-                        component="div" 
-                        sx={{ 
-                            flexGrow: 1, 
-                            fontWeight: 700,
-                            letterSpacing: '0.5px',
-                            display: { xs: 'none', sm: 'block' }
-                        }}
+                    <IconButton
+                        size="large"
+                        edge="start"
+                        color="inherit"
+                        aria-label="menu"
+                        sx={{ mr: 1 }}
+                        onClick={toggleSidebar}
+                        className="menu-button"
                     >
-                        Sports Management
-                    </Typography>
+                        <MenuIcon />
+                    </IconButton>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <SportsSoccerIcon sx={{ mr: 1, fontSize: 28 }} />
+                        <Typography 
+                            variant="h6" 
+                            component="div" 
+                            sx={{ 
+                                fontWeight: 700,
+                                letterSpacing: '0.5px',
+                                display: { xs: 'none', sm: 'block' }
+                            }}
+                        >
+                            Sports Management
+                        </Typography>
+                    </Box>
                 </Box>
-                
-                <Box sx={{ flexGrow: 1 }} />
                 
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <NotificationBadge />
@@ -96,7 +96,8 @@ const Navbar = ({ toggleSidebar }) => {
                         sx={{ 
                             display: 'flex', 
                             alignItems: 'center',
-                            ml: 2,
+                            ml: 1,
+                            mr: { xs: 0, sm: 1 },
                             cursor: 'pointer',
                             borderRadius: 1,
                             padding: '4px 8px',
@@ -120,13 +121,32 @@ const Navbar = ({ toggleSidebar }) => {
                         <Box 
                             sx={{ 
                                 ml: 1,
-                                display: { xs: 'none', md: 'block' }
+                                display: { xs: 'none', md: 'block' },
+                                maxWidth: { md: 120, lg: 200 },
+                                overflow: 'hidden'
                             }}
                         >
-                            <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+                            <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                    fontWeight: 600, 
+                                    lineHeight: 1.2,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                }}
+                            >
                                 {user?.firstName} {user?.lastName}
                             </Typography>
-                            <Typography variant="caption" sx={{ opacity: 0.8, lineHeight: 1 }}>
+                            <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                    opacity: 0.8, 
+                                    lineHeight: 1,
+                                    display: 'block',
+                                    whiteSpace: 'nowrap'
+                                }}
+                            >
                                 {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
                             </Typography>
                         </Box>

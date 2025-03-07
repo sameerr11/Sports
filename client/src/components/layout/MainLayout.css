@@ -3,6 +3,8 @@
     display: flex;
     flex-direction: column;
     background-color: #f8f9fa;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 .layout-content {
@@ -10,14 +12,17 @@
     flex: 1;
     transition: all 0.3s ease-in-out;
     position: relative;
+    width: 100%;
 }
 
 .layout-content.sidebar-closed .main-content {
     margin-left: 0;
+    width: 100%;
 }
 
 .layout-content.sidebar-open .main-content {
-    margin-left: 240px;
+    margin-left: 280px;
+    width: calc(100% - 280px);
 }
 
 .main-content {
@@ -27,6 +32,7 @@
     background-color: #f8f9fa;
     min-height: calc(100vh - 64px);
     overflow-x: hidden;
+    box-sizing: border-box;
 }
 
 /* Add a subtle pattern background */
@@ -45,13 +51,15 @@
 /* Add responsive adjustments */
 @media (max-width: 960px) {
     .layout-content.sidebar-open .main-content {
-        margin-left: 240px;
+        margin-left: 280px;
+        width: calc(100% - 280px);
     }
 }
 
 @media (max-width: 600px) {
     .layout-content.sidebar-open .main-content {
         margin-left: 0;
+        width: 100%;
     }
     
     .layout-content.sidebar-open {

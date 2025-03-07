@@ -4,7 +4,7 @@ import Sidebar from './Sidebar';
 import './MainLayout.css';
 
 const MainLayout = ({ children }) => {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     const toggleSidebar = () => {
         setSidebarOpen(!sidebarOpen);

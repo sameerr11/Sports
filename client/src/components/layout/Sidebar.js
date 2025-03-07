@@ -26,16 +26,15 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import EventIcon from '@mui/icons-material/Event';
 import PersonIcon from '@mui/icons-material/Person';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import { isAdmin, isSupervisor, getStoredUser } from '../../services/authService';
+import { isAdmin, isSupervisor } from '../../services/authService';
 import './Sidebar.css';
 
-const drawerWidth = 240;
+const drawerWidth = 280;
 
 const Sidebar = ({ open, toggleSidebar }) => {
     const location = useLocation();
     const admin = isAdmin();
     const supervisor = isSupervisor();
-    const user = getStoredUser();
     const theme = useTheme();
 
     const menuItems = [
@@ -72,7 +71,8 @@ const Sidebar = ({ open, toggleSidebar }) => {
                     backgroundColor: '#ffffff',
                     boxShadow: '2px 0 10px rgba(0, 0, 0, 0.05)',
                     borderRight: '1px solid rgba(0, 0, 0, 0.05)',
-                    transition: 'transform 0.3s ease-in-out',
+                    transition: 'all 0.3s ease-in-out',
+                    overflowX: 'hidden'
                 },
             }}
         >
@@ -81,19 +81,21 @@ const Sidebar = ({ open, toggleSidebar }) => {
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'space-between',
-                    p: 2
+                    p: 2,
+                    width: '100%'
                 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
                         <Avatar 
                             sx={{ 
                                 bgcolor: theme.palette.primary.main,
                                 width: 40,
-                                height: 40
+                                height: 40,
+                                flexShrink: 0
                             }}
                         >
                             <SportsSoccerIcon />
                         </Avatar>
-                        <Box sx={{ ml: 1 }}>
+                        <Box sx={{ ml: 1, overflow: 'hidden', whiteSpace: 'nowrap' }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
                                 Sports App
                             </Typography>
@@ -102,49 +104,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
                             </Typography>
                         </Box>
                     </Box>
-                    <IconButton onClick={toggleSidebar} className="close-sidebar-btn">
+                    <IconButton onClick={toggleSidebar} className="close-sidebar-btn" sx={{ flexShrink: 0 }}>
                         <ChevronLeftIcon />
                     </IconButton>
                 </Box>
-                
-                {user && (
-                    <Box sx={{ 
-                        px: 2, 
-                        pb: 2,
-                        display: 'flex',
-                        alignItems: 'center'
-                    }}>
-                        <Avatar 
-                            sx={{ 
-                                bgcolor: theme.palette.secondary.main,
-                                width: 36,
-                                height: 36
-                            }}
-                        >
-                            {user.firstName?.charAt(0) || 'U'}
-                        </Avatar>
-                        <Box sx={{ ml: 1 }}>
-                            <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
-                                {user.firstName} {user.lastName}
-                            </Typography>
-                            <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                    color: theme.palette.primary.main,
-                                    fontWeight: 600,
-                                    display: 'inline-block',
-                                    px: 0.75,
-                                    py: 0.25,
-                                    borderRadius: 1,
-                                    bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                    fontSize: '0.65rem'
-                                }}
-                            >
-                                {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                            </Typography>
-                        </Box>
-                    </Box>
-                )}
             </Box>
             <Divider />
             <List component="nav" className="sidebar-nav">
@@ -162,6 +125,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                             mb: 0.5,
                             position: 'relative',
                             overflow: 'hidden',
+                            width: 'calc(100% - 16px)',
                             '&.active': {
                                 backgroundColor: alpha(theme.palette.primary.main, 0.1),
                                 color: theme.palette.primary.main,
@@ -183,16 +147,19 @@ const Sidebar = ({ open, toggleSidebar }) => {
                     >
                         <ListItemIcon sx={{ 
                             color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
-                            minWidth: 40
+                            minWidth: 40,
+                            flexShrink: 0
                         }}>
                             {item.icon}
                         </ListItemIcon>
                         <ListItemText 
                             primary={item.text} 
                             primaryTypographyProps={{ 
-                                fontSize: '0.875rem',
-                                fontWeight: location.pathname === item.path ? 600 : 400
+                                fontSize: '0.95rem',
+                                fontWeight: location.pathname === item.path ? 600 : 400,
+                                noWrap: true
                             }}
+                            sx={{ overflow: 'hidden' }}
                         />
                     </ListItem>
                 ))}
@@ -208,7 +175,8 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
                                     color: 'text.secondary',
-                                    fontWeight: 600
+                                    fontWeight: 600,
+                                    noWrap: true
                                 }} 
                             />
                         </ListItem>
@@ -226,6 +194,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     mb: 0.5,
                                     position: 'relative',
                                     overflow: 'hidden',
+                                    width: 'calc(100% - 16px)',
                                     '&.active': {
                                         backgroundColor: alpha(theme.palette.primary.main, 0.1),
                                         color: theme.palette.primary.main,
@@ -247,16 +216,19 @@ const Sidebar = ({ open, toggleSidebar }) => {
                             >
                                 <ListItemIcon sx={{ 
                                     color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
-                                    minWidth: 40
+                                    minWidth: 40,
+                                    flexShrink: 0
                                 }}>
                                     {item.icon}
                                 </ListItemIcon>
                                 <ListItemText 
                                     primary={item.text} 
                                     primaryTypographyProps={{ 
-                                        fontSize: '0.875rem',
-                                        fontWeight: location.pathname === item.path ? 600 : 400
+                                        fontSize: '0.95rem',
+                                        fontWeight: location.pathname === item.path ? 600 : 400,
+                                        noWrap: true
                                     }}
+                                    sx={{ overflow: 'hidden' }}
                                 />
                             </ListItem>
                         ))}
@@ -274,7 +246,8 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
                                     color: 'text.secondary',
-                                    fontWeight: 600
+                                    fontWeight: 600,
+                                    noWrap: true
                                 }} 
                             />
                         </ListItem>
@@ -292,6 +265,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     mb: 0.5,
                                     position: 'relative',
                                     overflow: 'hidden',
+                                    width: 'calc(100% - 16px)',
                                     '&.active': {
                                         backgroundColor: alpha(theme.palette.primary.main, 0.1),
                                         color: theme.palette.primary.main,
@@ -313,16 +287,19 @@ const Sidebar = ({ open, toggleSidebar }) => {
                             >
                                 <ListItemIcon sx={{ 
                                     color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
-                                    minWidth: 40
+                                    minWidth: 40,
+                                    flexShrink: 0
                                 }}>
                                     {item.icon}
                                 </ListItemIcon>
                                 <ListItemText 
                                     primary={item.text} 
                                     primaryTypographyProps={{ 
-                                        fontSize: '0.875rem',
-                                        fontWeight: location.pathname === item.path ? 600 : 400
+                                        fontSize: '0.95rem',
+                                        fontWeight: location.pathname === item.path ? 600 : 400,
+                                        noWrap: true
                                     }}
+                                    sx={{ overflow: 'hidden' }}
                                 />
                             </ListItem>
                         ))}

@@ -24,7 +24,7 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { getUsers, deleteUser } from '../../services/userService';
+import { getAllUsers, deleteUser } from '../../services/userService';
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -39,7 +39,7 @@ const UserList = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const data = await getUsers();
+      const data = await getAllUsers();
       setUsers(data);
       setError('');
     } catch (err) {

@@ -4,10 +4,12 @@
     position: sticky;
     top: 0;
     z-index: 1100;
+    width: 100%;
 }
 
 .navbar .MuiToolbar-root {
     min-height: 64px;
+    padding-right: 16px !important;
 }
 
 .navbar .MuiTypography-root {
@@ -20,6 +22,17 @@
 
 .menu-button:hover {
     transform: scale(1.1);
+}
+
+/* Fix for account avatar */
+.navbar .MuiAvatar-root {
+    flex-shrink: 0;
+}
+
+/* Ensure proper spacing in the toolbar */
+.navbar .MuiToolbar-root > .MuiBox-root:last-child {
+    margin-left: auto;
+    padding-right: 0;
 }
 
 /* Add a subtle animation for the notification badge */
@@ -37,4 +50,12 @@
 
 .MuiBadge-badge {
     animation: pulse 2s infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .navbar .MuiToolbar-root {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
 } 
