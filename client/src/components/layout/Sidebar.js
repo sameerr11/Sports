@@ -44,8 +44,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'My Bookings', icon: <EventIcon />, path: '/bookings/me' },
         { text: 'Tournaments', icon: <EmojiEventsIcon />, path: '/tournaments' },
         { text: 'Cafeteria', icon: <RestaurantIcon />, path: '/cafeteria' },
-        { text: 'Payments', icon: <PaymentIcon />, path: '/payments' },
-        { text: 'Profile', icon: <PersonIcon />, path: '/profile' }
+        { text: 'Payments', icon: <PaymentIcon />, path: '/payments' }
     ];
 
     const supervisorItems = [
