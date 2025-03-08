@@ -41,6 +41,7 @@ const ManageItems = () => {
     price: '',
     category: 'Food',
     stock: '',
+    minStockLevel: '',
     isAvailable: true
   });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -70,6 +71,7 @@ const ManageItems = () => {
         price: item.price.toString(),
         category: item.category,
         stock: item.stock.toString(),
+        minStockLevel: item.minStockLevel?.toString() || '10',
         isAvailable: item.isAvailable
       });
     } else {
@@ -79,6 +81,7 @@ const ManageItems = () => {
         price: '',
         category: 'Food',
         stock: '',
+        minStockLevel: '10',
         isAvailable: true
       });
     }
@@ -93,6 +96,7 @@ const ManageItems = () => {
     if (!formData.name.trim()) return 'Name is required';
     if (!formData.price || formData.price <= 0) return 'Price must be greater than 0';
     if (!formData.stock || formData.stock < 0) return 'Stock cannot be negative';
+    if (!formData.minStockLevel || formData.minStockLevel < 0) return 'Minimum stock level cannot be negative';
     return null;
   };
 
@@ -111,7 +115,8 @@ const ManageItems = () => {
       const itemData = {
         ...formData,
         price: parseFloat(formData.price),
-        stock: parseInt(formData.stock, 10)
+        stock: parseInt(formData.stock, 10),
+        minStockLevel: parseInt(formData.minStockLevel, 10)
       };
 
       if (dialog.type === 'create') {
@@ -179,6 +184,7 @@ const ManageItems = () => {
               <TableCell>Category</TableCell>
               <TableCell>Price</TableCell>
               <TableCell>Stock</TableCell>
+              <TableCell>Min. Stock</TableCell>
               <TableCell>Status</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
@@ -190,6 +196,7 @@ const ManageItems = () => {
                 <TableCell>{item.category}</TableCell>
                 <TableCell>{formatCurrency(item.price)}</TableCell>
                 <TableCell>{item.stock}</TableCell>
+                <TableCell>{item.minStockLevel || 10}</TableCell>
                 <TableCell>{item.isAvailable ? 'Available' : 'Unavailable'}</TableCell>
                 <TableCell align="right">
                   <IconButton
@@ -234,6 +241,7 @@ const ManageItems = () => {
             fullWidth
             value={formData.price}
             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+            inputProps={{ min: 0, step: 0.01 }}
           />
           <TextField
             select
@@ -256,6 +264,17 @@ const ManageItems = () => {
             fullWidth
             value={formData.stock}
             onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+            inputProps={{ min: 0 }}
+          />
+          <TextField
+            margin="dense"
+            label="Minimum Stock Level"
+            type="number"
+            fullWidth
+            value={formData.minStockLevel}
+            onChange={(e) => setFormData({ ...formData, minStockLevel: e.target.value })}
+            inputProps={{ min: 0 }}
+            helperText="Alert will be shown when stock falls below this level"
           />
           <TextField
             select

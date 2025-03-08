@@ -15,7 +15,6 @@ import {
     alpha
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import PeopleIcon from '@mui/icons-material/People';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -51,7 +50,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
 
     const supervisorItems = [
         { text: 'All Bookings', icon: <EventIcon />, path: '/bookings' },
-        { text: 'Manage Cafeteria', icon: <FastfoodIcon />, path: '/cafeteria/manage' },
+        { text: 'Manage Cafeteria', icon: <FastfoodIcon />, path: '/cafeteria/manage' }
     ];
 
     const adminItems = [

@@ -19,7 +19,7 @@ import {
   isCoach, isPlayer, isParent 
 } from './services/authService';
 import Cafeteria from './components/cafeteria/Cafeteria';
-import ManageItems from './components/cafeteria/ManageItems';
+import CafeteriaManagement from './components/cafeteria/CafeteriaManagement';
 import './App.css';
 
 // Placeholder components for routes
@@ -220,7 +220,7 @@ function App() {
         <Route path="/cafeteria/manage" element={
           <ProtectedRoute requiredRole="supervisor">
             <MainLayout>
-              <ManageItems />
+              <CafeteriaManagement />
             </MainLayout>
           </ProtectedRoute>
         } />
