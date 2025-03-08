@@ -220,4 +220,25 @@ exports.changePassword = async (req, res) => {
     }
     res.status(500).json({ msg: 'Server error' });
   }
+};
+
+// @desc    Get users by role
+// @route   GET /api/users/role/:role
+// @access  Supervisor
+exports.getUsersByRole = async (req, res) => {
+  try {
+    const { role } = req.params;
+    
+    // Validate role
+    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'accounting', 'guest'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ msg: 'Invalid role' });
+    }
+    
+    const users = await User.find({ role, isActive: true }).select('-password');
+    res.json(users);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server error' });
+  }
 }; 

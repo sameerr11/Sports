@@ -123,7 +123,7 @@ exports.deleteTeam = async (req, res) => {
       return res.status(404).json({ msg: 'Team not found' });
     }
 
-    await team.remove();
+    await Team.findByIdAndDelete(req.params.id);
     res.json({ msg: 'Team removed' });
   } catch (err) {
     console.error(err.message);

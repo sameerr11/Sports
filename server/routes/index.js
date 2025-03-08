@@ -40,6 +40,7 @@ router.post(
   userController.registerUser
 );
 router.get('/users', [auth, admin], userController.getUsers);
+router.get('/users/role/:role', [auth, supervisor], userController.getUsersByRole);
 router.get('/users/:id', [auth, admin], userController.getUserById);
 router.put('/users/:id', [auth, admin], userController.updateUser);
 router.delete('/users/:id', [auth, admin], userController.deleteUser);

@@ -18,6 +18,7 @@ const TeamList = () => {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, teamId: null });
   const canManageTeams = isSupervisor();
 
@@ -45,8 +46,22 @@ const TeamList = () => {
       await deleteTeam(deleteDialog.teamId);
       setTeams(teams.filter(team => team._id !== deleteDialog.teamId));
       setDeleteDialog({ open: false, teamId: null });
+      setSuccess('Team deleted successfully');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
     } catch (err) {
-      setError(err.toString());
+      console.error('Error deleting team:', err);
+      // Show a more user-friendly error message
+      setError('Failed to delete team. Please try again later.');
+      setDeleteDialog({ open: false, teamId: null });
+      
+      // Clear error message after 5 seconds
+      setTimeout(() => {
+        setError(null);
+      }, 5000);
     }
   };
 
@@ -78,6 +93,7 @@ const TeamList = () => {
       </Box>
 
       {error && <AlertMessage severity="error" message={error} />}
+      {success && <AlertMessage severity="success" message={success} />}
 
       {teams.length === 0 ? (
         <Typography>No teams available.</Typography>

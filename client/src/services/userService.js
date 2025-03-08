@@ -165,4 +165,15 @@ export const getMockUserActivity = () => {
             { _id: '3', message: 'Payment received', date: '2025-03-03', read: true }
         ]
     };
-}; 
+};
+
+// Get users by role
+export const getUsersByRole = async (role) => {
+    try {
+        const response = await api.get(`/users/role/${role}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching ${role}s:`, error);
+        throw error.response?.data?.msg || `Failed to fetch ${role}s`;
+    }
+};

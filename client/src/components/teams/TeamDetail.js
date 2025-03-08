@@ -6,7 +6,7 @@ import {
   Card, CardContent, Alert, Tab, Tabs, Avatar, List, ListItem,
   ListItemAvatar, ListItemText, ListItemSecondaryAction, IconButton,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
-  FormControl, InputLabel, Select, MenuItem
+  FormControl, InputLabel, Select, MenuItem, CircularProgress
 } from '@mui/material';
 import { 
   ArrowBack, Edit, Delete, Add, Person, EmojiEvents, 
@@ -14,8 +14,9 @@ import {
 } from '@mui/icons-material';
 import { 
   getTeamById, addPlayerToTeam, removePlayerFromTeam,
-  addCoachToTeam, removeCoachFromTeam 
+  addCoachToTeam, removeCoachFromTeam, deleteTeam
 } from '../../services/teamService';
+import { getUsersByRole } from '../../services/userService';
 import { isSupervisor, isCoach, isPlayer, isParent } from '../../services/authService';
 import AlertMessage from '../common/AlertMessage';
 
@@ -28,10 +29,12 @@ const TeamDetail = () => {
   const [tabValue, setTabValue] = useState(0);
   const [playerDialog, setPlayerDialog] = useState({ open: false });
   const [coachDialog, setCoachDialog] = useState({ open: false });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false });
   const [playerFormData, setPlayerFormData] = useState({ playerId: '', position: '' });
   const [coachFormData, setCoachFormData] = useState({ coachId: '', role: 'Assistant Coach' });
   const [users, setUsers] = useState({ players: [], coaches: [] });
   const [successMessage, setSuccessMessage] = useState(null);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   
   const canManageTeams = isSupervisor();
   const canViewTeam = isSupervisor() || isCoach() || isPlayer() || isParent();
@@ -51,28 +54,52 @@ const TeamDetail = () => {
     fetchTeamData();
   }, [id]);
 
-  // Mock function to fetch available players and coaches
-  // In a real app, you would fetch this from your API
-  useEffect(() => {
-    // This is just a placeholder - in a real app you would fetch from your API
-    setUsers({
-      players: [
-        { _id: 'player1', firstName: 'John', lastName: 'Doe' },
-        { _id: 'player2', firstName: 'Jane', lastName: 'Smith' },
-        { _id: 'player3', firstName: 'Mike', lastName: 'Johnson' }
-      ],
-      coaches: [
-        { _id: 'coach1', firstName: 'Sarah', lastName: 'Williams' },
-        { _id: 'coach2', firstName: 'Robert', lastName: 'Brown' }
-      ]
-    });
-  }, []);
+  // Fetch available players and coaches from the API
+  const fetchAvailableUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      // Fetch players and coaches in parallel
+      const [playersResponse, coachesResponse] = await Promise.all([
+        getUsersByRole('player'),
+        getUsersByRole('coach')
+      ]);
+      
+      // Filter out players already in the team
+      const availablePlayers = team && team.players 
+        ? playersResponse.filter(player => 
+            !team.players.some(teamPlayer => 
+              teamPlayer.player && teamPlayer.player._id === player._id
+            )
+          )
+        : playersResponse;
+      
+      // Filter out coaches already in the team
+      const availableCoaches = team && team.coaches
+        ? coachesResponse.filter(coach => 
+            !team.coaches.some(teamCoach => 
+              teamCoach.coach && teamCoach.coach._id === coach._id
+            )
+          )
+        : coachesResponse;
+      
+      setUsers({
+        players: availablePlayers,
+        coaches: availableCoaches
+      });
+    } catch (err) {
+      console.error('Error fetching available users:', err);
+      setError('Failed to load available players and coaches.');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
 
   const handleOpenPlayerDialog = () => {
+    fetchAvailableUsers();
     setPlayerDialog({ open: true });
   };
 
@@ -82,12 +109,21 @@ const TeamDetail = () => {
   };
 
   const handleOpenCoachDialog = () => {
+    fetchAvailableUsers();
     setCoachDialog({ open: true });
   };
 
   const handleCloseCoachDialog = () => {
     setCoachDialog({ open: false });
     setCoachFormData({ coachId: '', role: 'Assistant Coach' });
+  };
+
+  const handleOpenDeleteDialog = () => {
+    setDeleteDialog({ open: true });
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialog({ open: false });
   };
 
   const handlePlayerFormChange = (e) => {
@@ -114,11 +150,12 @@ const TeamDetail = () => {
         return;
       }
       
-      const updatedPlayers = await addPlayerToTeam(id, playerId, position);
-      setTeam(prev => ({
-        ...prev,
-        players: updatedPlayers
-      }));
+      // Add player to team
+      await addPlayerToTeam(id, playerId, position);
+      
+      // Refresh team data to get updated players list
+      const updatedTeam = await getTeamById(id);
+      setTeam(updatedTeam);
       
       setSuccessMessage('Player added successfully');
       handleClosePlayerDialog();
@@ -128,17 +165,20 @@ const TeamDetail = () => {
         setSuccessMessage(null);
       }, 3000);
     } catch (err) {
-      setError(err.toString());
+      console.error('Error adding player:', err);
+      // Show a more user-friendly error message
+      setError('Failed to add player. Please try again later.');
     }
   };
 
   const handleRemovePlayer = async (playerId) => {
     try {
-      const updatedPlayers = await removePlayerFromTeam(id, playerId);
-      setTeam(prev => ({
-        ...prev,
-        players: updatedPlayers
-      }));
+      // Remove player from team
+      await removePlayerFromTeam(id, playerId);
+      
+      // Refresh team data to get updated players list
+      const updatedTeam = await getTeamById(id);
+      setTeam(updatedTeam);
       
       setSuccessMessage('Player removed successfully');
       
@@ -147,7 +187,9 @@ const TeamDetail = () => {
         setSuccessMessage(null);
       }, 3000);
     } catch (err) {
-      setError(err.toString());
+      console.error('Error removing player:', err);
+      // Show a more user-friendly error message
+      setError('Failed to remove player. Please try again later.');
     }
   };
 
@@ -159,11 +201,12 @@ const TeamDetail = () => {
         return;
       }
       
-      const updatedCoaches = await addCoachToTeam(id, coachId, role);
-      setTeam(prev => ({
-        ...prev,
-        coaches: updatedCoaches
-      }));
+      // Add coach to team
+      await addCoachToTeam(id, coachId, role);
+      
+      // Refresh team data to get updated coaches list
+      const updatedTeam = await getTeamById(id);
+      setTeam(updatedTeam);
       
       setSuccessMessage('Coach added successfully');
       handleCloseCoachDialog();
@@ -173,17 +216,20 @@ const TeamDetail = () => {
         setSuccessMessage(null);
       }, 3000);
     } catch (err) {
-      setError(err.toString());
+      console.error('Error adding coach:', err);
+      // Show a more user-friendly error message
+      setError('Failed to add coach. Please try again later.');
     }
   };
 
   const handleRemoveCoach = async (coachId) => {
     try {
-      const updatedCoaches = await removeCoachFromTeam(id, coachId);
-      setTeam(prev => ({
-        ...prev,
-        coaches: updatedCoaches
-      }));
+      // Remove coach from team
+      await removeCoachFromTeam(id, coachId);
+      
+      // Refresh team data to get updated coaches list
+      const updatedTeam = await getTeamById(id);
+      setTeam(updatedTeam);
       
       setSuccessMessage('Coach removed successfully');
       
@@ -192,7 +238,27 @@ const TeamDetail = () => {
         setSuccessMessage(null);
       }, 3000);
     } catch (err) {
-      setError(err.toString());
+      console.error('Error removing coach:', err);
+      // Show a more user-friendly error message
+      setError('Failed to remove coach. Please try again later.');
+    }
+  };
+
+  const handleDeleteTeam = async () => {
+    try {
+      await deleteTeam(id);
+      setSuccessMessage('Team deleted successfully');
+      handleCloseDeleteDialog();
+      
+      // Navigate after a short delay to show the success message
+      setTimeout(() => {
+        navigate('/teams');
+      }, 1500);
+    } catch (err) {
+      console.error('Error deleting team:', err);
+      // Show a more user-friendly error message
+      setError('Failed to delete team. Please try again later.');
+      handleCloseDeleteDialog();
     }
   };
 
@@ -411,35 +477,53 @@ const TeamDetail = () => {
       <Dialog open={playerDialog.open} onClose={handleClosePlayerDialog}>
         <DialogTitle>Add Player to Team</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Select Player</InputLabel>
-              <Select
-                name="playerId"
-                value={playerFormData.playerId}
+          {loadingUsers ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box sx={{ pt: 1 }}>
+              {users.players.length === 0 ? (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  No available players found. All players are already assigned to this team or no players exist in the system.
+                </Alert>
+              ) : (
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                  <InputLabel>Select Player</InputLabel>
+                  <Select
+                    name="playerId"
+                    value={playerFormData.playerId}
+                    onChange={handlePlayerFormChange}
+                    label="Select Player"
+                  >
+                    {users.players.map(player => (
+                      <MenuItem key={player._id} value={player._id}>
+                        {player.firstName} {player.lastName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+              <TextField
+                fullWidth
+                label="Position (Optional)"
+                name="position"
+                value={playerFormData.position}
                 onChange={handlePlayerFormChange}
-                label="Select Player"
-              >
-                {users.players.map(player => (
-                  <MenuItem key={player._id} value={player._id}>
-                    {player.firstName} {player.lastName}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
-              fullWidth
-              label="Position (Optional)"
-              name="position"
-              value={playerFormData.position}
-              onChange={handlePlayerFormChange}
-              placeholder="e.g. Forward, Goalkeeper, etc."
-            />
-          </Box>
+                placeholder="e.g. Forward, Goalkeeper, etc."
+                disabled={users.players.length === 0}
+              />
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClosePlayerDialog}>Cancel</Button>
-          <Button onClick={handleAddPlayer} color="primary" variant="contained">
+          <Button 
+            onClick={handleAddPlayer} 
+            color="primary" 
+            variant="contained"
+            disabled={loadingUsers || users.players.length === 0 || !playerFormData.playerId}
+          >
             Add Player
           </Button>
         </DialogActions>
@@ -449,45 +533,98 @@ const TeamDetail = () => {
       <Dialog open={coachDialog.open} onClose={handleCloseCoachDialog}>
         <DialogTitle>Add Coach to Team</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Select Coach</InputLabel>
-              <Select
-                name="coachId"
-                value={coachFormData.coachId}
-                onChange={handleCoachFormChange}
-                label="Select Coach"
-              >
-                {users.coaches.map(coach => (
-                  <MenuItem key={coach._id} value={coach._id}>
-                    {coach.firstName} {coach.lastName}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Role</InputLabel>
-              <Select
-                name="role"
-                value={coachFormData.role}
-                onChange={handleCoachFormChange}
-                label="Role"
-              >
-                <MenuItem value="Head Coach">Head Coach</MenuItem>
-                <MenuItem value="Assistant Coach">Assistant Coach</MenuItem>
-                <MenuItem value="Fitness Coach">Fitness Coach</MenuItem>
-                <MenuItem value="Goalkeeper Coach">Goalkeeper Coach</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
+          {loadingUsers ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box sx={{ pt: 1 }}>
+              {users.coaches.length === 0 ? (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  No available coaches found. All coaches are already assigned to this team or no coaches exist in the system.
+                </Alert>
+              ) : (
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                  <InputLabel>Select Coach</InputLabel>
+                  <Select
+                    name="coachId"
+                    value={coachFormData.coachId}
+                    onChange={handleCoachFormChange}
+                    label="Select Coach"
+                  >
+                    {users.coaches.map(coach => (
+                      <MenuItem key={coach._id} value={coach._id}>
+                        {coach.firstName} {coach.lastName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+              <FormControl fullWidth disabled={users.coaches.length === 0}>
+                <InputLabel>Role</InputLabel>
+                <Select
+                  name="role"
+                  value={coachFormData.role}
+                  onChange={handleCoachFormChange}
+                  label="Role"
+                >
+                  <MenuItem value="Head Coach">Head Coach</MenuItem>
+                  <MenuItem value="Assistant Coach">Assistant Coach</MenuItem>
+                  <MenuItem value="Fitness Coach">Fitness Coach</MenuItem>
+                  <MenuItem value="Goalkeeper Coach">Goalkeeper Coach</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseCoachDialog}>Cancel</Button>
-          <Button onClick={handleAddCoach} color="primary" variant="contained">
+          <Button 
+            onClick={handleAddCoach} 
+            color="primary" 
+            variant="contained"
+            disabled={loadingUsers || users.coaches.length === 0 || !coachFormData.coachId}
+          >
             Add Coach
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Delete Team Confirmation Dialog */}
+      <Dialog open={deleteDialog.open} onClose={handleCloseDeleteDialog}>
+        <DialogTitle>Delete Team</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 1 }}>
+            <Typography variant="body1">
+              Are you sure you want to delete this team? This action cannot be undone.
+            </Typography>
+            <Typography variant="body2" color="error" sx={{ mt: 2 }}>
+              All players and coaches will be removed from this team.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
+          <Button 
+            onClick={handleDeleteTeam} 
+            color="error" 
+            variant="contained"
+          >
+            Delete Team
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {canManageTeams && (
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={handleOpenDeleteDialog}
+          sx={{ mt: 2, ml: 2 }}
+        >
+          Delete Team
+        </Button>
+      )}
     </Container>
   );
 };
