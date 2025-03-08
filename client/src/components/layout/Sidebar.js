@@ -20,7 +20,6 @@ import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PaymentIcon from '@mui/icons-material/Payment';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import EventIcon from '@mui/icons-material/Event';
@@ -47,8 +46,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'Tournaments', icon: <EmojiEventsIcon />, path: '/tournaments' },
         { text: 'Cafeteria', icon: <RestaurantIcon />, path: '/cafeteria' },
         { text: 'Payments', icon: <PaymentIcon />, path: '/payments' },
-        { text: 'Profile', icon: <PersonIcon />, path: '/profile' },
-        { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications' },
+        { text: 'Profile', icon: <PersonIcon />, path: '/profile' }
     ];
 
     const supervisorItems = [
