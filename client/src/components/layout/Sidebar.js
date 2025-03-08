@@ -26,6 +26,8 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import EventIcon from '@mui/icons-material/Event';
 import PersonIcon from '@mui/icons-material/Person';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
+import FastfoodIcon from '@mui/icons-material/Fastfood';
 import { isAdmin, isSupervisor } from '../../services/authService';
 import './Sidebar.css';
 
@@ -43,6 +45,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'Teams', icon: <SportsSoccerIcon />, path: '/teams' },
         { text: 'My Bookings', icon: <EventIcon />, path: '/bookings/me' },
         { text: 'Tournaments', icon: <EmojiEventsIcon />, path: '/tournaments' },
+        { text: 'Cafeteria', icon: <RestaurantIcon />, path: '/cafeteria' },
         { text: 'Payments', icon: <PaymentIcon />, path: '/payments' },
         { text: 'Profile', icon: <PersonIcon />, path: '/profile' },
         { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications' },
@@ -50,6 +53,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
 
     const supervisorItems = [
         { text: 'All Bookings', icon: <EventIcon />, path: '/bookings' },
+        { text: 'Manage Cafeteria', icon: <FastfoodIcon />, path: '/cafeteria/manage' },
     ];
 
     const adminItems = [

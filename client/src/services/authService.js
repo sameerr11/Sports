@@ -99,4 +99,13 @@ export const isParent = () => {
 // Check if user is guest
 export const isGuest = () => {
   return hasRole('guest');
+};
+
+export const getAuthHeader = () => {
+  const token = getToken();
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  };
 }; 

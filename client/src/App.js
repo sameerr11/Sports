@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import Login from './components/auth/Login';
@@ -18,6 +18,8 @@ import {
   isAuthenticated, isAdmin, isSupervisor, 
   isCoach, isPlayer, isParent 
 } from './services/authService';
+import Cafeteria from './components/cafeteria/Cafeteria';
+import ManageItems from './components/cafeteria/ManageItems';
 import './App.css';
 
 // Placeholder components for routes
@@ -203,6 +205,22 @@ function App() {
           <ProtectedRoute requiredRole="admin">
             <MainLayout>
               <UserForm />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/cafeteria" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Cafeteria />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/cafeteria/manage" element={
+          <ProtectedRoute requiredRole="supervisor">
+            <MainLayout>
+              <ManageItems />
             </MainLayout>
           </ProtectedRoute>
         } />

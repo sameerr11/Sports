@@ -1,0 +1,84 @@
+.cafeteria-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.cafeteria-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.item-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s;
+}
+
+.item-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.item-card .MuiCardContent-root {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.item-card .MuiButton-root {
+  margin-top: auto;
+}
+
+.cart-card {
+  position: sticky;
+  top: 24px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.cart-item:last-child {
+  border-bottom: none;
+}
+
+.cart-item-controls {
+  display: flex;
+  align-items: center;
+}
+
+.cart-item-controls .MuiIconButton-root {
+  padding: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .cart-card {
+    position: static;
+    margin-top: 24px;
+    max-height: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .cafeteria-container {
+    padding: 16px;
+  }
+
+  .cafeteria-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+} 

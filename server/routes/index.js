@@ -9,6 +9,7 @@ const notificationController = require('../controllers/notificationController');
 const courtController = require('../controllers/courtController');
 const bookingController = require('../controllers/bookingController');
 const teamController = require('../controllers/teamController');
+const cafeteriaRoutes = require('./cafeteriaRoutes');
 
 // Middleware
 const { auth, admin, supervisor, coach, player, parent } = require('../middleware/auth');
@@ -141,5 +142,8 @@ router.post(
   teamController.addCoachToTeam
 );
 router.delete('/teams/:id/coaches/:coachId', [auth, supervisor], teamController.removeCoachFromTeam);
+
+// Cafeteria routes
+router.use('/cafeteria', cafeteriaRoutes);
 
 module.exports = router; 
