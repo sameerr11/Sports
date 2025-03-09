@@ -75,6 +75,8 @@ const UserList = () => {
         return 'error';
       case 'supervisor':
         return 'warning';
+      case 'cashier':
+        return 'info';
       case 'coach':
         return 'success';
       case 'player':

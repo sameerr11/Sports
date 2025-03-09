@@ -26,7 +26,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import FastfoodIcon from '@mui/icons-material/Fastfood';
-import { isAdmin, isSupervisor } from '../../services/authService';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import { isAdmin, isSupervisor, isCashier } from '../../services/authService';
 import './Sidebar.css';
 
 const drawerWidth = 280;
@@ -35,6 +36,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const location = useLocation();
     const admin = isAdmin();
     const supervisor = isSupervisor();
+    const cashier = isCashier();
     const theme = useTheme();
 
     const menuItems = [
@@ -43,8 +45,11 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'Teams', icon: <SportsSoccerIcon />, path: '/teams' },
         { text: 'My Bookings', icon: <EventIcon />, path: '/bookings/me' },
         { text: 'Tournaments', icon: <EmojiEventsIcon />, path: '/tournaments' },
-        { text: 'Cafeteria', icon: <RestaurantIcon />, path: '/cafeteria' },
         { text: 'Payments', icon: <PaymentIcon />, path: '/payments' }
+    ];
+
+    const cashierItems = [
+        { text: 'Cafeteria POS', icon: <RestaurantIcon />, path: '/cafeteria' }
     ];
 
     const supervisorItems = [
@@ -110,60 +115,123 @@ const Sidebar = ({ open, toggleSidebar }) => {
                 </Box>
             </Box>
             <Divider />
-            <List component="nav" className="sidebar-nav">
-                {menuItems.map((item) => (
-                    <ListItem 
-                        button 
-                        key={item.text} 
-                        component={Link} 
-                        to={item.path}
-                        selected={location.pathname === item.path}
-                        className={location.pathname === item.path ? 'active' : ''}
-                        sx={{
-                            borderRadius: '0 20px 20px 0',
-                            mx: 1,
-                            mb: 0.5,
-                            position: 'relative',
-                            overflow: 'hidden',
-                            width: 'calc(100% - 16px)',
-                            '&.active': {
-                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                color: theme.palette.primary.main,
-                                '&::before': {
-                                    content: '""',
-                                    position: 'absolute',
-                                    left: 0,
-                                    top: 0,
-                                    bottom: 0,
-                                    width: 4,
-                                    backgroundColor: theme.palette.primary.main,
-                                    borderRadius: '0 4px 4px 0'
+            
+            {/* Only show regular menu items if not a cashier */}
+            {!cashier && (
+                <List component="nav" className="sidebar-nav">
+                    {menuItems.map((item) => (
+                        <ListItem 
+                            button 
+                            key={item.text} 
+                            component={Link} 
+                            to={item.path}
+                            selected={location.pathname === item.path}
+                            className={location.pathname === item.path ? 'active' : ''}
+                            sx={{
+                                borderRadius: '0 20px 20px 0',
+                                mx: 1,
+                                mb: 0.5,
+                                position: 'relative',
+                                overflow: 'hidden',
+                                width: 'calc(100% - 16px)',
+                                '&.active': {
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                    color: theme.palette.primary.main,
+                                    '&::before': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        left: 0,
+                                        top: 0,
+                                        bottom: 0,
+                                        width: 4,
+                                        backgroundColor: theme.palette.primary.main,
+                                        borderRadius: '0 4px 4px 0'
+                                    }
+                                },
+                                '&:hover': {
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.05),
                                 }
-                            },
-                            '&:hover': {
-                                backgroundColor: alpha(theme.palette.primary.main, 0.05),
-                            }
-                        }}
-                    >
-                        <ListItemIcon sx={{ 
-                            color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
-                            minWidth: 40,
-                            flexShrink: 0
-                        }}>
-                            {item.icon}
-                        </ListItemIcon>
-                        <ListItemText 
-                            primary={item.text} 
-                            primaryTypographyProps={{ 
-                                fontSize: '0.95rem',
-                                fontWeight: location.pathname === item.path ? 600 : 400,
-                                noWrap: true
                             }}
-                            sx={{ overflow: 'hidden' }}
-                        />
-                    </ListItem>
-                ))}
-            </List>
+                        >
+                            <ListItemIcon sx={{ 
+                                color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                minWidth: 40,
+                                flexShrink: 0
+                            }}>
+                                {item.icon}
+                            </ListItemIcon>
+                            <ListItemText 
+                                primary={item.text} 
+                                primaryTypographyProps={{ 
+                                    fontSize: '0.95rem',
+                                    fontWeight: location.pathname === item.path ? 600 : 400,
+                                    noWrap: true
+                                }}
+                                sx={{ overflow: 'hidden' }}
+                            />
+                        </ListItem>
+                    ))}
+                </List>
+            )}
+            
+            {cashier && (
+                <>
+                    <List component="nav" className="sidebar-nav">
+                        {cashierItems.map((item) => (
+                            <ListItem 
+                                button 
+                                key={item.text} 
+                                component={Link} 
+                                to={item.path}
+                                selected={location.pathname === item.path}
+                                className={location.pathname === item.path ? 'active' : ''}
+                                sx={{
+                                    borderRadius: '0 20px 20px 0',
+                                    mx: 1,
+                                    mb: 0.5,
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    width: 'calc(100% - 16px)',
+                                    '&.active': {
+                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                        color: theme.palette.primary.main,
+                                        '&::before': {
+                                            content: '""',
+                                            position: 'absolute',
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: 4,
+                                            backgroundColor: theme.palette.primary.main,
+                                            borderRadius: '0 4px 4px 0'
+                                        }
+                                    },
+                                    '&:hover': {
+                                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                    }
+                                }}
+                            >
+                                <ListItemIcon sx={{ 
+                                    color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                    minWidth: 40,
+                                    flexShrink: 0
+                                }}>
+                                    {item.icon}
+                                </ListItemIcon>
+                                <ListItemText 
+                                    primary={item.text} 
+                                    primaryTypographyProps={{ 
+                                        fontSize: '0.95rem',
+                                        fontWeight: location.pathname === item.path ? 600 : 400,
+                                        noWrap: true
+                                    }}
+                                    sx={{ overflow: 'hidden' }}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                </>
+            )}
             
             {supervisor && (
                 <>

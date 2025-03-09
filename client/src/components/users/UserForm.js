@@ -23,6 +23,7 @@ import { createUser, getUserById, updateUser } from '../../services/userService'
 const ROLES = [
   { value: 'admin', label: 'Admin' },
   { value: 'supervisor', label: 'Supervisor' },
+  { value: 'cashier', label: 'Cashier' },
   { value: 'coach', label: 'Coach' },
   { value: 'player', label: 'Player' },
   { value: 'parent', label: 'Parent' },

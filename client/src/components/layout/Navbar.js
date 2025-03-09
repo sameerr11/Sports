@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  IconButton, 
-  Box, 
-  Menu, 
-  MenuItem, 
-  Divider, 
-  ListItemIcon, 
-  Avatar,
-  Badge,
-  useTheme,
-  alpha,
-  Container
+    AppBar, 
+    Toolbar, 
+    Typography, 
+    IconButton, 
+    Box, 
+    Menu, 
+    MenuItem, 
+    Divider, 
+    ListItemIcon, 
+    Avatar,
+    Badge,
+    useTheme,
+    alpha,
+    Container
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircle from '@mui/icons-material/AccountCircle';
@@ -22,8 +22,9 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
 import NotificationBadge from '../notifications/NotificationBadge';
-import { logout, getStoredUser } from '../../services/authService';
+import { logout, getStoredUser, isCashier } from '../../services/authService';
 import './Navbar.css';
 
 const Navbar = ({ toggleSidebar }) => {
@@ -31,6 +32,7 @@ const Navbar = ({ toggleSidebar }) => {
     const navigate = useNavigate();
     const user = getStoredUser();
     const theme = useTheme();
+    const cashier = isCashier();
     
     const handleMenu = (event) => {
         setAnchorEl(event.currentTarget);
@@ -59,176 +61,199 @@ const Navbar = ({ toggleSidebar }) => {
                 borderBottom: `1px solid ${alpha(theme.palette.common.white, 0.1)}`
             }}
         >
-            <Toolbar sx={{ px: { xs: 1, sm: 2 }, justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <IconButton
-                        size="large"
-                        edge="start"
-                        color="inherit"
-                        aria-label="menu"
-                        sx={{ mr: 1 }}
-                        onClick={toggleSidebar}
-                        className="menu-button"
-                    >
-                        <MenuIcon />
-                    </IconButton>
-                    
+            <Toolbar>
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <SportsSoccerIcon sx={{ mr: 1, fontSize: 28 }} />
-                        <Typography 
-                            variant="h6" 
-                            component="div" 
-                            sx={{ 
-                                fontWeight: 700,
-                                letterSpacing: '0.5px',
-                                display: { xs: 'none', sm: 'block' }
-                            }}
+                        <IconButton
+                            size="large"
+                            edge="start"
+                            color="inherit"
+                            aria-label="menu"
+                            sx={{ mr: 1 }}
+                            onClick={toggleSidebar}
+                            className="menu-button"
                         >
-                            Sports Management
-                        </Typography>
-                    </Box>
-                </Box>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <NotificationBadge />
-                    
-                    <Box 
-                        sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center',
-                            ml: 1,
-                            mr: { xs: 0, sm: 1 },
-                            cursor: 'pointer',
-                            borderRadius: 1,
-                            padding: '4px 8px',
-                            transition: 'all 0.2s',
-                            '&:hover': {
-                                backgroundColor: alpha(theme.palette.common.white, 0.1)
-                            }
-                        }}
-                        onClick={handleMenu}
-                    >
-                        <Avatar 
-                            sx={{ 
-                                width: 32, 
-                                height: 32,
-                                bgcolor: theme.palette.secondary.main,
-                                border: `2px solid ${alpha(theme.palette.common.white, 0.8)}`
-                            }}
-                        >
-                            {user?.firstName?.charAt(0) || 'U'}
-                        </Avatar>
-                        <Box 
-                            sx={{ 
-                                ml: 1,
-                                display: { xs: 'none', md: 'block' },
-                                maxWidth: { md: 120, lg: 200 },
-                                overflow: 'hidden'
-                            }}
-                        >
-                            <Typography 
-                                variant="body2" 
-                                sx={{ 
-                                    fontWeight: 600, 
-                                    lineHeight: 1.2,
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis'
-                                }}
-                            >
-                                {user?.firstName} {user?.lastName}
-                            </Typography>
-                            <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                    opacity: 0.8, 
-                                    lineHeight: 1,
-                                    display: 'block',
-                                    whiteSpace: 'nowrap'
-                                }}
-                            >
-                                {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
-                            </Typography>
+                            <MenuIcon />
+                        </IconButton>
+                        
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            {cashier ? (
+                                <>
+                                    <RestaurantIcon sx={{ mr: 1, fontSize: 28 }} />
+                                    <Typography 
+                                        variant="h6" 
+                                        component="div" 
+                                        sx={{ 
+                                            fontWeight: 700,
+                                            letterSpacing: '0.5px'
+                                        }}
+                                    >
+                                        Cafeteria POS
+                                    </Typography>
+                                </>
+                            ) : (
+                                <>
+                                    <SportsSoccerIcon sx={{ mr: 1, fontSize: 28 }} />
+                                    <Typography 
+                                        variant="h6" 
+                                        component="div" 
+                                        sx={{ 
+                                            fontWeight: 700,
+                                            letterSpacing: '0.5px',
+                                            display: { xs: 'none', sm: 'block' }
+                                        }}
+                                    >
+                                        Sports Management
+                                    </Typography>
+                                </>
+                            )}
                         </Box>
                     </Box>
                     
-                    <Menu
-                        id="menu-appbar"
-                        anchorEl={anchorEl}
-                        anchorOrigin={{
-                            vertical: 'bottom',
-                            horizontal: 'right',
-                        }}
-                        keepMounted
-                        transformOrigin={{
-                            vertical: 'top',
-                            horizontal: 'right',
-                        }}
-                        open={Boolean(anchorEl)}
-                        onClose={handleClose}
-                        PaperProps={{
-                            elevation: 3,
-                            sx: {
-                                mt: 1,
-                                width: 220,
-                                overflow: 'visible',
-                                filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.1))',
-                                '&:before': {
-                                    content: '""',
-                                    display: 'block',
-                                    position: 'absolute',
-                                    top: 0,
-                                    right: 14,
-                                    width: 10,
-                                    height: 10,
-                                    bgcolor: 'background.paper',
-                                    transform: 'translateY(-50%) rotate(45deg)',
-                                    zIndex: 0,
-                                },
-                            },
-                        }}
-                    >
-                        {user && (
-                            <Box sx={{ px: 2, py: 1.5 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                    {user.firstName} {user.lastName}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    {user.email}
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {!cashier && <NotificationBadge />}
+                        
+                        <Box 
+                            sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center',
+                                ml: 1,
+                                mr: { xs: 0, sm: 1 },
+                                cursor: 'pointer',
+                                borderRadius: 1,
+                                padding: '4px 8px',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                    backgroundColor: alpha(theme.palette.common.white, 0.1)
+                                }
+                            }}
+                            onClick={handleMenu}
+                        >
+                            <Avatar 
+                                sx={{ 
+                                    width: 32, 
+                                    height: 32,
+                                    bgcolor: theme.palette.secondary.main,
+                                    border: `2px solid ${alpha(theme.palette.common.white, 0.8)}`
+                                }}
+                            >
+                                {user?.firstName?.charAt(0) || 'U'}
+                            </Avatar>
+                            
+                            <Box 
+                                sx={{ 
+                                    ml: 1,
+                                    display: { xs: 'none', md: 'block' },
+                                    maxWidth: { md: 120, lg: 200 },
+                                    overflow: 'hidden'
+                                }}
+                            >
+                                <Typography 
+                                    variant="body2" 
+                                    sx={{ 
+                                        fontWeight: 600, 
+                                        lineHeight: 1.2,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        color: 'white'
+                                    }}
+                                >
+                                    {user?.firstName} {user?.lastName}
                                 </Typography>
                                 <Typography 
                                     variant="caption" 
                                     sx={{ 
-                                        color: theme.palette.primary.main,
-                                        fontWeight: 600,
-                                        display: 'inline-block',
-                                        mt: 0.5,
-                                        px: 1,
-                                        py: 0.25,
-                                        borderRadius: 1,
-                                        bgcolor: alpha(theme.palette.primary.main, 0.1)
+                                        opacity: 0.8, 
+                                        lineHeight: 1,
+                                        display: 'block',
+                                        whiteSpace: 'nowrap',
+                                        color: 'white'
                                     }}
                                 >
-                                    {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                                    {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
                                 </Typography>
                             </Box>
-                        )}
-                        <Divider />
-                        <MenuItem onClick={handleProfile} sx={{ py: 1.5 }}>
-                            <ListItemIcon>
-                                <PersonIcon fontSize="small" color="primary" />
-                            </ListItemIcon>
-                            <Typography variant="body2">Profile</Typography>
-                        </MenuItem>
-                        <MenuItem onClick={handleLogout} sx={{ py: 1.5 }}>
-                            <ListItemIcon>
-                                <LogoutIcon fontSize="small" color="error" />
-                            </ListItemIcon>
-                            <Typography variant="body2">Logout</Typography>
-                        </MenuItem>
-                    </Menu>
+                        </Box>
+                    </Box>
                 </Box>
             </Toolbar>
+
+            <Menu
+                id="menu-appbar"
+                anchorEl={anchorEl}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                }}
+                keepMounted
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                }}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+                PaperProps={{
+                    elevation: 3,
+                    sx: {
+                        mt: 1,
+                        width: 220,
+                        overflow: 'visible',
+                        filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.1))',
+                        '&:before': {
+                            content: '""',
+                            display: 'block',
+                            position: 'absolute',
+                            top: 0,
+                            right: 14,
+                            width: 10,
+                            height: 10,
+                            bgcolor: 'background.paper',
+                            transform: 'translateY(-50%) rotate(45deg)',
+                            zIndex: 0,
+                        },
+                    },
+                }}
+            >
+                <Box sx={{ px: 2, py: 1.5 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        {user?.firstName} {user?.lastName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        {user?.email}
+                    </Typography>
+                    <Typography 
+                        variant="caption" 
+                        sx={{ 
+                            color: theme.palette.primary.main,
+                            fontWeight: 600,
+                            display: 'inline-block',
+                            mt: 0.5,
+                            px: 1,
+                            py: 0.25,
+                            borderRadius: 1,
+                            bgcolor: alpha(theme.palette.primary.main, 0.1)
+                        }}
+                    >
+                        {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
+                    </Typography>
+                </Box>
+                <Divider />
+                {!cashier && (
+                    <MenuItem onClick={handleProfile} sx={{ py: 1.5 }}>
+                        <ListItemIcon>
+                            <PersonIcon fontSize="small" color="primary" />
+                        </ListItemIcon>
+                        <Typography variant="body2">Profile</Typography>
+                    </MenuItem>
+                )}
+                <MenuItem onClick={handleLogout} sx={{ py: 1.5 }}>
+                    <ListItemIcon>
+                        <LogoutIcon fontSize="small" color="error" />
+                    </ListItemIcon>
+                    <Typography variant="body2" color="error">Logout</Typography>
+                </MenuItem>
+            </Menu>
         </AppBar>
     );
 };

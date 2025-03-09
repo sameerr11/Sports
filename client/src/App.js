@@ -16,7 +16,7 @@ import Dashboard from './components/dashboard/Dashboard';
 import Profile from './components/profile/Profile';
 import { 
   isAuthenticated, isAdmin, isSupervisor, 
-  isCoach, isPlayer, isParent 
+  isCoach, isPlayer, isParent, isCashier 
 } from './services/authService';
 import Cafeteria from './components/cafeteria/Cafeteria';
 import CafeteriaManagement from './components/cafeteria/CafeteriaManagement';
@@ -32,11 +32,20 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/login" />;
   }
 
+  // Redirect cashiers to POS if they try to access any other route
+  if (isCashier() && window.location.pathname !== '/cafeteria') {
+    return <Navigate to="/cafeteria" />;
+  }
+
   if (requiredRole === 'admin' && !isAdmin()) {
     return <Navigate to="/" />;
   }
 
   if (requiredRole === 'supervisor' && !isSupervisor()) {
+    return <Navigate to="/" />;
+  }
+
+  if (requiredRole === 'cashier' && !isCashier()) {
     return <Navigate to="/" />;
   }
 
@@ -209,8 +218,9 @@ function App() {
           </ProtectedRoute>
         } />
         
+        {/* Cafeteria Routes */}
         <Route path="/cafeteria" element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRole="cashier">
             <MainLayout>
               <Cafeteria />
             </MainLayout>
