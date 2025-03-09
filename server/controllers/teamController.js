@@ -296,4 +296,25 @@ exports.removeCoachFromTeam = async (req, res) => {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
+};
+
+// @desc    Get teams coached by a specific coach
+// @route   GET /api/teams/coach
+// @access  Private (Coach, Supervisor, Admin)
+exports.getTeamsByCoach = async (req, res) => {
+  try {
+    // Find teams where the current user is a coach
+    const teams = await Team.find({
+      'coaches.coach': req.user.id,
+      isActive: true
+    })
+      .populate('coaches.coach', 'firstName lastName email profilePicture')
+      .populate('players.player', 'firstName lastName email profilePicture')
+      .sort({ createdAt: -1 });
+    
+    res.json(teams);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
 }; 

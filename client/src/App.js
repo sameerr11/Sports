@@ -21,6 +21,7 @@ import {
 } from './services/authService';
 import Cafeteria from './components/cafeteria/Cafeteria';
 import CafeteriaManagement from './components/cafeteria/CafeteriaManagement';
+import CoachDashboard from './components/coach/CoachDashboard';
 import './App.css';
 
 // Placeholder components for routes
@@ -149,6 +150,15 @@ function App() {
           <ProtectedRoute requiredRole="supervisor">
             <MainLayout>
               <TeamScheduler />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        {/* Coach Routes */}
+        <Route path="/coach" element={
+          <ProtectedRoute requiredRole="coach">
+            <MainLayout>
+              <CoachDashboard />
             </MainLayout>
           </ProtectedRoute>
         } />

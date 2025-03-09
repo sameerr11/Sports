@@ -27,7 +27,10 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import FastfoodIcon from '@mui/icons-material/Fastfood';
 import StorefrontIcon from '@mui/icons-material/Storefront';
-import { isAdmin, isSupervisor, isCashier } from '../../services/authService';
+import PeopleIcon from '@mui/icons-material/People';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import { isAdmin, isSupervisor, isCashier, isCoach } from '../../services/authService';
 import './Sidebar.css';
 
 const drawerWidth = 280;
@@ -37,6 +40,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const admin = isAdmin();
     const supervisor = isSupervisor();
     const cashier = isCashier();
+    const coach = isCoach();
     const theme = useTheme();
 
     const menuItems = [
@@ -61,6 +65,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const adminItems = [
         { text: 'User Management', icon: <AdminPanelSettingsIcon />, path: '/users' },
         { text: 'Add User', icon: <PersonAddIcon />, path: '/users/new' },
+    ];
+
+    const coachItems = [
+        { text: 'Coach Dashboard', icon: <FitnessCenterIcon />, path: '/coach' }
     ];
 
     return (
@@ -370,6 +378,63 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     }}
                                     sx={{ overflow: 'hidden' }}
                                 />
+                            </ListItem>
+                        ))}
+                    </List>
+                </>
+            )}
+            
+            {/* Coach Items */}
+            {coach && !supervisor && !admin && (
+                <>
+                    <Divider sx={{ my: 1 }} />
+                    <List component="nav" className="sidebar-nav">
+                        <ListItem sx={{ px: 3 }}>
+                            <ListItemText 
+                                primary="Coach Tools" 
+                                primaryTypographyProps={{ 
+                                    variant: 'overline',
+                                    color: 'text.secondary',
+                                    fontWeight: 600,
+                                    noWrap: true
+                                }} 
+                            />
+                        </ListItem>
+                        {coachItems.map((item) => (
+                            <ListItem 
+                                button 
+                                key={item.text} 
+                                component={Link} 
+                                to={item.path}
+                                selected={location.pathname === item.path || 
+                                          (item.path.includes('?tab=') && 
+                                           location.pathname === '/coach')}
+                                className={location.pathname === item.path ? 'active' : ''}
+                                sx={{ 
+                                    pl: 3,
+                                    py: 1,
+                                    '&.active, &.Mui-selected': {
+                                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                        borderRight: `3px solid ${theme.palette.primary.main}`,
+                                        '& .MuiListItemIcon-root': {
+                                            color: theme.palette.primary.main
+                                        },
+                                        '& .MuiListItemText-root': {
+                                            '& .MuiTypography-root': {
+                                                fontWeight: 600,
+                                                color: theme.palette.primary.main
+                                            }
+                                        }
+                                    },
+                                    '&:hover': {
+                                        bgcolor: alpha(theme.palette.primary.main, 0.05)
+                                    }
+                                }}
+                            >
+                                <ListItemIcon sx={{ minWidth: 40 }}>
+                                    {item.icon}
+                                </ListItemIcon>
+                                <ListItemText primary={item.text} />
                             </ListItem>
                         ))}
                     </List>

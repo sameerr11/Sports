@@ -10,6 +10,7 @@ const courtController = require('../controllers/courtController');
 const bookingController = require('../controllers/bookingController');
 const teamController = require('../controllers/teamController');
 const cafeteriaRoutes = require('./cafeteriaRoutes');
+const trainingPlanController = require('../controllers/trainingPlanController');
 
 // Middleware
 const { auth, admin, supervisor, coach, player, parent } = require('../middleware/auth');
@@ -116,6 +117,7 @@ router.post(
   teamController.createTeam
 );
 router.get('/teams', teamController.getTeams);
+router.get('/teams/coach', [auth, coach], teamController.getTeamsByCoach);
 router.get('/teams/:id', teamController.getTeamById);
 router.put('/teams/:id', [auth, supervisor], teamController.updateTeam);
 router.delete('/teams/:id', [auth, supervisor], teamController.deleteTeam);
@@ -146,5 +148,33 @@ router.delete('/teams/:id/coaches/:coachId', [auth, supervisor], teamController.
 
 // Cafeteria routes
 router.use('/cafeteria', cafeteriaRoutes);
+
+// Training plan routes
+router.post(
+  '/training-plans',
+  [
+    auth,
+    supervisor,
+    check('title', 'Title is required').not().isEmpty(),
+    check('description', 'Description is required').not().isEmpty(),
+    check('team', 'Team is required').not().isEmpty(),
+    check('date', 'Date is required').not().isEmpty(),
+    check('duration', 'Duration is required').isNumeric()
+  ],
+  trainingPlanController.createTrainingPlan
+);
+
+router.get('/training-plans', [auth, supervisor], trainingPlanController.getAllTrainingPlans);
+router.get('/training-plans/coach', [auth, coach], trainingPlanController.getCoachTrainingPlans);
+router.get('/training-plans/team/:teamId', auth, trainingPlanController.getTeamTrainingPlans);
+router.get('/training-plans/:id', auth, trainingPlanController.getTrainingPlanById);
+router.put(
+  '/training-plans/:id/status',
+  [
+    auth,
+    check('status', 'Status is required').isIn(['Draft', 'Assigned', 'InProgress', 'Completed'])
+  ],
+  trainingPlanController.updateTrainingPlanStatus
+);
 
 module.exports = router; 
