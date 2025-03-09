@@ -53,11 +53,12 @@ const Sidebar = ({ open, toggleSidebar }) => {
     ];
 
     const supervisorItems = [
+        { text: 'All Bookings', icon: <EventIcon />, path: '/bookings' },
+        { text: 'Team Scheduling', icon: <SportsSoccerIcon />, path: '/teams/schedule' },
         { text: 'Manage Cafeteria', icon: <FastfoodIcon />, path: '/cafeteria/manage' }
     ];
 
     const adminItems = [
-        { text: 'All Bookings', icon: <EventIcon />, path: '/bookings' },
         { text: 'User Management', icon: <AdminPanelSettingsIcon />, path: '/users' },
         { text: 'Add User', icon: <PersonAddIcon />, path: '/users/new' },
     ];

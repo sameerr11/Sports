@@ -11,6 +11,7 @@ import CourtDetail from './components/courts/CourtDetail';
 import TeamList from './components/teams/TeamList';
 import TeamForm from './components/teams/TeamForm';
 import TeamDetail from './components/teams/TeamDetail';
+import TeamScheduler from './components/teams/TeamScheduler';
 import BookingList from './components/bookings/BookingList';
 import Dashboard from './components/dashboard/Dashboard';
 import Profile from './components/profile/Profile';
@@ -144,9 +145,17 @@ function App() {
           </ProtectedRoute>
         } />
         
+        <Route path="/teams/schedule" element={
+          <ProtectedRoute requiredRole="supervisor">
+            <MainLayout>
+              <TeamScheduler />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
         {/* Booking Routes */}
         <Route path="/bookings" element={
-          <ProtectedRoute requiredRole="admin">
+          <ProtectedRoute requiredRole="supervisor">
             <MainLayout>
               <BookingList />
             </MainLayout>

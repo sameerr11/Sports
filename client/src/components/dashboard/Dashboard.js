@@ -15,7 +15,8 @@ import {
   ListItemAvatar, 
   Divider,
   Button,
-  useTheme
+  useTheme,
+  alpha
 } from '@mui/material';
 import { 
   SportsSoccer, 
@@ -26,10 +27,12 @@ import {
   ArrowUpward, 
   ArrowDownward,
   People,
-  AccessTime
+  AccessTime,
+  FitnessCenter,
+  SportsScore
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
-import { getStoredUser } from '../../services/authService';
+import { getStoredUser, isSupervisor } from '../../services/authService';
 import './Dashboard.css';
 
 // Mock data - in a real app, you would fetch this from your API
@@ -55,6 +58,7 @@ const mockTeams = [
 const Dashboard = () => {
   const theme = useTheme();
   const user = getStoredUser();
+  const supervisor = isSupervisor();
   const [stats, setStats] = useState({
     totalBookings: 24,
     upcomingBookings: 3,
@@ -331,6 +335,88 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </Grid>
+
+        {/* Team Scheduling Section for Supervisors */}
+        {supervisor && (
+          <Grid container spacing={3} className="dashboard-content">
+            <Grid item xs={12}>
+              <Card elevation={3} className="dashboard-card">
+                <CardHeader
+                  title="Team Training & Match Scheduling"
+                  action={
+                    <Button 
+                      component={Link} 
+                      to="/teams/schedule" 
+                      variant="contained" 
+                      color="primary"
+                      startIcon={<Event />}
+                    >
+                      Manage Schedules
+                    </Button>
+                  }
+                />
+                <Divider />
+                <CardContent>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
+                    <Paper 
+                      elevation={2} 
+                      sx={{ 
+                        p: 2, 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center',
+                        width: 200,
+                        bgcolor: alpha(theme.palette.primary.main, 0.1)
+                      }}
+                    >
+                      <FitnessCenter sx={{ fontSize: 40, color: theme.palette.primary.main, mb: 1 }} />
+                      <Typography variant="h6" gutterBottom>Schedule Training</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center' }}>
+                        Plan team training sessions
+                      </Typography>
+                      <Button 
+                        component={Link} 
+                        to="/teams/schedule" 
+                        variant="outlined" 
+                        color="primary" 
+                        size="small"
+                      >
+                        Schedule
+                      </Button>
+                    </Paper>
+                    
+                    <Paper 
+                      elevation={2} 
+                      sx={{ 
+                        p: 2, 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center',
+                        width: 200,
+                        bgcolor: alpha(theme.palette.secondary.main, 0.1)
+                      }}
+                    >
+                      <SportsScore sx={{ fontSize: 40, color: theme.palette.secondary.main, mb: 1 }} />
+                      <Typography variant="h6" gutterBottom>Schedule Matches</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center' }}>
+                        Plan team matches and events
+                      </Typography>
+                      <Button 
+                        component={Link} 
+                        to="/teams/schedule" 
+                        variant="outlined" 
+                        color="secondary" 
+                        size="small"
+                      >
+                        Schedule
+                      </Button>
+                    </Paper>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        )}
       </Grid>
     </Box>
   );
