@@ -90,14 +90,14 @@ router.post(
   ],
   bookingController.createBooking
 );
-router.get('/bookings', [auth, supervisor], bookingController.getBookings);
+router.get('/bookings', [auth, admin], bookingController.getBookings);
 router.get('/bookings/me', auth, bookingController.getUserBookings);
 router.get('/bookings/:id', auth, bookingController.getBookingById);
 router.put(
   '/bookings/:id/status',
   [
     auth,
-    supervisor,
+    admin,
     check('status', 'Status is required').isIn(['Pending', 'Confirmed', 'Cancelled', 'Completed'])
   ],
   bookingController.updateBookingStatus

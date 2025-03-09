@@ -146,7 +146,7 @@ function App() {
         
         {/* Booking Routes */}
         <Route path="/bookings" element={
-          <ProtectedRoute requiredRole="supervisor">
+          <ProtectedRoute requiredRole="admin">
             <MainLayout>
               <BookingList />
             </MainLayout>

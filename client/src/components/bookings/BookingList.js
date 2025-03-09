@@ -11,7 +11,7 @@ import {
   SportsTennis, AccessTime
 } from '@mui/icons-material';
 import { getBookings, getUserBookings, cancelBooking, updateBookingStatus } from '../../services/bookingService';
-import { isSupervisor } from '../../services/authService';
+import { isAdmin } from '../../services/authService';
 import AlertMessage from '../common/AlertMessage';
 
 const BookingList = ({ userOnly = false }) => {
@@ -22,7 +22,7 @@ const BookingList = ({ userOnly = false }) => {
   const [statusDialog, setStatusDialog] = useState({ open: false, bookingId: null, status: '' });
   const [cancelDialog, setCancelDialog] = useState({ open: false, bookingId: null });
   
-  const canManageBookings = isSupervisor();
+  const canManageBookings = isAdmin();
 
   useEffect(() => {
     const fetchBookings = async () => {
