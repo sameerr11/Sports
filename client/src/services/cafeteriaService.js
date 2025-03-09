@@ -108,11 +108,23 @@ export const getInventoryReport = async (startDate, endDate) => {
 // Order Management
 export const createOrder = async (orderData) => {
   try {
+    if (!orderData.items || orderData.items.length === 0) {
+      throw new Error('No items in order');
+    }
+
     const response = await api.post('/cafeteria/orders', orderData);
+    
+    if (!response.data || !response.data.data) {
+      throw new Error('Invalid server response');
+    }
+    
     return response.data.data;
   } catch (error) {
-    console.error('Error creating order:', error);
-    throw error.response?.data?.message || 'Failed to create order';
+    console.error('Error creating order:', error.response?.data || error);
+    if (error.response?.data?.message?.includes('not found')) {
+      throw new Error('One or more items in your order are no longer available');
+    }
+    throw new Error(error.response?.data?.message || 'Failed to create order. Please try again.');
   }
 };
 

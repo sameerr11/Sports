@@ -6,6 +6,17 @@ const orderItemSchema = new mongoose.Schema({
     ref: 'CafeteriaItem',
     required: true
   },
+  name: {
+    type: String,
+    required: true
+  },
+  category: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String
+  },
   quantity: {
     type: Number,
     required: true,
@@ -26,7 +37,6 @@ const orderItemSchema = new mongoose.Schema({
 const cafeteriaOrderSchema = new mongoose.Schema({
   orderNumber: {
     type: String,
-    required: true,
     unique: true
   },
   items: [orderItemSchema],
@@ -62,24 +72,31 @@ const cafeteriaOrderSchema = new mongoose.Schema({
 
 // Generate order number before saving
 cafeteriaOrderSchema.pre('save', async function(next) {
-  if (this.isNew) {
-    const date = new Date();
-    const year = date.getFullYear().toString().slice(-2);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    
-    // Get count of orders for today
-    const count = await this.constructor.countDocuments({
-      createdAt: {
-        $gte: new Date(date.setHours(0, 0, 0, 0)),
-        $lt: new Date(date.setHours(23, 59, 59, 999))
-      }
-    });
-    
-    // Format: YYMMDDxxxx where xxxx is the sequential number
-    this.orderNumber = `${year}${month}${day}${(count + 1).toString().padStart(4, '0')}`;
+  try {
+    if (!this.orderNumber) {
+      const date = new Date();
+      const year = date.getFullYear().toString().slice(-2);
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      
+      // Get count of orders for today
+      const startOfDay = new Date(date.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+      
+      const count = await this.constructor.countDocuments({
+        createdAt: {
+          $gte: startOfDay,
+          $lt: endOfDay
+        }
+      });
+      
+      // Format: YYMMDDxxxx where xxxx is the sequential number
+      this.orderNumber = `${year}${month}${day}${(count + 1).toString().padStart(4, '0')}`;
+    }
+    next();
+  } catch (error) {
+    next(error);
   }
-  next();
 });
 
 module.exports = mongoose.model('CafeteriaOrder', cafeteriaOrderSchema); 

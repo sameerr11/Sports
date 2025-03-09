@@ -79,55 +79,59 @@ exports.updateItem = async (req, res) => {
 // @access  Private
 exports.createOrder = async (req, res) => {
   try {
-    const { items, paymentMethod, customer } = req.body;
+    const { items, total, paymentMethod, paymentStatus, customer } = req.body;
 
-    // Validate and calculate totals
-    let total = 0;
-    const orderItems = [];
+    // Validate items
+    if (!items || items.length === 0) {
+      return ApiResponse.error(res, 'No items in order', 400);
+    }
 
-    for (const item of items) {
-      const cafeteriaItem = await CafeteriaItem.findById(item.itemId);
+    // Validate and check stock, also collect item details
+    const enrichedItems = [];
+    for (const orderItem of items) {
+      const cafeteriaItem = await CafeteriaItem.findById(orderItem.item);
       if (!cafeteriaItem) {
-        return ApiResponse.error(res, `Item ${item.itemId} not found`, 404);
+        return ApiResponse.error(res, `Item ${orderItem.item} not found`, 404);
       }
 
       if (!cafeteriaItem.isAvailable) {
         return ApiResponse.error(res, `Item ${cafeteriaItem.name} is not available`, 400);
       }
 
-      if (cafeteriaItem.stock < item.quantity) {
+      if (cafeteriaItem.stock < orderItem.quantity) {
         return ApiResponse.error(res, `Insufficient stock for ${cafeteriaItem.name}`, 400);
       }
 
-      const subtotal = cafeteriaItem.price * item.quantity;
-      total += subtotal;
-
-      orderItems.push({
-        item: cafeteriaItem._id,
-        quantity: item.quantity,
-        price: cafeteriaItem.price,
-        subtotal
-      });
-
       // Update stock
-      cafeteriaItem.stock -= item.quantity;
+      cafeteriaItem.stock -= orderItem.quantity;
       await cafeteriaItem.save();
+
+      // Add item details to the order
+      enrichedItems.push({
+        item: cafeteriaItem._id,
+        name: cafeteriaItem.name,
+        category: cafeteriaItem.category,
+        description: cafeteriaItem.description,
+        quantity: orderItem.quantity,
+        price: orderItem.price,
+        subtotal: orderItem.subtotal
+      });
     }
 
+    // Create new order with enriched items
     const newOrder = new CafeteriaOrder({
-      items: orderItems,
+      items: enrichedItems,
       total,
       paymentMethod,
+      paymentStatus,
       customer,
       processedBy: req.user.id
     });
 
     const order = await newOrder.save();
-    const populatedOrder = await CafeteriaOrder.findById(order._id)
-      .populate('items.item', 'name price')
-      .populate('processedBy', 'firstName lastName');
-
-    return ApiResponse.success(res, populatedOrder, 'Order created successfully', 201);
+    
+    // Return the order directly since it now contains all item details
+    return ApiResponse.success(res, order, 'Order created successfully', 201);
   } catch (error) {
     console.error('Error creating cafeteria order:', error);
     return ApiResponse.error(res, 'Error creating cafeteria order', 500);

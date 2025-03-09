@@ -97,30 +97,49 @@ const Cafeteria = () => {
   const handleCheckout = async () => {
     try {
       setProcessing(true);
+
+      // Validate cart items
+      if (cart.length === 0) {
+        throw new Error('Cart is empty');
+      }
+
+      // Create order data
       const orderData = {
         items: cart.map(item => ({
-          itemId: item._id,
-          quantity: item.quantity
+          item: item._id,
+          quantity: item.quantity,
+          price: item.price,
+          subtotal: item.price * item.quantity
         })),
-        paymentMethod,
+        total: getCartTotal(),
+        paymentMethod: paymentMethod,
+        paymentStatus: 'Completed',
         customer: {
-          name: customerName
+          name: customerName || 'Walk-in Customer'
         }
       };
 
-      await createOrder(orderData);
+      // Create the order
+      const response = await createOrder(orderData);
+      
+      // Show success message with items
+      const itemsList = response.items.map(item => `${item.quantity}x ${item.name}`).join(', ');
       setSnackbar({
         open: true,
-        message: 'Order created successfully',
+        message: `Order #${response.orderNumber} created successfully!\nItems: ${itemsList}\nTotal: ${formatCurrency(response.total)}`,
         severity: 'success'
       });
+
+      // Clear cart and close dialog
       setCart([]);
+      setCustomerName('');
       setOrderDialog(false);
-      fetchItems(); // Refresh items to get updated stock
+
     } catch (error) {
+      console.error('Checkout error:', error);
       setSnackbar({
         open: true,
-        message: error.message || 'Failed to create order',
+        message: error.message || 'Failed to process order. Please try again.',
         severity: 'error'
       });
     } finally {
@@ -286,8 +305,7 @@ const Cafeteria = () => {
             onChange={(e) => setPaymentMethod(e.target.value)}
           >
             <MenuItem value="Cash">Cash</MenuItem>
-            <MenuItem value="Card">Card</MenuItem>
-            <MenuItem value="Mobile">Mobile Payment</MenuItem>
+
           </TextField>
           <Typography variant="h6" mt={2}>
             Total: {formatCurrency(getCartTotal())}
