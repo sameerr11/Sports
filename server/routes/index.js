@@ -10,6 +10,9 @@ const courtController = require('../controllers/courtController');
 const bookingController = require('../controllers/bookingController');
 const teamController = require('../controllers/teamController');
 const cafeteriaRoutes = require('./cafeteriaRoutes');
+const trainingRoutes = require('./trainingRoutes');
+const gameRoutes = require('./gameRoutes');
+const progressRoutes = require('./progressRoutes');
 
 // Middleware
 const { auth, admin, supervisor, coach, player, parent } = require('../middleware/auth');
@@ -146,5 +149,10 @@ router.delete('/teams/:id/coaches/:coachId', [auth, supervisor], teamController.
 
 // Cafeteria routes
 router.use('/cafeteria', cafeteriaRoutes);
+
+// Use training, game, and progress routes
+router.use('/trainings', trainingRoutes);
+router.use('/games', gameRoutes);
+router.use('/progress', progressRoutes);
 
 module.exports = router; 

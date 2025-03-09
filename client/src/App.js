@@ -14,6 +14,11 @@ import TeamDetail from './components/teams/TeamDetail';
 import BookingList from './components/bookings/BookingList';
 import Dashboard from './components/dashboard/Dashboard';
 import Profile from './components/profile/Profile';
+import TrainingList from './components/trainings/TrainingList';
+import CoachDashboard from './components/trainings/CoachDashboard';
+import PlayerDashboard from './components/trainings/PlayerDashboard';
+import SupervisorDashboard from './components/trainings/SupervisorDashboard';
+import ParentDashboard from './components/trainings/ParentDashboard';
 import { 
   isAuthenticated, isAdmin, isSupervisor, 
   isCoach, isPlayer, isParent, isCashier 
@@ -25,6 +30,14 @@ import './App.css';
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
 const Payments = () => <div>Payments Page</div>;
+const GameList = () => <div>Game List Page</div>;
+const GameDetail = () => <div>Game Detail Page</div>;
+const GameForm = () => <div>Game Form Page</div>;
+const TrainingDetail = () => <div>Training Detail Page</div>;
+const TrainingForm = () => <div>Training Form Page</div>;
+const TrainingAttendance = () => <div>Training Attendance Page</div>;
+const PlayerProgress = () => <div>Player Progress Page</div>;
+const TeamProgress = () => <div>Team Progress Page</div>;
 
 // Protected route component
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -37,11 +50,12 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/cafeteria" />;
   }
 
+  // For role-specific routes, enforce strict role requirements
   if (requiredRole === 'admin' && !isAdmin()) {
     return <Navigate to="/" />;
   }
 
-  if (requiredRole === 'supervisor' && !isSupervisor()) {
+  if (requiredRole === 'supervisor' && !(isAdmin() || isSupervisor())) {
     return <Navigate to="/" />;
   }
 
@@ -49,15 +63,15 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/" />;
   }
 
-  if (requiredRole === 'coach' && !isCoach()) {
+  if (requiredRole === 'coach' && !(isAdmin() || isSupervisor() || isCoach())) {
     return <Navigate to="/" />;
   }
 
-  if (requiredRole === 'player' && !isPlayer()) {
+  if (requiredRole === 'player' && !(isAdmin() || isSupervisor() || isPlayer())) {
     return <Navigate to="/" />;
   }
 
-  if (requiredRole === 'parent' && !isParent()) {
+  if (requiredRole === 'parent' && !(isAdmin() || isSupervisor() || isParent())) {
     return <Navigate to="/" />;
   }
 
@@ -231,6 +245,167 @@ function App() {
           <ProtectedRoute requiredRole="supervisor">
             <MainLayout>
               <CafeteriaManagement />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        {/* Game & Training Management Routes */}
+        <Route path="/trainings" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <TrainingList />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/trainings/coach" element={
+          <ProtectedRoute requiredRole="coach">
+            <MainLayout>
+              <CoachDashboard />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/trainings/player" element={
+          <ProtectedRoute requiredRole="player">
+            <MainLayout>
+              <PlayerDashboard />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/trainings/supervisor" element={
+          <ProtectedRoute requiredRole="supervisor">
+            <MainLayout>
+              <SupervisorDashboard />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/trainings/parent" element={
+          <ProtectedRoute requiredRole="parent">
+            <MainLayout>
+              <ParentDashboard />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/trainings/new" element={
+          <ProtectedRoute requiredRole="supervisor">
+            <MainLayout>
+              <TrainingForm />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/trainings/:id" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <TrainingDetail />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/trainings/:id/edit" element={
+          <ProtectedRoute requiredRole="supervisor">
+            <MainLayout>
+              <TrainingForm />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/trainings/:id/attendance" element={
+          <ProtectedRoute requiredRole="coach">
+            <MainLayout>
+              <TrainingAttendance />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/trainings/child/:childId" element={
+          <ProtectedRoute requiredRole="parent">
+            <MainLayout>
+              <TrainingList userView={true} />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/games" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <GameList />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/games/new" element={
+          <ProtectedRoute requiredRole="supervisor">
+            <MainLayout>
+              <GameForm />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/games/:id" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <GameDetail />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/games/:id/edit" element={
+          <ProtectedRoute requiredRole="supervisor">
+            <MainLayout>
+              <GameForm />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/games/player" element={
+          <ProtectedRoute requiredRole="player">
+            <MainLayout>
+              <GameList userView={true} />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/games/child/:childId" element={
+          <ProtectedRoute requiredRole="parent">
+            <MainLayout>
+              <GameList userView={true} />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/progress" element={
+          <ProtectedRoute requiredRole="coach">
+            <MainLayout>
+              <TeamProgress />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/progress/player" element={
+          <ProtectedRoute requiredRole="player">
+            <MainLayout>
+              <PlayerProgress />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/progress/team/:teamId" element={
+          <ProtectedRoute requiredRole="coach">
+            <MainLayout>
+              <TeamProgress />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/progress/child/:childId" element={
+          <ProtectedRoute requiredRole="parent">
+            <MainLayout>
+              <PlayerProgress />
             </MainLayout>
           </ProtectedRoute>
         } />

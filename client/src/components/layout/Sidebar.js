@@ -27,7 +27,13 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import FastfoodIcon from '@mui/icons-material/Fastfood';
 import StorefrontIcon from '@mui/icons-material/Storefront';
-import { isAdmin, isSupervisor, isCashier } from '../../services/authService';
+import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
+import SportsIcon from '@mui/icons-material/Sports';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import ChildCareIcon from '@mui/icons-material/ChildCare';
+import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
+import AddIcon from '@mui/icons-material/Add';
+import { isAdmin, isSupervisor, isCashier, isCoach, isPlayer, isParent, hasCoachingPrivileges } from '../../services/authService';
 import './Sidebar.css';
 
 const drawerWidth = 280;
@@ -37,6 +43,9 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const admin = isAdmin();
     const supervisor = isSupervisor();
     const cashier = isCashier();
+    const coach = isCoach();
+    const player = isPlayer();
+    const parent = isParent();
     const theme = useTheme();
 
     const menuItems = [
@@ -47,6 +56,36 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'Tournaments', icon: <EmojiEventsIcon />, path: '/tournaments' },
         { text: 'Payments', icon: <PaymentIcon />, path: '/payments' }
     ];
+
+    // Game & Training Management items based on role
+    const trainingItems = [];
+    
+    if (coach) {
+        trainingItems.push(
+            { text: 'Coach Dashboard', icon: <SportsIcon />, path: '/trainings/coach' },
+            { text: 'View Trainings', icon: <DirectionsRunIcon />, path: '/trainings' },
+            { text: 'View Games', icon: <EmojiEventsIcon />, path: '/games' },
+            { text: 'Player Progress', icon: <AssessmentIcon />, path: '/progress' }
+        );
+    } else if (player) {
+        trainingItems.push(
+            { text: 'Player Dashboard', icon: <DirectionsRunIcon />, path: '/trainings/player' },
+            { text: 'My Progress', icon: <AssessmentIcon />, path: '/progress/player' }
+        );
+    } else if (parent) {
+        trainingItems.push(
+            { text: 'Parent Dashboard', icon: <ChildCareIcon />, path: '/trainings/parent' }
+        );
+    } else if (supervisor || admin) {
+        trainingItems.push(
+            { text: 'Supervisor Dashboard', icon: <SupervisorAccountIcon />, path: '/trainings/supervisor' },
+            { text: 'Manage Trainings', icon: <DirectionsRunIcon />, path: '/trainings' },
+            { text: 'Schedule Training', icon: <AddIcon />, path: '/trainings/new' },
+            { text: 'Manage Games', icon: <EmojiEventsIcon />, path: '/games' },
+            { text: 'Schedule Match', icon: <AddIcon />, path: '/games/new' },
+            { text: 'Player Progress', icon: <AssessmentIcon />, path: '/progress' }
+        );
+    }
 
     const cashierItems = [
         { text: 'Cafeteria POS', icon: <RestaurantIcon />, path: '/cafeteria' }
@@ -172,6 +211,78 @@ const Sidebar = ({ open, toggleSidebar }) => {
                         </ListItem>
                     ))}
                 </List>
+            )}
+            
+            {/* Game & Training Management Section */}
+            {trainingItems.length > 0 && (
+                <>
+                    <Divider sx={{ my: 1 }} />
+                    <List component="nav" className="sidebar-nav">
+                        <ListItem sx={{ px: 3 }}>
+                            <ListItemText 
+                                primary="Training & Games" 
+                                primaryTypographyProps={{ 
+                                    variant: 'overline',
+                                    color: 'text.secondary',
+                                    fontWeight: 600,
+                                    noWrap: true
+                                }} 
+                            />
+                        </ListItem>
+                        {trainingItems.map((item) => (
+                            <ListItem 
+                                button 
+                                key={item.text} 
+                                component={Link} 
+                                to={item.path}
+                                selected={location.pathname === item.path}
+                                className={location.pathname === item.path ? 'active' : ''}
+                                sx={{
+                                    borderRadius: '0 20px 20px 0',
+                                    mx: 1,
+                                    mb: 0.5,
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    width: 'calc(100% - 16px)',
+                                    '&.active': {
+                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                        color: theme.palette.primary.main,
+                                        '&::before': {
+                                            content: '""',
+                                            position: 'absolute',
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: 4,
+                                            backgroundColor: theme.palette.primary.main,
+                                            borderRadius: '0 4px 4px 0'
+                                        }
+                                    },
+                                    '&:hover': {
+                                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                    }
+                                }}
+                            >
+                                <ListItemIcon sx={{ 
+                                    color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                    minWidth: 40,
+                                    flexShrink: 0
+                                }}>
+                                    {item.icon}
+                                </ListItemIcon>
+                                <ListItemText 
+                                    primary={item.text} 
+                                    primaryTypographyProps={{ 
+                                        fontSize: '0.95rem',
+                                        fontWeight: location.pathname === item.path ? 600 : 400,
+                                        noWrap: true
+                                    }}
+                                    sx={{ overflow: 'hidden' }}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                </>
             )}
             
             {cashier && (

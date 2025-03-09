@@ -89,24 +89,37 @@ export const isCashier = () => {
   return user && user.role === 'cashier';
 };
 
-// Check if user is coach
+// Check if user is coach (strictly coach role only)
 export const isCoach = () => {
-  return hasRole(['admin', 'supervisor', 'coach']);
+  const user = getStoredUser();
+  return user && user.role === 'coach';
 };
 
-// Check if user is player
+// Check if user is player (strictly player role only)
 export const isPlayer = () => {
-  return hasRole(['admin', 'supervisor', 'coach', 'player']);
+  const user = getStoredUser();
+  return user && user.role === 'player';
 };
 
-// Check if user is parent
+// Check if user is parent (strictly parent role only)
 export const isParent = () => {
-  return hasRole(['admin', 'supervisor', 'coach', 'parent']);
+  const user = getStoredUser();
+  return user && user.role === 'parent';
 };
 
 // Check if user is guest
 export const isGuest = () => {
   return hasRole('guest');
+};
+
+// Check if user has coaching privileges (admin, supervisor, or coach)
+export const hasCoachingPrivileges = () => {
+  return hasRole(['admin', 'supervisor', 'coach']);
+};
+
+// Check if user has player view privileges (admin, supervisor, coach, or player)
+export const hasPlayerViewPrivileges = () => {
+  return hasRole(['admin', 'supervisor', 'coach', 'player']);
 };
 
 export const getAuthHeader = () => {
