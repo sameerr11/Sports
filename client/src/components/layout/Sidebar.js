@@ -47,9 +47,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
         { text: 'Courts', icon: <LocationOnIcon />, path: '/courts' },
         { text: 'Teams', icon: <SportsSoccerIcon />, path: '/teams' },
-        { text: 'My Bookings', icon: <EventIcon />, path: '/bookings/me' },
-        { text: 'Tournaments', icon: <EmojiEventsIcon />, path: '/tournaments' },
-        { text: 'Payments', icon: <PaymentIcon />, path: '/payments' }
+        { text: 'My Bookings', icon: <EventIcon />, path: '/bookings/me' }
     ];
 
     const cashierItems = [
