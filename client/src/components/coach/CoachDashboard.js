@@ -367,13 +367,24 @@ const CoachDashboard = () => {
                       <React.Fragment key={plan._id}>
                         <ListItem
                           secondaryAction={
-                            <IconButton 
-                              edge="end" 
-                              size="small"
-                              onClick={() => handleUpdateStatus(plan._id, 'InProgress')}
-                            >
-                              <PlayArrow />
-                            </IconButton>
+                            <Box>
+                              <IconButton 
+                                edge="end" 
+                                size="small"
+                                onClick={() => handleUpdateStatus(plan._id, 'InProgress')}
+                                sx={{ mr: 1 }}
+                              >
+                                <PlayArrow />
+                              </IconButton>
+                              <IconButton 
+                                edge="end" 
+                                size="small"
+                                component={Link}
+                                to={`/training-plans/${plan._id}`}
+                              >
+                                <Visibility />
+                              </IconButton>
+                            </Box>
                           }
                         >
                           <ListItemAvatar>
@@ -423,13 +434,24 @@ const CoachDashboard = () => {
                       <React.Fragment key={plan._id}>
                         <ListItem
                           secondaryAction={
-                            <IconButton 
-                              edge="end" 
-                              size="small"
-                              onClick={() => handleUpdateStatus(plan._id, 'Completed')}
-                            >
-                              <Check />
-                            </IconButton>
+                            <Box>
+                              <IconButton 
+                                edge="end" 
+                                size="small"
+                                onClick={() => handleUpdateStatus(plan._id, 'Completed')}
+                                sx={{ mr: 1 }}
+                              >
+                                <Check />
+                              </IconButton>
+                              <IconButton 
+                                edge="end" 
+                                size="small"
+                                component={Link}
+                                to={`/training-plans/${plan._id}`}
+                              >
+                                <Visibility />
+                              </IconButton>
+                            </Box>
                           }
                         >
                           <ListItemAvatar>
@@ -462,7 +484,7 @@ const CoachDashboard = () => {
             </Card>
           </Grid>
           
-          <Grid item xs={12}>
+          <Grid item xs={12} mt={3}>
             <Card elevation={2} sx={{ borderRadius: 2 }}>
               <CardHeader 
                 title="Completed Plans"
@@ -473,37 +495,42 @@ const CoachDashboard = () => {
                 }
               />
               <CardContent>
-                <List dense>
-                  {getPlansByStatus('Completed').length > 0 ? (
-                    getPlansByStatus('Completed').map(plan => (
-                      <React.Fragment key={plan._id}>
-                        <ListItem>
-                          <ListItemAvatar>
-                            <Avatar sx={{ bgcolor: theme.palette.success.light }}>
-                              <SportsHandball />
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={plan.title}
-                            secondary={
-                              <React.Fragment>
-                                <Typography variant="body2" component="span" color="text.primary">
-                                  {plan.team.name}
-                                </Typography>
-                                {` - ${format(new Date(plan.date), 'MMM d, yyyy')}`}
-                              </React.Fragment>
-                            }
-                          />
-                        </ListItem>
-                        <Divider variant="inset" component="li" />
-                      </React.Fragment>
-                    ))
-                  ) : (
-                    <ListItem>
-                      <ListItemText primary="No completed training plans" />
-                    </ListItem>
-                  )}
-                </List>
+                {getPlansByStatus('Completed').length > 0 ? (
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Title</TableCell>
+                          <TableCell>Team</TableCell>
+                          <TableCell>Date</TableCell>
+                          <TableCell>Actions</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {getPlansByStatus('Completed').map(plan => (
+                          <TableRow key={plan._id}>
+                            <TableCell>{plan.title}</TableCell>
+                            <TableCell>{plan.team.name}</TableCell>
+                            <TableCell>{format(new Date(plan.date), 'MMM d, yyyy')}</TableCell>
+                            <TableCell>
+                              <IconButton 
+                                size="small"
+                                component={Link}
+                                to={`/training-plans/${plan._id}`}
+                              >
+                                <Visibility fontSize="small" />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                ) : (
+                  <Typography variant="body1" sx={{ p: 2, textAlign: 'center' }}>
+                    No completed training plans
+                  </Typography>
+                )}
               </CardContent>
             </Card>
           </Grid>

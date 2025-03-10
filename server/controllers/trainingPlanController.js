@@ -141,7 +141,7 @@ exports.getTeamTrainingPlans = async (req, res) => {
 
 // @desc    Get training plan by ID
 // @route   GET /api/training-plans/:id
-// @access  Private (Coach of that team, Supervisor, Admin)
+// @access  Private (Assigned Coach, Coach of that team, Supervisor, Admin)
 exports.getTrainingPlanById = async (req, res) => {
   try {
     const trainingPlan = await TrainingPlan.findById(req.params.id)
@@ -153,20 +153,34 @@ exports.getTrainingPlanById = async (req, res) => {
       return res.status(404).json({ msg: 'Training plan not found' });
     }
     
-    // Verify user is coach of this team if not supervisor/admin
-    if (!['admin', 'supervisor'].includes(req.user.role) && 
-        trainingPlan.assignedTo.toString() !== req.user.id) {
+    // Authorized roles:
+    // 1. Supervisors and admins have full access
+    // 2. Coaches who are assigned to this training plan
+    // 3. Coaches who are part of the team for this training plan
+    
+    const isAssignedCoach = trainingPlan.assignedTo && 
+                           trainingPlan.assignedTo._id && 
+                           trainingPlan.assignedTo._id.toString() === req.user.id;
+    
+    if (['admin', 'supervisor'].includes(req.user.role) || isAssignedCoach) {
+      // Admin, supervisor, or assigned coach - grant access
+      return res.json(trainingPlan);
+    }
+    
+    // For other coaches, check if they're a coach of this team
+    if (req.user.role === 'coach') {
       const team = await Team.findOne({
         _id: trainingPlan.team,
         'coaches.coach': req.user.id
       });
       
-      if (!team) {
-        return res.status(403).json({ msg: 'Not authorized to view this training plan' });
+      if (team) {
+        return res.json(trainingPlan);
       }
     }
     
-    res.json(trainingPlan);
+    // If we get here, user is not authorized
+    return res.status(403).json({ msg: 'Not authorized to view this training plan' });
   } catch (err) {
     console.error(err.message);
     if (err.kind === 'ObjectId') {
@@ -194,18 +208,43 @@ exports.updateTrainingPlanStatus = async (req, res) => {
       return res.status(404).json({ msg: 'Training plan not found' });
     }
     
-    // Verify user is the assigned coach or supervisor/admin
-    if (!['admin', 'supervisor'].includes(req.user.role) && 
-        trainingPlan.assignedTo.toString() !== req.user.id) {
+    // Check if user is authorized to update status
+    // Handle both populated and non-populated assignedTo field
+    const isAssignedCoach = 
+      trainingPlan.assignedTo && 
+      ((trainingPlan.assignedTo._id && trainingPlan.assignedTo._id.toString() === req.user.id) || 
+       (typeof trainingPlan.assignedTo === 'string' && trainingPlan.assignedTo === req.user.id));
+    
+    if (!['admin', 'supervisor'].includes(req.user.role) && !isAssignedCoach) {
       return res.status(403).json({ msg: 'Not authorized to update this training plan' });
     }
     
+    // Validate status transitions
+    const validStatuses = ['Draft', 'Assigned', 'InProgress', 'Completed'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ msg: 'Invalid status value' });
+    }
+    
     trainingPlan.status = status;
+    
+    // Update completedDate if status is Completed
+    if (status === 'Completed') {
+      trainingPlan.completedDate = Date.now();
+    }
+    
     await trainingPlan.save();
+    
+    // Re-populate the response
+    await trainingPlan.populate('team', 'name sportType');
+    await trainingPlan.populate('createdBy', 'firstName lastName');
+    await trainingPlan.populate('assignedTo', 'firstName lastName');
     
     res.json(trainingPlan);
   } catch (err) {
     console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'Training plan not found' });
+    }
     res.status(500).send('Server Error');
   }
 };

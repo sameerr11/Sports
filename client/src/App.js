@@ -23,6 +23,7 @@ import Cafeteria from './components/cafeteria/Cafeteria';
 import CafeteriaManagement from './components/cafeteria/CafeteriaManagement';
 import CoachDashboard from './components/coach/CoachDashboard';
 import TrainingPlanManager from './components/training/TrainingPlanManager';
+import TrainingPlanDetail from './components/training/TrainingPlanDetail';
 import PlayerDashboard from './components/player/PlayerDashboard';
 import ParentDashboard from './components/parent/ParentDashboard';
 import './App.css';
@@ -50,6 +51,11 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   // Redirect players to player dashboard if they try to access the main dashboard
   if (isPlayerOnly() && window.location.pathname === '/' && !requiredRole) {
     return <Navigate to="/player" />;
+  }
+  
+  // Redirect coaches to coach dashboard if they try to access the main dashboard
+  if (isCoach() && !isSupervisor() && !isAdmin() && window.location.pathname === '/' && !requiredRole) {
+    return <Navigate to="/coach" />;
   }
 
   if (requiredRole === 'admin' && !isAdmin()) {
@@ -171,6 +177,14 @@ function App() {
           <ProtectedRoute requiredRole="supervisor">
             <MainLayout>
               <TrainingPlanManager />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/training-plans/:id" element={
+          <ProtectedRoute requiredRole="coach">
+            <MainLayout>
+              <TrainingPlanDetail />
             </MainLayout>
           </ProtectedRoute>
         } />
