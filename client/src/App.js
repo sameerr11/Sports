@@ -46,6 +46,11 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   if (isParent() && window.location.pathname === '/' && !requiredRole) {
     return <Navigate to="/parent" />;
   }
+  
+  // Redirect players to player dashboard if they try to access the main dashboard
+  if (isPlayerOnly() && window.location.pathname === '/' && !requiredRole) {
+    return <Navigate to="/player" />;
+  }
 
   if (requiredRole === 'admin' && !isAdmin()) {
     return <Navigate to="/" />;

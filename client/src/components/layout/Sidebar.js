@@ -131,8 +131,8 @@ const Sidebar = ({ open, toggleSidebar }) => {
             </Box>
             <Divider />
             
-            {/* Only show regular menu items if not a cashier or parent */}
-            {!cashier && !parent && (
+            {/* Only show regular menu items if not a cashier, parent, or player */}
+            {!cashier && !parent && !player && (
                 <List component="nav" className="sidebar-nav">
                     {menuItems.map((item) => (
                         <ListItem 
