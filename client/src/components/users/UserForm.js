@@ -26,9 +26,7 @@ const ROLES = [
   { value: 'cashier', label: 'Cashier' },
   { value: 'coach', label: 'Coach' },
   { value: 'player', label: 'Player' },
-  { value: 'parent', label: 'Parent' },
-  { value: 'accounting', label: 'Accounting Staff' },
-  { value: 'guest', label: 'Guest' }
+  { value: 'parent', label: 'Parent' }
 ];
 
 const initialState = {
