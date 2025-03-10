@@ -25,7 +25,8 @@ import RestaurantIcon from '@mui/icons-material/Restaurant';
 import FastfoodIcon from '@mui/icons-material/Fastfood';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import { isAdmin, isSupervisor, isCashier, isCoach } from '../../services/authService';
+import PersonIcon from '@mui/icons-material/Person';
+import { isAdmin, isSupervisor, isCashier, isCoach, isPlayerOnly } from '../../services/authService';
 import './Sidebar.css';
 
 const drawerWidth = 280;
@@ -36,6 +37,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const supervisor = isSupervisor();
     const cashier = isCashier();
     const coach = isCoach();
+    const player = isPlayerOnly();
     const theme = useTheme();
 
     const menuItems = [
@@ -63,6 +65,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
 
     const coachItems = [
         { text: 'Coach Dashboard', icon: <FitnessCenterIcon />, path: '/coach' }
+    ];
+
+    const playerItems = [
+        { text: 'Player Dashboard', icon: <PersonIcon />, path: '/player' }
     ];
 
     return (
@@ -158,6 +164,64 @@ const Sidebar = ({ open, toggleSidebar }) => {
                         >
                             <ListItemIcon sx={{ 
                                 color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                minWidth: 40,
+                                flexShrink: 0
+                            }}>
+                                {item.icon}
+                            </ListItemIcon>
+                            <ListItemText 
+                                primary={item.text} 
+                                primaryTypographyProps={{ 
+                                    fontSize: '0.95rem',
+                                    fontWeight: location.pathname === item.path ? 600 : 400,
+                                    noWrap: true
+                                }}
+                                sx={{ overflow: 'hidden' }}
+                            />
+                        </ListItem>
+                    ))}
+                </List>
+            )}
+            
+            {/* Player Dashboard Link */}
+            {player && (
+                <List component="nav" className="sidebar-nav">
+                    {playerItems.map((item) => (
+                        <ListItem 
+                            button 
+                            key={item.text} 
+                            component={Link} 
+                            to={item.path}
+                            selected={location.pathname === item.path}
+                            className={location.pathname === item.path ? 'active' : ''}
+                            sx={{
+                                borderRadius: '0 20px 20px 0',
+                                mx: 1,
+                                mb: 0.5,
+                                position: 'relative',
+                                overflow: 'hidden',
+                                width: 'calc(100% - 16px)',
+                                '&.active': {
+                                    backgroundColor: alpha(theme.palette.secondary.main, 0.1),
+                                    color: theme.palette.secondary.main,
+                                    '&::before': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        left: 0,
+                                        top: 0,
+                                        bottom: 0,
+                                        width: 4,
+                                        backgroundColor: theme.palette.secondary.main,
+                                        borderRadius: '0 4px 4px 0'
+                                    }
+                                },
+                                '&:hover': {
+                                    backgroundColor: alpha(theme.palette.secondary.main, 0.05),
+                                }
+                            }}
+                        >
+                            <ListItemIcon sx={{ 
+                                color: location.pathname === item.path ? theme.palette.secondary.main : 'inherit',
                                 minWidth: 40,
                                 flexShrink: 0
                             }}>

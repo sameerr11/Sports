@@ -317,4 +317,25 @@ exports.getTeamsByCoach = async (req, res) => {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
+};
+
+// @desc    Get teams where current user is a player
+// @route   GET /api/teams/player
+// @access  Private (Player)
+exports.getTeamsByPlayer = async (req, res) => {
+  try {
+    // Find teams where the current user is a player
+    const teams = await Team.find({
+      'players.player': req.user.id,
+      isActive: true
+    })
+      .populate('coaches.coach', 'firstName lastName email profilePicture')
+      .populate('players.player', 'firstName lastName email profilePicture')
+      .sort({ createdAt: -1 });
+    
+    res.json(teams);
+  } catch (err) {
+    console.error('Error fetching player teams:', err.message);
+    res.status(500).send('Server Error');
+  }
 }; 

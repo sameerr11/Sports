@@ -97,17 +97,26 @@ exports.getCoachTrainingPlans = async (req, res) => {
 
 // @desc    Get training plans for a specific team
 // @route   GET /api/training-plans/team/:teamId
-// @access  Private (Coach of that team, Supervisor, Admin)
+// @access  Private (Coach of that team, Supervisor, Admin, Player in that team)
 exports.getTeamTrainingPlans = async (req, res) => {
   try {
     const { teamId } = req.params;
     
-    // Verify user is coach of this team if not supervisor/admin
+    // Verify user is coach or player of this team if not supervisor/admin
     if (!['admin', 'supervisor'].includes(req.user.role)) {
-      const team = await Team.findOne({
+      // Check if user is a coach for this team
+      let team = await Team.findOne({
         _id: teamId,
         'coaches.coach': req.user.id
       });
+      
+      // If not a coach, check if user is a player for this team
+      if (!team && req.user.role === 'player') {
+        team = await Team.findOne({
+          _id: teamId,
+          'players.player': req.user.id
+        });
+      }
       
       if (!team) {
         return res.status(403).json({ msg: 'Not authorized to view training plans for this team' });
@@ -120,11 +129,12 @@ exports.getTeamTrainingPlans = async (req, res) => {
     })
       .populate('assignedTo', 'firstName lastName')
       .populate('createdBy', 'firstName lastName')
+      .populate('team', 'name sportType')
       .sort({ date: 1 });
     
     res.json(trainingPlans);
   } catch (err) {
-    console.error(err.message);
+    console.error('Error fetching team training plans:', err.message);
     res.status(500).send('Server Error');
   }
 };

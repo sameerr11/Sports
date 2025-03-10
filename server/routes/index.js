@@ -118,6 +118,7 @@ router.post(
 );
 router.get('/teams', teamController.getTeams);
 router.get('/teams/coach', [auth, coach], teamController.getTeamsByCoach);
+router.get('/teams/player', [auth, player], teamController.getTeamsByPlayer);
 router.get('/teams/:id', teamController.getTeamById);
 router.put('/teams/:id', [auth, supervisor], teamController.updateTeam);
 router.delete('/teams/:id', [auth, supervisor], teamController.deleteTeam);

@@ -17,12 +17,13 @@ import Dashboard from './components/dashboard/Dashboard';
 import Profile from './components/profile/Profile';
 import { 
   isAuthenticated, isAdmin, isSupervisor, 
-  isCoach, isPlayer, isParent, isCashier 
+  isCoach, isPlayer, isParent, isCashier, isPlayerOnly 
 } from './services/authService';
 import Cafeteria from './components/cafeteria/Cafeteria';
 import CafeteriaManagement from './components/cafeteria/CafeteriaManagement';
 import CoachDashboard from './components/coach/CoachDashboard';
 import TrainingPlanManager from './components/training/TrainingPlanManager';
+import PlayerDashboard from './components/player/PlayerDashboard';
 import './App.css';
 
 // Placeholder components for routes
@@ -56,7 +57,7 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/" />;
   }
 
-  if (requiredRole === 'player' && !isPlayer()) {
+  if (requiredRole === 'player' && !isPlayerOnly()) {
     return <Navigate to="/" />;
   }
 
@@ -168,6 +169,15 @@ function App() {
           <ProtectedRoute requiredRole="coach">
             <MainLayout>
               <CoachDashboard />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        {/* Player Routes */}
+        <Route path="/player" element={
+          <ProtectedRoute requiredRole="player">
+            <MainLayout>
+              <PlayerDashboard />
             </MainLayout>
           </ProtectedRoute>
         } />

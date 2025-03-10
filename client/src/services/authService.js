@@ -99,6 +99,12 @@ export const isPlayer = () => {
   return hasRole(['admin', 'supervisor', 'coach', 'player']);
 };
 
+// Check if user is ONLY a player (not admin, supervisor, or coach)
+export const isPlayerOnly = () => {
+  const user = getStoredUser();
+  return user && user.role === 'player';
+};
+
 // Check if user is parent
 export const isParent = () => {
   return hasRole(['admin', 'supervisor', 'coach', 'parent']);
