@@ -168,6 +168,8 @@ router.get('/training-plans', [auth, supervisor], trainingPlanController.getAllT
 router.get('/training-plans/coach', [auth, coach], trainingPlanController.getCoachTrainingPlans);
 router.get('/training-plans/team/:teamId', auth, trainingPlanController.getTeamTrainingPlans);
 router.get('/training-plans/:id', auth, trainingPlanController.getTrainingPlanById);
+router.put('/training-plans/:id', [auth, supervisor], trainingPlanController.updateTrainingPlan);
+router.delete('/training-plans/:id', [auth, supervisor], trainingPlanController.deleteTrainingPlan);
 router.put(
   '/training-plans/:id/status',
   [

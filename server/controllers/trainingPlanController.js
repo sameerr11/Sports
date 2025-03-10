@@ -198,4 +198,108 @@ exports.updateTrainingPlanStatus = async (req, res) => {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
+};
+
+// @desc    Update training plan
+// @route   PUT /api/training-plans/:id
+// @access  Private (Supervisor, Admin)
+exports.updateTrainingPlan = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const { title, description, team, assignedTo, date, duration, activities, notes, attachments } = req.body;
+
+    // Check if plan exists
+    const plan = await TrainingPlan.findById(req.params.id);
+    if (!plan) {
+      return res.status(404).json({ msg: 'Training plan not found' });
+    }
+    
+    // Prevent editing completed plans
+    if (plan.status === 'Completed') {
+      return res.status(403).json({ 
+        msg: 'Cannot edit a completed training plan. Completed plans are locked for historical accuracy.' 
+      });
+    }
+
+    // Update plan fields
+    plan.title = title;
+    plan.description = description;
+    plan.team = team;
+    plan.date = new Date(date);
+    plan.duration = duration;
+    plan.activities = activities || [];
+    plan.notes = notes;
+    plan.attachments = attachments || [];
+
+    // Update assignment if changed
+    if (assignedTo !== plan.assignedTo?.toString()) {
+      plan.assignedTo = assignedTo || null;
+      
+      // If being assigned to a coach, update status
+      if (assignedTo && plan.status === 'Draft') {
+        plan.status = 'Assigned';
+      }
+    }
+
+    const updatedPlan = await plan.save();
+    
+    // Populate related fields
+    await updatedPlan.populate('team', 'name sportType');
+    await updatedPlan.populate('createdBy', 'firstName lastName');
+    await updatedPlan.populate('assignedTo', 'firstName lastName');
+    
+    res.json(updatedPlan);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// @desc    Delete training plan
+// @route   DELETE /api/training-plans/:id
+// @access  Private (Supervisor, Admin)
+exports.deleteTrainingPlan = async (req, res) => {
+  try {
+    console.log(`Attempting to delete training plan with ID: ${req.params.id}`);
+    
+    const plan = await TrainingPlan.findById(req.params.id);
+    
+    if (!plan) {
+      console.log(`Training plan with ID ${req.params.id} not found`);
+      return res.status(404).json({ msg: 'Training plan not found' });
+    }
+
+    // Check if user is creator or has rights
+    if (plan.createdBy.toString() !== req.user.id && 
+        !['admin', 'supervisor'].includes(req.user.role)) {
+      console.log(`User ${req.user.id} not authorized to delete plan ${req.params.id}`);
+      return res.status(403).json({ msg: 'Not authorized to delete this plan' });
+    }
+
+    console.log(`Deleting training plan: ${plan._id}`);
+    const result = await TrainingPlan.deleteOne({ _id: plan._id });
+    
+    if (result.deletedCount === 0) {
+      console.log(`Failed to delete training plan: ${plan._id}`);
+      return res.status(500).json({ msg: 'Failed to delete training plan' });
+    }
+    
+    console.log(`Successfully deleted training plan: ${plan._id}`);
+    res.json({ msg: 'Training plan deleted successfully', id: plan._id });
+  } catch (err) {
+    console.error(`Error deleting training plan ${req.params.id}:`, err.message);
+    
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'Training plan not found - invalid ID format' });
+    }
+    
+    res.status(500).json({ 
+      msg: 'Server error when deleting training plan',
+      error: err.message
+    });
+  }
 }; 

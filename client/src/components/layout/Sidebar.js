@@ -24,6 +24,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import FastfoodIcon from '@mui/icons-material/Fastfood';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import { isAdmin, isSupervisor, isCashier, isCoach } from '../../services/authService';
 import './Sidebar.css';
 
@@ -51,6 +52,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const supervisorItems = [
         { text: 'All Bookings', icon: <EventIcon />, path: '/bookings' },
         { text: 'Team Scheduling', icon: <SportsSoccerIcon />, path: '/teams/schedule' },
+        { text: 'Training Plans', icon: <AssignmentIcon />, path: '/training-plans' },
         { text: 'Manage Cafeteria', icon: <FastfoodIcon />, path: '/cafeteria/manage' }
     ];
 
