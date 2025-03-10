@@ -41,6 +41,11 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   if (isCashier() && window.location.pathname !== '/cafeteria') {
     return <Navigate to="/cafeteria" />;
   }
+  
+  // Redirect parents to parent dashboard if they try to access the main dashboard
+  if (isParent() && window.location.pathname === '/' && !requiredRole) {
+    return <Navigate to="/parent" />;
+  }
 
   if (requiredRole === 'admin' && !isAdmin()) {
     return <Navigate to="/" />;
