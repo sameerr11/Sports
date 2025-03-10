@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const Booking = require('../models/Booking');
 const Court = require('../models/Court');
 const User = require('../models/User');
+const Team = require('../models/Team');
 
 // @desc    Create a new booking
 // @route   POST /api/bookings
@@ -89,7 +90,32 @@ exports.createBooking = async (req, res) => {
 // @access  Private (Admin, Supervisor)
 exports.getBookings = async (req, res) => {
   try {
-    const bookings = await Booking.find()
+    // Build query based on request parameters
+    const query = {};
+    
+    // Filter by team if provided
+    if (req.query.team) {
+      query.team = req.query.team;
+    }
+    
+    // Allow players to see team bookings when team parameter is specified
+    if (req.query.team && req.user.role === 'player') {
+      // Verify the player is part of the requested team
+      const team = await Team.findById(req.query.team);
+      if (!team) {
+        return res.status(404).json({ msg: 'Team not found' });
+      }
+      
+      const isPlayerInTeam = team.players.some(p => p.player.toString() === req.user.id);
+      if (!isPlayerInTeam) {
+        return res.status(403).json({ msg: 'Access denied: You are not a member of this team' });
+      }
+    } else if (req.user.role !== 'admin' && req.user.role !== 'supervisor' && !req.query.team) {
+      // If not admin/supervisor and no team filter, restrict access
+      return res.status(403).json({ msg: 'Access denied' });
+    }
+    
+    const bookings = await Booking.find(query)
       .populate('court', 'name location sportType')
       .populate('user', 'firstName lastName email')
       .populate('team', 'name')

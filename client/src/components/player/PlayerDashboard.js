@@ -9,17 +9,11 @@ import {
   Tabs, 
   Tab, 
   Paper, 
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  ListItemSecondaryAction,
   Avatar,
   Divider,
   Chip,
   CircularProgress,
   Button,
-  IconButton,
   useTheme,
   alpha,
   Table,
@@ -32,17 +26,13 @@ import {
 } from '@mui/material';
 import { 
   Person, 
-  CalendarMonth, 
+  CalendarMonth,
   SportsScore, 
   Assignment, 
   FitnessCenter, 
-  Event, 
   LocationOn, 
   AccessTime, 
-  ArrowForward, 
-  StarOutline,
-  Star,
-  KeyboardArrowRight
+  ArrowForward,
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -74,16 +64,36 @@ const PlayerDashboard = () => {
         // Get team IDs for further queries
         const teamIds = teamsRes.data.map(team => team._id);
         
-        // 2. Fetch training sessions (bookings with purpose = 'Training')
-        // We're using the my bookings endpoint but will filter for training sessions
-        const bookingsRes = await api.get('/bookings/me');
-        const trainingSessions = bookingsRes.data.filter(
+        // Fetch data for personal bookings
+        const personalBookingsRes = await api.get('/bookings/me');
+        const personalBookings = personalBookingsRes.data;
+        
+        // Fetch all team-related bookings
+        let teamBookings = [];
+        if (teamIds.length > 0) {
+          // Fetch bookings for each team
+          const bookingsPromises = teamIds.map(teamId => 
+            api.get('/bookings', { 
+              params: { team: teamId } 
+            })
+          );
+          
+          const bookingsResponses = await Promise.all(bookingsPromises);
+          teamBookings = bookingsResponses.flatMap(res => res.data);
+        }
+        
+        // Combine personal and team bookings and remove duplicates
+        const allBookings = [...personalBookings, ...teamBookings];
+        const uniqueBookings = Array.from(new Map(allBookings.map(booking => [booking._id, booking])).values());
+        
+        // Filter for training sessions and matches
+        const trainingSessions = uniqueBookings.filter(
           booking => booking.purpose === 'Training' && new Date(booking.startTime) >= new Date()
         );
         setTrainingSessions(trainingSessions);
         
-        // 3. Fetch upcoming matches (bookings with purpose = 'Match')
-        const matchSessions = bookingsRes.data.filter(
+        // 3. Filter for upcoming matches
+        const matchSessions = uniqueBookings.filter(
           booking => booking.purpose === 'Match' && new Date(booking.startTime) >= new Date()
         );
         setUpcomingMatches(matchSessions);
