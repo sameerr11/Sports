@@ -12,7 +12,7 @@ const NotificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['new_registration', 'role_change', 'document_upload', 'system'],
+    enum: ['new_registration', 'role_change', 'document_upload', 'system', 'child_account_linked'],
     required: true
   },
   title: {

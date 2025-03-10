@@ -42,6 +42,7 @@ router.post(
 );
 router.get('/users', [auth, admin], userController.getUsers);
 router.get('/users/role/:role', [auth, supervisor], userController.getUsersByRole);
+router.get('/users/parent/children', [auth, parent], userController.getParentChildren);
 router.get('/users/:id', [auth, admin], userController.getUserById);
 router.put('/users/:id', [auth, admin], userController.updateUser);
 router.delete('/users/:id', [auth, admin], userController.deleteUser);
@@ -119,6 +120,7 @@ router.post(
 router.get('/teams', teamController.getTeams);
 router.get('/teams/coach', [auth, coach], teamController.getTeamsByCoach);
 router.get('/teams/player', [auth, player], teamController.getTeamsByPlayer);
+router.get('/teams/player/:playerId', [auth], teamController.getTeamsByPlayerId);
 router.get('/teams/:id', teamController.getTeamById);
 router.put('/teams/:id', [auth, supervisor], teamController.updateTeam);
 router.delete('/teams/:id', [auth, supervisor], teamController.deleteTeam);

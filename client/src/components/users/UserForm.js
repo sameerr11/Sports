@@ -18,7 +18,7 @@ import {
   FormControlLabel,
   Divider
 } from '@mui/material';
-import { createUser, getUserById, updateUser } from '../../services/userService';
+import { createUser, getUserById, updateUser, getUsersByRole } from '../../services/userService';
 
 const ROLES = [
   { value: 'admin', label: 'Admin' },
@@ -37,6 +37,7 @@ const initialState = {
   email: '',
   password: '',
   role: '',
+  parentId: '',
   phoneNumber: '',
   address: {
     street: '',
@@ -54,6 +55,7 @@ const UserForm = () => {
   const [fetchLoading, setFetchLoading] = useState(false);
   const [error, setError] = useState('');
   const [isEdit, setIsEdit] = useState(false);
+  const [parents, setParents] = useState([]);
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -62,6 +64,9 @@ const UserForm = () => {
       setIsEdit(true);
       fetchUser(id);
     }
+    
+    // Fetch parent users for the dropdown
+    fetchParents();
   }, [id]);
 
   useEffect(() => {
@@ -78,6 +83,15 @@ const UserForm = () => {
       }));
     }
   }, []);
+  
+  const fetchParents = async () => {
+    try {
+      const parentUsers = await getUsersByRole('parent');
+      setParents(parentUsers);
+    } catch (err) {
+      console.error('Failed to fetch parents:', err);
+    }
+  };
 
   const fetchUser = async (userId) => {
     setFetchLoading(true);
@@ -144,6 +158,9 @@ const UserForm = () => {
     setLoading(true);
     setError('');
 
+    // Log what we're submitting
+    console.log('Submitting form data:', formData);
+
     try {
       if (isEdit) {
         // If editing and password is empty, remove it from the request
@@ -151,12 +168,15 @@ const UserForm = () => {
         if (!updateData.password) {
           delete updateData.password;
         }
-        await updateUser(id, updateData);
+        const result = await updateUser(id, updateData);
+        console.log('Update response:', result);
       } else {
-        await createUser(formData);
+        const result = await createUser(formData);
+        console.log('Create response:', result);
       }
       navigate('/users');
     } catch (err) {
+      console.error('Error submitting form:', err);
       setError(err.toString());
     } finally {
       setLoading(false);
@@ -246,6 +266,32 @@ const UserForm = () => {
                 <FormHelperText>Select the user's role in the system</FormHelperText>
               </FormControl>
             </Grid>
+            
+            {/* Parent Selection Dropdown (only visible when role is 'player') */}
+            {formData.role === 'player' && (
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Parent</InputLabel>
+                  <Select
+                    name="parentId"
+                    value={formData.parentId || ''}
+                    onChange={handleChange}
+                    label="Parent"
+                  >
+                    <MenuItem value="">
+                      <em>None</em>
+                    </MenuItem>
+                    {parents.map((parent) => (
+                      <MenuItem key={parent._id} value={parent._id}>
+                        {`${parent.firstName} ${parent.lastName} (${parent.email})`}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText>Associate this player with a parent</FormHelperText>
+                </FormControl>
+              </Grid>
+            )}
+            
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth

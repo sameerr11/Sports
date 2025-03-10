@@ -26,7 +26,8 @@ import FastfoodIcon from '@mui/icons-material/Fastfood';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PersonIcon from '@mui/icons-material/Person';
-import { isAdmin, isSupervisor, isCashier, isCoach, isPlayerOnly } from '../../services/authService';
+import FamilyRestroomIcon from '@mui/icons-material/FamilyRestroom';
+import { isAdmin, isSupervisor, isCashier, isCoach, isPlayerOnly, isParent } from '../../services/authService';
 import './Sidebar.css';
 
 const drawerWidth = 280;
@@ -38,6 +39,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const cashier = isCashier();
     const coach = isCoach();
     const player = isPlayerOnly();
+    const parent = isParent();
     const theme = useTheme();
 
     const menuItems = [
@@ -69,6 +71,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
 
     const playerItems = [
         { text: 'Player Dashboard', icon: <PersonIcon />, path: '/player' }
+    ];
+    
+    const parentItems = [
+        { text: 'Parent Dashboard', icon: <FamilyRestroomIcon />, path: '/parent' }
     ];
 
     return (
@@ -493,6 +499,77 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     {item.icon}
                                 </ListItemIcon>
                                 <ListItemText primary={item.text} />
+                            </ListItem>
+                        ))}
+                    </List>
+                </>
+            )}
+            
+            {parent && (
+                <>
+                    <Divider sx={{ my: 1 }} />
+                    <List component="nav" className="sidebar-nav">
+                        <ListItem sx={{ px: 3 }}>
+                            <ListItemText 
+                                primary="Parent Dashboard" 
+                                primaryTypographyProps={{ 
+                                    variant: 'overline',
+                                    color: 'text.secondary',
+                                    fontWeight: 600,
+                                    noWrap: true
+                                }} 
+                            />
+                        </ListItem>
+                        {parentItems.map((item) => (
+                            <ListItem 
+                                button 
+                                key={item.text} 
+                                component={Link} 
+                                to={item.path}
+                                selected={location.pathname === item.path}
+                                className={location.pathname === item.path ? 'active' : ''}
+                                sx={{
+                                    borderRadius: '0 20px 20px 0',
+                                    mx: 1,
+                                    mb: 0.5,
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    width: 'calc(100% - 16px)',
+                                    '&.active': {
+                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                        color: theme.palette.primary.main,
+                                        '&::before': {
+                                            content: '""',
+                                            position: 'absolute',
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: 4,
+                                            backgroundColor: theme.palette.primary.main,
+                                            borderRadius: '0 4px 4px 0'
+                                        }
+                                    },
+                                    '&:hover': {
+                                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                    }
+                                }}
+                            >
+                                <ListItemIcon sx={{ 
+                                    color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                    minWidth: 40,
+                                    flexShrink: 0
+                                }}>
+                                    {item.icon}
+                                </ListItemIcon>
+                                <ListItemText 
+                                    primary={item.text} 
+                                    primaryTypographyProps={{ 
+                                        fontSize: '0.95rem',
+                                        fontWeight: location.pathname === item.path ? 600 : 400,
+                                        noWrap: true
+                                    }}
+                                    sx={{ overflow: 'hidden' }}
+                                />
                             </ListItem>
                         ))}
                     </List>

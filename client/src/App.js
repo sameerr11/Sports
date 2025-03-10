@@ -24,6 +24,7 @@ import CafeteriaManagement from './components/cafeteria/CafeteriaManagement';
 import CoachDashboard from './components/coach/CoachDashboard';
 import TrainingPlanManager from './components/training/TrainingPlanManager';
 import PlayerDashboard from './components/player/PlayerDashboard';
+import ParentDashboard from './components/parent/ParentDashboard';
 import './App.css';
 
 // Placeholder components for routes
@@ -178,6 +179,15 @@ function App() {
           <ProtectedRoute requiredRole="player">
             <MainLayout>
               <PlayerDashboard />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        {/* Parent Routes */}
+        <Route path="/parent" element={
+          <ProtectedRoute requiredRole="parent">
+            <MainLayout>
+              <ParentDashboard />
             </MainLayout>
           </ProtectedRoute>
         } />

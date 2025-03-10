@@ -338,4 +338,50 @@ exports.getTeamsByPlayer = async (req, res) => {
     console.error('Error fetching player teams:', err.message);
     res.status(500).send('Server Error');
   }
+};
+
+// @desc    Get teams for a specific player by ID
+// @route   GET /api/teams/player/:playerId
+// @access  Private (Parent, Admin, Supervisor)
+exports.getTeamsByPlayerId = async (req, res) => {
+  try {
+    const { playerId } = req.params;
+    
+    // Check if user is authorized to view this player's teams
+    // Allow if user is the player themselves, a parent of the player, or an admin/supervisor
+    const isAuthorized = 
+      req.user.id === playerId || 
+      req.user.role === 'admin' || 
+      req.user.role === 'supervisor' ||
+      (req.user.role === 'parent' && await isParentOfPlayer(req.user.id, playerId));
+    
+    if (!isAuthorized) {
+      return res.status(403).json({ msg: 'Not authorized to view this player\'s teams' });
+    }
+    
+    // Find teams where the specified player is a member
+    const teams = await Team.find({
+      'players.player': playerId,
+      isActive: true
+    })
+      .populate('coaches.coach', 'firstName lastName email profilePicture')
+      .populate('players.player', 'firstName lastName email profilePicture')
+      .sort({ createdAt: -1 });
+    
+    res.json(teams);
+  } catch (err) {
+    console.error('Error fetching player teams by ID:', err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// Helper function to check if a user is a parent of a player
+const isParentOfPlayer = async (parentId, playerId) => {
+  try {
+    const player = await User.findById(playerId);
+    return player && player.parentId && player.parentId.toString() === parentId;
+  } catch (err) {
+    console.error('Error checking parent relationship:', err.message);
+    return false;
+  }
 }; 

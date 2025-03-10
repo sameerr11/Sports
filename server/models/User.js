@@ -30,6 +30,11 @@ const UserSchema = new mongoose.Schema({
     enum: ['admin', 'supervisor', 'cashier', 'coach', 'player', 'parent', 'accounting', 'guest'],
     default: 'guest'
   },
+  parentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
   profilePicture: {
     type: String,
     default: ''

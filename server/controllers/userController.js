@@ -13,7 +13,8 @@ exports.registerUser = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { firstName, lastName, email, password, role, phoneNumber, address } = req.body;
+  console.log('Register user request body:', req.body);
+  const { firstName, lastName, email, password, role, phoneNumber, address, parentId } = req.body;
 
   try {
     // Check if user already exists
@@ -22,8 +23,8 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ msg: 'User already exists' });
     }
 
-    // Create new user
-    user = new User({
+    // Create new user object
+    const userFields = {
       firstName,
       lastName,
       email,
@@ -31,28 +32,62 @@ exports.registerUser = async (req, res) => {
       role,
       phoneNumber,
       address
-    });
+    };
+    
+    // Only set parentId if it exists and is not empty string
+    if (parentId && parentId.trim() !== '') {
+      userFields.parentId = parentId;
+      console.log(`Setting parentId to: ${parentId}`);
+    }
 
+    user = new User(userFields);
     await user.save();
+    console.log('New user created:', { id: user._id, email: user.email, role: user.role, parentId: user.parentId });
 
-    // Create notification for supervisors if new player registration
-    if (role === 'player') {
-      const supervisors = await User.find({ role: 'supervisor' });
-      
-      for (const supervisor of supervisors) {
-        const notification = new Notification({
-          recipient: supervisor._id,
-          type: 'new_registration',
-          title: 'New Player Registration',
-          message: `${firstName} ${lastName} has registered as a new player.`,
-          relatedTo: {
-            model: 'User',
-            id: user._id
-          }
-        });
+    // Create notifications - separated to prevent notification failures from breaking user creation
+    try {
+      // Create notification for supervisors if new player registration
+      if (role === 'player') {
+        const supervisors = await User.find({ role: 'supervisor' });
         
-        await notification.save();
+        for (const supervisor of supervisors) {
+          const notification = new Notification({
+            recipient: supervisor._id,
+            type: 'new_registration',
+            title: 'New Player Registration',
+            message: `${firstName} ${lastName} has registered as a new player.`,
+            relatedTo: {
+              model: 'User',
+              id: user._id
+            }
+          });
+          
+          await notification.save();
+        }
+        
+        // If parentId is provided, create notification for the parent
+        if (userFields.parentId) {
+          const parent = await User.findById(userFields.parentId);
+          if (parent) {
+            const notification = new Notification({
+              recipient: parent._id,
+              type: 'child_account_linked',
+              title: 'Child Account Linked',
+              message: `Your account has been linked to ${firstName} ${lastName}.`,
+              relatedTo: {
+                model: 'User',
+                id: user._id
+              }
+            });
+            
+            await notification.save();
+          }
+        }
       }
+    } catch (notificationError) {
+      // Log notification error but don't fail the whole request
+      console.error('Error creating notifications:', notificationError);
+      // We'll still return the created user without failing
     }
 
     // Return user without password
@@ -61,7 +96,7 @@ exports.registerUser = async (req, res) => {
 
     res.status(201).json(userResponse);
   } catch (err) {
-    console.error(err.message);
+    console.error('Error creating user:', err);
     res.status(500).json({ msg: 'Server error' });
   }
 };
@@ -104,7 +139,8 @@ exports.getUserById = async (req, res) => {
 // @route   PUT /api/users/:id
 // @access  Admin
 exports.updateUser = async (req, res) => {
-  const { firstName, lastName, email, role, phoneNumber, address, isActive } = req.body;
+  console.log('Update user request body:', req.body);
+  const { firstName, lastName, email, role, phoneNumber, address, isActive, parentId } = req.body;
 
   // Build user object
   const userFields = {};
@@ -115,6 +151,18 @@ exports.updateUser = async (req, res) => {
   if (phoneNumber) userFields.phoneNumber = phoneNumber;
   if (address) userFields.address = address;
   if (isActive !== undefined) userFields.isActive = isActive;
+  
+  // Handle parentId - Set it if provided as non-empty string, otherwise set to null if explicitly provided
+  if (parentId !== undefined) {
+    if (parentId && parentId.trim() !== '') {
+      userFields.parentId = parentId;
+      console.log(`Setting parentId to: ${parentId}`);
+    } else {
+      userFields.parentId = null;
+      console.log('Setting parentId to null');
+    }
+  }
+  
   userFields.updatedAt = Date.now();
 
   try {
@@ -127,35 +175,73 @@ exports.updateUser = async (req, res) => {
     // Check if role is being changed
     const roleChanged = role && user.role !== role;
     
+    // Check if parent is being changed (compare as strings in case of ObjectId objects)
+    const parentChanged = parentId !== undefined && 
+      ((!user.parentId && parentId && parentId.trim() !== '') || 
+       (user.parentId && String(user.parentId) !== String(parentId)));
+    
+    console.log('Before update:', { 
+      userId: user._id,
+      currentParentId: user.parentId, 
+      newParentId: parentId,
+      parentChanged 
+    });
+    
     // Update user
     user = await User.findByIdAndUpdate(
       req.params.id,
       { $set: userFields },
       { new: true }
     ).select('-password');
+    
+    console.log('After update:', { userId: user._id, parentId: user.parentId });
 
-    // Create notification for role change
-    if (roleChanged) {
-      const notification = new Notification({
-        recipient: user._id,
-        type: 'role_change',
-        title: 'Role Updated',
-        message: `Your role has been updated to ${role}.`,
-        relatedTo: {
-          model: 'User',
-          id: user._id
-        }
-      });
+    // Create notifications - this is now separated from the main user update
+    // to prevent notification creation failures from breaking the update
+    try {
+      // Create notification for role change
+      if (roleChanged) {
+        const notification = new Notification({
+          recipient: user._id,
+          type: 'role_change',
+          title: 'Role Updated',
+          message: `Your role has been updated to ${role}.`,
+          relatedTo: {
+            model: 'User',
+            id: user._id
+          }
+        });
+        
+        await notification.save();
+      }
       
-      await notification.save();
+      // Create notification for parent change if user is a player
+      if (parentChanged && user.role === 'player' && userFields.parentId) {
+        const parent = await User.findById(userFields.parentId);
+        if (parent) {
+          const notification = new Notification({
+            recipient: parent._id,
+            type: 'child_account_linked',
+            title: 'Child Account Linked',
+            message: `Your account has been linked to ${user.firstName} ${user.lastName}.`,
+            relatedTo: {
+              model: 'User',
+              id: user._id
+            }
+          });
+          
+          await notification.save();
+        }
+      }
+    } catch (notificationError) {
+      // Log notification error but don't fail the whole request
+      console.error('Error creating notifications:', notificationError);
+      // We'll still return the updated user without failing
     }
 
     res.json(user);
   } catch (err) {
-    console.error(err.message);
-    if (err.kind === 'ObjectId') {
-      return res.status(404).json({ msg: 'User not found' });
-    }
+    console.error('Error updating user:', err);
     res.status(500).json({ msg: 'Server error' });
   }
 };
@@ -240,5 +326,36 @@ exports.getUsersByRole = async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+// @desc    Get children of a parent user
+// @route   GET /api/users/parent/children
+// @access  Private (Parent)
+exports.getParentChildren = async (req, res) => {
+  try {
+    // Get the parent user ID
+    const parentId = req.user.id;
+    
+    // Check if user is a parent
+    if (req.user.role !== 'parent') {
+      return res.status(403).json({ msg: 'Not authorized. Only parent users can access this data' });
+    }
+    
+    // Find child users linked to this parent
+    // Assuming there's a parentId field in the User model for child users
+    const children = await User.find({ 
+      parentId: parentId,
+      role: 'player'
+    }).select('-password');
+    
+    if (!children || children.length === 0) {
+      return res.status(404).json({ msg: 'No children found for this parent' });
+    }
+    
+    res.json(children);
+  } catch (err) {
+    console.error('Error fetching parent children:', err.message);
+    res.status(500).send('Server Error');
   }
 }; 

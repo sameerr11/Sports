@@ -107,7 +107,8 @@ export const isPlayerOnly = () => {
 
 // Check if user is parent
 export const isParent = () => {
-  return hasRole(['admin', 'supervisor', 'coach', 'parent']);
+  const user = getStoredUser();
+  return user && user.role === 'parent';
 };
 
 // Check if user is guest
