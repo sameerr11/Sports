@@ -20,6 +20,23 @@ export const getUserBookings = async () => {
   }
 };
 
+// Get upcoming user bookings for dashboard
+export const getUpcomingUserBookings = async (limit = 3) => {
+  try {
+    const response = await api.get('/bookings/me');
+    // Filter for upcoming bookings (where the start time is in the future)
+    const currentDate = new Date();
+    const upcomingBookings = response.data
+      .filter(booking => new Date(booking.startTime) > currentDate)
+      .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
+      .slice(0, limit);
+    
+    return upcomingBookings;
+  } catch (error) {
+    throw error.response?.data?.msg || 'Failed to fetch upcoming bookings';
+  }
+};
+
 // Get booking by ID
 export const getBookingById = async (id) => {
   try {

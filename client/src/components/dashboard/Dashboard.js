@@ -16,7 +16,8 @@ import {
   Divider,
   Button,
   useTheme,
-  alpha
+  alpha,
+  CircularProgress
 } from '@mui/material';
 import { 
   SportsSoccer, 
@@ -33,42 +34,46 @@ import {
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { getStoredUser, isSupervisor } from '../../services/authService';
+import { getDashboardData } from '../../services/dashboardService';
 import './Dashboard.css';
 
-// Mock data - in a real app, you would fetch this from your API
-const mockUpcomingBookings = [
-  { id: 1, court: 'Tennis Court 1', date: '2025-03-08', time: '10:00 AM', type: 'Practice' },
-  { id: 2, court: 'Basketball Court 3', date: '2025-03-09', time: '2:30 PM', type: 'Match' },
-  { id: 3, court: 'Soccer Field 2', date: '2025-03-10', time: '4:00 PM', type: 'Tournament' }
-];
-
-const mockRecentActivity = [
-  { id: 1, type: 'booking', title: 'New Booking', description: 'Tennis Court 1 booked for practice', time: '2 hours ago' },
-  { id: 2, type: 'team', title: 'Team Update', description: 'New player added to Eagles team', time: '1 day ago' },
-  { id: 3, type: 'tournament', title: 'Tournament Registration', description: 'Summer Championship registration open', time: '2 days ago' },
-  { id: 4, type: 'court', title: 'Court Maintenance', description: 'Basketball Court 2 under maintenance', time: '3 days ago' }
-];
-
-const mockTeams = [
-  { id: 1, name: 'Eagles', sport: 'Basketball', members: 12, wins: 8, losses: 2 },
-  { id: 2, name: 'Tigers', sport: 'Soccer', members: 15, wins: 6, losses: 4 },
-  { id: 3, name: 'Sharks', sport: 'Swimming', members: 8, wins: 10, losses: 0 }
-];
+// Removed mock data as we'll use real data from the API
 
 const Dashboard = () => {
   const theme = useTheme();
   const user = getStoredUser();
   const supervisor = isSupervisor();
-  const [stats, setStats] = useState({
-    totalBookings: 24,
-    upcomingBookings: 3,
-    totalTeams: 3,
-    activeTournaments: 2
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [dashboardData, setDashboardData] = useState({
+    stats: {
+      totalBookings: 0,
+      upcomingBookings: 0,
+      totalTeams: 0,
+      activeTournaments: 0
+    },
+    upcomingBookings: [],
+    recentActivity: [],
+    userTeams: []
   });
   
-  // In a real app, you would fetch this data from your API
+  // Fetch real data from the API
   useEffect(() => {
-    // Fetch dashboard data
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const data = await getDashboardData();
+        setDashboardData(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Failed to load dashboard data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDashboardData();
   }, []);
 
   const getActivityIcon = (type) => {
@@ -85,6 +90,49 @@ const Dashboard = () => {
         return <Event />;
     }
   };
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  };
+
+  // Format time for display
+  const formatTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  };
+
+  // Show loading state while fetching data
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+        <Typography variant="h6" sx={{ ml: 2 }}>Loading dashboard data...</Typography>
+      </Box>
+    );
+  }
+
+  // Show error message if data fetch failed
+  if (error) {
+    return (
+      <Box sx={{ textAlign: 'center', mt: 4 }}>
+        <Typography variant="h6" color="error">{error}</Typography>
+        <Button
+          onClick={() => window.location.reload()}
+          variant="contained"
+          color="primary"
+          sx={{ mt: 2 }}
+        >
+          Retry
+        </Button>
+      </Box>
+    );
+  }
+
+  const { stats, upcomingBookings, recentActivity, userTeams } = dashboardData;
 
   return (
     <Box className="dashboard-container">
@@ -191,31 +239,37 @@ const Dashboard = () => {
             />
             <Divider />
             <CardContent>
-              <List>
-                {mockUpcomingBookings.map((booking) => (
-                  <React.Fragment key={booking.id}>
-                    <ListItem alignItems="flex-start">
-                      <ListItemAvatar>
-                        <Avatar className="booking-avatar">
-                          <Event />
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={booking.court}
-                        secondary={
-                          <>
-                            <Typography component="span" variant="body2" color="text.primary">
-                              {booking.date} at {booking.time}
-                            </Typography>
-                            {` — ${booking.type}`}
-                          </>
-                        }
-                      />
-                    </ListItem>
-                    <Divider variant="inset" component="li" />
-                  </React.Fragment>
-                ))}
-              </List>
+              {upcomingBookings.length === 0 ? (
+                <Typography variant="body1" align="center" sx={{ py: 2 }}>
+                  No upcoming bookings found
+                </Typography>
+              ) : (
+                <List>
+                  {upcomingBookings.map((booking) => (
+                    <React.Fragment key={booking._id}>
+                      <ListItem alignItems="flex-start">
+                        <ListItemAvatar>
+                          <Avatar className="booking-avatar">
+                            <Event />
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={booking.court?.name || 'Court'}
+                          secondary={
+                            <>
+                              <Typography component="span" variant="body2" color="text.primary">
+                                {formatDate(booking.startTime)} at {formatTime(booking.startTime)}
+                              </Typography>
+                              {` — ${booking.purpose || 'Practice'}`}
+                            </>
+                          }
+                        />
+                      </ListItem>
+                      <Divider variant="inset" component="li" />
+                    </React.Fragment>
+                  ))}
+                </List>
+              )}
               <Box sx={{ textAlign: 'center', mt: 2 }}>
                 <Button 
                   component={Link} 
@@ -243,31 +297,37 @@ const Dashboard = () => {
             />
             <Divider />
             <CardContent>
-              <List>
-                {mockRecentActivity.map((activity) => (
-                  <React.Fragment key={activity.id}>
-                    <ListItem alignItems="flex-start">
-                      <ListItemAvatar>
-                        <Avatar className="activity-avatar">
-                          {getActivityIcon(activity.type)}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={activity.title}
-                        secondary={
-                          <>
-                            <Typography component="span" variant="body2" color="text.primary">
-                              {activity.description}
-                            </Typography>
-                            {` — ${activity.time}`}
-                          </>
-                        }
-                      />
-                    </ListItem>
-                    <Divider variant="inset" component="li" />
-                  </React.Fragment>
-                ))}
-              </List>
+              {recentActivity.length === 0 ? (
+                <Typography variant="body1" align="center" sx={{ py: 2 }}>
+                  No recent activity found
+                </Typography>
+              ) : (
+                <List>
+                  {recentActivity.map((activity) => (
+                    <React.Fragment key={activity.id}>
+                      <ListItem alignItems="flex-start">
+                        <ListItemAvatar>
+                          <Avatar className="activity-avatar">
+                            {getActivityIcon(activity.type)}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={activity.title}
+                          secondary={
+                            <>
+                              <Typography component="span" variant="body2" color="text.primary">
+                                {activity.description}
+                              </Typography>
+                              {` — ${activity.time}`}
+                            </>
+                          }
+                        />
+                      </ListItem>
+                      <Divider variant="inset" component="li" />
+                    </React.Fragment>
+                  ))}
+                </List>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -285,43 +345,49 @@ const Dashboard = () => {
             />
             <Divider />
             <CardContent>
-              <Grid container spacing={3}>
-                {mockTeams.map((team) => (
-                  <Grid item xs={12} sm={6} md={4} key={team.id}>
-                    <Paper elevation={2} className="team-card">
-                      <Box className="team-card-header">
-                        <Typography variant="h6">{team.name}</Typography>
-                        <Typography variant="body2" color="text.secondary">{team.sport}</Typography>
-                      </Box>
-                      <Box className="team-card-content">
-                        <Box className="team-stat">
-                          <Typography variant="body2" color="text.secondary">Members</Typography>
-                          <Typography variant="h6">{team.members}</Typography>
+              {userTeams.length === 0 ? (
+                <Typography variant="body1" align="center" sx={{ py: 2 }}>
+                  You are not a member of any teams
+                </Typography>
+              ) : (
+                <Grid container spacing={3}>
+                  {userTeams.map((team) => (
+                    <Grid item xs={12} sm={6} md={4} key={team._id}>
+                      <Paper elevation={2} className="team-card">
+                        <Box className="team-card-header">
+                          <Typography variant="h6">{team.name}</Typography>
+                          <Typography variant="body2" color="text.secondary">{team.sportType}</Typography>
                         </Box>
-                        <Box className="team-stat">
-                          <Typography variant="body2" color="text.secondary">Wins</Typography>
-                          <Typography variant="h6" color="success.main">{team.wins}</Typography>
+                        <Box className="team-card-content">
+                          <Box className="team-stat">
+                            <Typography variant="body2" color="text.secondary">Members</Typography>
+                            <Typography variant="h6">{team.players?.length || 0}</Typography>
+                          </Box>
+                          <Box className="team-stat">
+                            <Typography variant="body2" color="text.secondary">Wins</Typography>
+                            <Typography variant="h6" color="success.main">{team.wins || 0}</Typography>
+                          </Box>
+                          <Box className="team-stat">
+                            <Typography variant="body2" color="text.secondary">Losses</Typography>
+                            <Typography variant="h6" color="error.main">{team.losses || 0}</Typography>
+                          </Box>
                         </Box>
-                        <Box className="team-stat">
-                          <Typography variant="body2" color="text.secondary">Losses</Typography>
-                          <Typography variant="h6" color="error.main">{team.losses}</Typography>
+                        <Box className="team-card-footer">
+                          <Button 
+                            component={Link} 
+                            to={`/teams/${team._id}`} 
+                            variant="outlined" 
+                            size="small" 
+                            fullWidth
+                          >
+                            View Team
+                          </Button>
                         </Box>
-                      </Box>
-                      <Box className="team-card-footer">
-                        <Button 
-                          component={Link} 
-                          to={`/teams/${team.id}`} 
-                          variant="outlined" 
-                          size="small" 
-                          fullWidth
-                        >
-                          View Team
-                        </Button>
-                      </Box>
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
+                      </Paper>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
               <Box sx={{ textAlign: 'center', mt: 3 }}>
                 <Button 
                   component={Link} 
