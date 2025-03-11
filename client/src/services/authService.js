@@ -79,8 +79,7 @@ export const isAdmin = () => {
 
 // Check if user is supervisor
 export const isSupervisor = () => {
-  const user = getStoredUser();
-  return user && user.role === 'supervisor';
+  return hasRole(['admin', 'supervisor']);
 };
 
 // Check if user is cashier
