@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const connectDB = require('./db');
 const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
@@ -16,6 +17,17 @@ app.use(express.json());
 
 // Routes
 app.use('/api', routes);
+
+// Serve static assets in production
+if (process.env.NODE_ENV === 'production') {
+  // Set static folder
+  app.use(express.static(path.join(__dirname, '../client/build')));
+
+  // Any route that is not /api will be redirected to the React app
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
+  });
+}
 
 // Error handling
 app.use(errorHandler);
