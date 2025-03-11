@@ -8,7 +8,6 @@
     "server": "cd server && npm run dev",
     "client": "cd client && npm start",
     "install-all": "npm install && cd server && npm install && cd ../client && npm install",
-    "build": "cd client && npm run build",
     "create-admin": "cd server && node scripts/createAdminUser.js",
     "create-test-users": "cd server && node scripts/createTestUsers.js"
   },
