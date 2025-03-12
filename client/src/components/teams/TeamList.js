@@ -144,14 +144,23 @@ const TeamList = () => {
                         Coaches:
                       </Typography>
                       <AvatarGroup max={3}>
-                        {team.coaches.map((coachItem) => (
-                          <Tooltip key={coachItem.coach._id} title={`${coachItem.coach.firstName} ${coachItem.coach.lastName}`}>
-                            <Avatar 
-                              alt={`${coachItem.coach.firstName} ${coachItem.coach.lastName}`} 
-                              src={coachItem.coach.profilePicture} 
-                            />
-                          </Tooltip>
-                        ))}
+                        {team.coaches.map((coachItem) => {
+                          // Handle different possible data structures safely
+                          const coachData = coachItem.coach || coachItem;
+                          const coachId = coachData._id || (typeof coachData === 'string' ? coachData : 'unknown');
+                          const firstName = coachData.firstName || '';
+                          const lastName = coachData.lastName || '';
+                          const profilePicture = coachData.profilePicture || '';
+                          
+                          return (
+                            <Tooltip key={coachId} title={`${firstName} ${lastName}`}>
+                              <Avatar 
+                                alt={`${firstName} ${lastName}`} 
+                                src={profilePicture} 
+                              />
+                            </Tooltip>
+                          );
+                        })}
                       </AvatarGroup>
                     </Box>
                   )}

@@ -15,10 +15,17 @@ export const getDashboardData = async () => {
     // Fetch recent activity
     const recentActivity = await getRecentActivity();
 
-    // Get user's team data
+    // Get user's team data with corrected filtering logic
+    const userId = localStorage.getItem('userId');
     const userTeams = teams.filter(team => 
-      team.players?.some(player => player._id === localStorage.getItem('userId')) ||
-      team.coaches?.some(coach => coach._id === localStorage.getItem('userId'))
+      (team.players && team.players.some(playerItem => 
+        (playerItem.player && playerItem.player._id === userId) || 
+        (typeof playerItem === 'string' && playerItem === userId)
+      )) ||
+      (team.coaches && team.coaches.some(coachItem => 
+        (coachItem.coach && coachItem.coach._id === userId) || 
+        (typeof coachItem === 'string' && coachItem === userId)
+      ))
     );
 
     // Get active tournaments

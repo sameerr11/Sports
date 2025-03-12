@@ -384,32 +384,42 @@ const TeamDetail = () => {
 
                 {team.players && team.players.length > 0 ? (
                   <List>
-                    {team.players.map((playerItem) => (
-                      <ListItem key={playerItem.player._id} divider>
-                        <ListItemAvatar>
-                          <Avatar 
-                            alt={`${playerItem.player.firstName} ${playerItem.player.lastName}`}
-                            src={playerItem.player.profilePicture}
+                    {team.players.map((playerItem) => {
+                      // Handle different possible data structures safely
+                      const playerData = playerItem.player || playerItem;
+                      const playerId = playerData._id || (typeof playerData === 'string' ? playerData : 'unknown');
+                      const firstName = playerData.firstName || '';
+                      const lastName = playerData.lastName || '';
+                      const profilePicture = playerData.profilePicture || '';
+                      const position = playerItem.position || '';
+                      
+                      return (
+                        <ListItem key={playerId} divider>
+                          <ListItemAvatar>
+                            <Avatar 
+                              alt={`${firstName} ${lastName}`}
+                              src={profilePicture}
+                            />
+                          </ListItemAvatar>
+                          <ListItemText 
+                            primary={`${firstName} ${lastName}`}
+                            secondary={position ? `Position: ${position}` : 'No position specified'}
                           />
-                        </ListItemAvatar>
-                        <ListItemText 
-                          primary={`${playerItem.player.firstName} ${playerItem.player.lastName}`}
-                          secondary={playerItem.position ? `Position: ${playerItem.position}` : 'No position specified'}
-                        />
-                        {canManageTeams && (
-                          <ListItemSecondaryAction>
-                            <IconButton 
-                              edge="end" 
-                              aria-label="delete"
-                              onClick={() => handleRemovePlayer(playerItem.player._id)}
-                              color="error"
-                            >
-                              <Delete />
-                            </IconButton>
-                          </ListItemSecondaryAction>
-                        )}
-                      </ListItem>
-                    ))}
+                          {canManageTeams && (
+                            <ListItemSecondaryAction>
+                              <IconButton 
+                                edge="end" 
+                                aria-label="delete"
+                                onClick={() => handleRemovePlayer(playerId)}
+                                color="error"
+                              >
+                                <Delete />
+                              </IconButton>
+                            </ListItemSecondaryAction>
+                          )}
+                        </ListItem>
+                      );
+                    })}
                   </List>
                 ) : (
                   <Alert severity="info">No players assigned to this team yet.</Alert>
@@ -437,32 +447,42 @@ const TeamDetail = () => {
 
                 {team.coaches && team.coaches.length > 0 ? (
                   <List>
-                    {team.coaches.map((coachItem) => (
-                      <ListItem key={coachItem.coach._id} divider>
-                        <ListItemAvatar>
-                          <Avatar 
-                            alt={`${coachItem.coach.firstName} ${coachItem.coach.lastName}`}
-                            src={coachItem.coach.profilePicture}
+                    {team.coaches.map((coachItem) => {
+                      // Handle different possible data structures safely
+                      const coachData = coachItem.coach || coachItem;
+                      const coachId = coachData._id || (typeof coachData === 'string' ? coachData : 'unknown');
+                      const firstName = coachData.firstName || '';
+                      const lastName = coachData.lastName || '';
+                      const profilePicture = coachData.profilePicture || '';
+                      const role = coachItem.role || 'Assistant Coach';
+                      
+                      return (
+                        <ListItem key={coachId} divider>
+                          <ListItemAvatar>
+                            <Avatar 
+                              alt={`${firstName} ${lastName}`}
+                              src={profilePicture}
+                            />
+                          </ListItemAvatar>
+                          <ListItemText 
+                            primary={`${firstName} ${lastName}`}
+                            secondary={`Role: ${role}`}
                           />
-                        </ListItemAvatar>
-                        <ListItemText 
-                          primary={`${coachItem.coach.firstName} ${coachItem.coach.lastName}`}
-                          secondary={`Role: ${coachItem.role || 'Assistant Coach'}`}
-                        />
-                        {canManageTeams && (
-                          <ListItemSecondaryAction>
-                            <IconButton 
-                              edge="end" 
-                              aria-label="delete"
-                              onClick={() => handleRemoveCoach(coachItem.coach._id)}
-                              color="error"
-                            >
-                              <Delete />
-                            </IconButton>
-                          </ListItemSecondaryAction>
-                        )}
-                      </ListItem>
-                    ))}
+                          {canManageTeams && (
+                            <ListItemSecondaryAction>
+                              <IconButton 
+                                edge="end" 
+                                aria-label="delete"
+                                onClick={() => handleRemoveCoach(coachId)}
+                                color="error"
+                              >
+                                <Delete />
+                              </IconButton>
+                            </ListItemSecondaryAction>
+                          )}
+                        </ListItem>
+                      );
+                    })}
                   </List>
                 ) : (
                   <Alert severity="info">No coaches assigned to this team yet.</Alert>
