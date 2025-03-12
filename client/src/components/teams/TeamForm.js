@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container, Typography, Box, TextField, Button, Grid, Paper,
-  FormControl, InputLabel, Select, MenuItem, Alert
+  FormControl, InputLabel, Select, MenuItem, Alert, CircularProgress, FormHelperText
 } from '@mui/material';
-import { ArrowBack, Save } from '@mui/icons-material';
+import { ArrowBack, Save, CloudUpload } from '@mui/icons-material';
 import { createTeam, getTeamById, updateTeam } from '../../services/teamService';
+import { alpha } from '@mui/material/styles';
 
 const TeamForm = () => {
   const { id } = useParams();
@@ -15,7 +16,6 @@ const TeamForm = () => {
   const [formData, setFormData] = useState({
     name: '',
     sportType: '',
-    description: '',
     ageGroup: '',
     level: 'Beginner',
     logo: ''
@@ -24,6 +24,13 @@ const TeamForm = () => {
   const [loading, setLoading] = useState(isEditMode);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [imageLoading, setImageLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const allowedSportTypes = ['Football', 'Cricket', 'Basketball', 'Tennis', 'Others'];
 
   useEffect(() => {
     const fetchTeam = async () => {
@@ -33,11 +40,14 @@ const TeamForm = () => {
           setFormData({
             name: team.name,
             sportType: team.sportType,
-            description: team.description || '',
             ageGroup: team.ageGroup || '',
             level: team.level,
             logo: team.logo || ''
           });
+          
+          if (team.logo) {
+            setImagePreview(team.logo);
+          }
         }
       } catch (err) {
         setError(err.toString());
@@ -57,10 +67,74 @@ const TeamForm = () => {
     }));
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImageLoading(true);
+      
+      // Create a FileReader to read the image
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // Create an image element to get dimensions for resizing
+        const img = new Image();
+        img.onload = () => {
+          // Create a canvas to resize the image
+          const canvas = document.createElement('canvas');
+          
+          // Calculate new dimensions (max width/height of 800px while maintaining aspect ratio)
+          let width = img.width;
+          let height = img.height;
+          const maxSize = 800;
+          
+          if (width > height && width > maxSize) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          } else if (height > maxSize) {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+          
+          // Set canvas dimensions and draw resized image
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Get resized image as data URL (JPEG format with 0.8 quality to reduce size)
+          const resizedImage = canvas.toDataURL('image/jpeg', 0.8);
+          
+          // Update preview and form data with resized image
+          setImagePreview(resizedImage);
+          setFormData(prev => ({
+            ...prev,
+            logo: resizedImage
+          }));
+          setImageLoading(false);
+        };
+        img.src = reader.result; // Use the file reader result to load the image
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setSuccess(false);
+    setValidationErrors({});
+    setSubmitting(true);
+    
+    const errors = {};
+    if (!allowedSportTypes.includes(formData.sportType)) {
+      errors.sportType = 'Please select a valid sport type';
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setSubmitting(false);
+      return;
+    }
     
     try {
       if (isEditMode) {
@@ -74,6 +148,8 @@ const TeamForm = () => {
       }, 2000);
     } catch (err) {
       setError(err.toString());
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -113,15 +189,26 @@ const TeamForm = () => {
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                label="Sport Type"
-                name="sportType"
-                value={formData.sportType}
-                onChange={handleChange}
-                placeholder="e.g. Soccer, Basketball, Tennis"
-              />
+              <FormControl required fullWidth error={!!validationErrors.sportType}>
+                <InputLabel id="sport-type-label">Sport Type</InputLabel>
+                <Select
+                  labelId="sport-type-label"
+                  id="sportType"
+                  name="sportType"
+                  value={formData.sportType}
+                  onChange={handleChange}
+                  label="Sport Type"
+                >
+                  <MenuItem value="Football">Football</MenuItem>
+                  <MenuItem value="Cricket">Cricket</MenuItem>
+                  <MenuItem value="Basketball">Basketball</MenuItem>
+                  <MenuItem value="Tennis">Tennis</MenuItem>
+                  <MenuItem value="Others">Others</MenuItem>
+                </Select>
+                {validationErrors.sportType && (
+                  <FormHelperText>{validationErrors.sportType}</FormHelperText>
+                )}
+              </FormControl>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -150,26 +237,42 @@ const TeamForm = () => {
               </FormControl>
             </Grid>
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                label="Description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Team description, goals, achievements, etc."
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Logo URL"
-                name="logo"
-                value={formData.logo}
-                onChange={handleChange}
-                placeholder="https://example.com/logo.jpg"
-              />
+              <Typography variant="subtitle1" gutterBottom>Team Logo</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <input
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  id="team-logo-upload"
+                  type="file"
+                  onChange={handleImageChange}
+                  disabled={imageLoading}
+                />
+                <label htmlFor="team-logo-upload">
+                  <Button 
+                    variant="outlined" 
+                    component="span"
+                    startIcon={imageLoading ? <CircularProgress size={20} /> : <CloudUpload />}
+                    sx={{ mb: 2 }}
+                    disabled={imageLoading}
+                  >
+                    {imageLoading ? 'Processing...' : 'Upload Logo'}
+                  </Button>
+                </label>
+                {imagePreview && (
+                  <Box mt={2} sx={{ width: '100%' }}>
+                    <img 
+                      src={imagePreview} 
+                      alt="Team logo preview" 
+                      style={{ 
+                        maxWidth: '100%', 
+                        maxHeight: '200px', 
+                        objectFit: 'cover',
+                        borderRadius: '4px'
+                      }} 
+                    />
+                  </Box>
+                )}
+              </Box>
             </Grid>
 
             <Grid item xs={12} sx={{ mt: 2 }}>
@@ -177,10 +280,13 @@ const TeamForm = () => {
                 type="submit"
                 variant="contained"
                 color="primary"
-                startIcon={<Save />}
+                startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <Save />}
                 size="large"
+                disabled={submitting || imageLoading}
               >
-                {isEditMode ? 'Update Team' : 'Create Team'}
+                {isEditMode 
+                  ? (submitting ? 'Updating...' : 'Update Team') 
+                  : (submitting ? 'Creating...' : 'Create Team')}
               </Button>
             </Grid>
           </Grid>

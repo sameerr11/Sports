@@ -15,6 +15,9 @@ exports.createTrainingPlan = async (req, res) => {
   try {
     const { title, description, team, assignedTo, date, duration, activities, notes, attachments } = req.body;
 
+    // Use default description if empty
+    const planDescription = description || 'Created from scheduling';
+
     // Verify team exists
     const teamExists = await Team.findById(team);
     if (!teamExists) {
@@ -31,7 +34,7 @@ exports.createTrainingPlan = async (req, res) => {
 
     const newTrainingPlan = new TrainingPlan({
       title,
-      description,
+      description: planDescription, // Use the default or provided description
       team,
       createdBy: req.user.id,
       assignedTo,
@@ -261,6 +264,9 @@ exports.updateTrainingPlan = async (req, res) => {
   try {
     const { title, description, team, assignedTo, date, duration, activities, notes, attachments } = req.body;
 
+    // Use default description if empty
+    const planDescription = description || 'Created from scheduling';
+
     // Check if plan exists
     const plan = await TrainingPlan.findById(req.params.id);
     if (!plan) {
@@ -276,7 +282,7 @@ exports.updateTrainingPlan = async (req, res) => {
 
     // Update plan fields
     plan.title = title;
-    plan.description = description;
+    plan.description = planDescription;
     plan.team = team;
     plan.date = new Date(date);
     plan.duration = duration;

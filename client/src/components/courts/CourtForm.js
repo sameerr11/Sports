@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container, Typography, Box, TextField, Button, Grid, Paper,
   FormControl, InputLabel, Select, MenuItem, Divider, IconButton,
-  InputAdornment, FormHelperText, Alert
+  InputAdornment, FormHelperText, Alert, Avatar, CircularProgress
 } from '@mui/material';
-import { ArrowBack, Save, Add, Delete } from '@mui/icons-material';
+import { ArrowBack, Save, Add, Delete, CloudUpload } from '@mui/icons-material';
 import { createCourt, getCourtById, updateCourt } from '../../services/courtService';
 
 const initialAvailability = {
@@ -27,7 +27,6 @@ const CourtForm = () => {
     name: '',
     sportType: '',
     location: '',
-    description: '',
     capacity: 1,
     hourlyRate: '',
     availability: { ...initialAvailability },
@@ -37,6 +36,13 @@ const CourtForm = () => {
   const [loading, setLoading] = useState(isEditMode);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [imageLoading, setImageLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const allowedSportTypes = ['Football', 'Cricket', 'Basketball', 'Tennis', 'Others'];
 
   useEffect(() => {
     const fetchCourt = async () => {
@@ -47,12 +53,15 @@ const CourtForm = () => {
             name: court.name,
             sportType: court.sportType,
             location: court.location,
-            description: court.description || '',
             capacity: court.capacity,
             hourlyRate: court.hourlyRate,
             availability: court.availability || { ...initialAvailability },
             image: court.image || ''
           });
+          
+          if (court.image) {
+            setImagePreview(court.image);
+          }
         }
       } catch (err) {
         setError(err.toString());
@@ -78,6 +87,57 @@ const CourtForm = () => {
       ...prev,
       [name]: value === '' ? '' : Number(value)
     }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImageLoading(true);
+      
+      // Create a FileReader to read the image
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // Create an image element to get dimensions for resizing
+        const img = new Image();
+        img.onload = () => {
+          // Create a canvas to resize the image
+          const canvas = document.createElement('canvas');
+          
+          // Calculate new dimensions (max width/height of 800px while maintaining aspect ratio)
+          let width = img.width;
+          let height = img.height;
+          const maxSize = 800;
+          
+          if (width > height && width > maxSize) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          } else if (height > maxSize) {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+          
+          // Set canvas dimensions and draw resized image
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Get resized image as data URL (JPEG format with 0.8 quality to reduce size)
+          const resizedImage = canvas.toDataURL('image/jpeg', 0.8);
+          
+          // Update preview and form data with resized image
+          setImagePreview(resizedImage);
+          setFormData(prev => ({
+            ...prev,
+            image: resizedImage
+          }));
+          setImageLoading(false);
+        };
+        img.src = reader.result; // Use the file reader result to load the image
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const addTimeSlot = (day) => {
@@ -119,6 +179,19 @@ const CourtForm = () => {
     e.preventDefault();
     setError(null);
     setSuccess(false);
+    setValidationErrors({});
+    setSubmitting(true);
+    
+    const errors = {};
+    if (!allowedSportTypes.includes(formData.sportType)) {
+      errors.sportType = 'Please select a valid sport type';
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setSubmitting(false);
+      return;
+    }
     
     try {
       if (isEditMode) {
@@ -132,6 +205,8 @@ const CourtForm = () => {
       }, 2000);
     } catch (err) {
       setError(err.toString());
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -173,15 +248,26 @@ const CourtForm = () => {
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                label="Sport Type"
-                name="sportType"
-                value={formData.sportType}
-                onChange={handleChange}
-                placeholder="e.g. Tennis, Basketball, Soccer"
-              />
+              <FormControl required fullWidth error={!!validationErrors.sportType}>
+                <InputLabel id="sport-type-label">Sport Type</InputLabel>
+                <Select
+                  labelId="sport-type-label"
+                  id="sportType"
+                  name="sportType"
+                  value={formData.sportType}
+                  onChange={handleChange}
+                  label="Sport Type"
+                >
+                  <MenuItem value="Football">Football</MenuItem>
+                  <MenuItem value="Cricket">Cricket</MenuItem>
+                  <MenuItem value="Basketball">Basketball</MenuItem>
+                  <MenuItem value="Tennis">Tennis</MenuItem>
+                  <MenuItem value="Others">Others</MenuItem>
+                </Select>
+                {validationErrors.sportType && (
+                  <FormHelperText>{validationErrors.sportType}</FormHelperText>
+                )}
+              </FormControl>
             </Grid>
             <Grid item xs={12}>
               <TextField
@@ -221,25 +307,42 @@ const CourtForm = () => {
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                label="Description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Image URL"
-                name="image"
-                value={formData.image}
-                onChange={handleChange}
-                placeholder="https://example.com/image.jpg"
-              />
+              <Typography variant="subtitle1" gutterBottom>Court Image</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <input
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  id="court-image-upload"
+                  type="file"
+                  onChange={handleImageChange}
+                  disabled={imageLoading}
+                />
+                <label htmlFor="court-image-upload">
+                  <Button 
+                    variant="outlined" 
+                    component="span"
+                    startIcon={imageLoading ? <CircularProgress size={20} /> : <CloudUpload />}
+                    sx={{ mb: 2 }}
+                    disabled={imageLoading}
+                  >
+                    {imageLoading ? 'Processing...' : 'Upload Image'}
+                  </Button>
+                </label>
+                {imagePreview && (
+                  <Box mt={2} sx={{ width: '100%' }}>
+                    <img 
+                      src={imagePreview} 
+                      alt="Court preview" 
+                      style={{ 
+                        maxWidth: '100%', 
+                        maxHeight: '200px', 
+                        objectFit: 'cover',
+                        borderRadius: '4px'
+                      }} 
+                    />
+                  </Box>
+                )}
+              </Box>
             </Grid>
 
             <Grid item xs={12}>
@@ -320,10 +423,13 @@ const CourtForm = () => {
                 type="submit"
                 variant="contained"
                 color="primary"
-                startIcon={<Save />}
+                startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <Save />}
                 size="large"
+                disabled={submitting || imageLoading}
               >
-                {isEditMode ? 'Update Court' : 'Create Court'}
+                {isEditMode 
+                  ? (submitting ? 'Updating...' : 'Update Court') 
+                  : (submitting ? 'Creating...' : 'Create Court')}
               </Button>
             </Grid>
           </Grid>

@@ -14,38 +14,77 @@ exports.createBooking = async (req, res) => {
   }
 
   try {
-    const { court, startTime, endTime, purpose, team, notes } = req.body;
+    const { court, team, startTime, endTime, purpose, notes, isRecurring, recurringDay } = req.body;
 
-    // Check if court exists
+    // Validate court exists
     const courtDoc = await Court.findById(court);
     if (!courtDoc) {
       return res.status(404).json({ msg: 'Court not found' });
     }
-
-    // Check if court is active
-    if (!courtDoc.isActive) {
-      return res.status(400).json({ msg: 'Court is not available for booking' });
+    
+    // Validate team exists if team is provided
+    if (team) {
+      const teamDoc = await Team.findById(team);
+      if (!teamDoc) {
+        return res.status(404).json({ msg: 'Team not found' });
+      }
     }
-
-    // Convert strings to Date objects
+    
+    // Format dates
     const startDate = new Date(startTime);
     const endDate = new Date(endTime);
-
-    // Validate dates
-    if (startDate >= endDate) {
-      return res.status(400).json({ msg: 'End time must be after start time' });
+    
+    // Get day of week for the booking
+    const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][startDate.getDay()];
+    
+    // Check if the court is available on this day
+    const dayAvailability = courtDoc.availability[dayOfWeek] || [];
+    
+    if (dayAvailability.length === 0) {
+      return res.status(400).json({ msg: `Court is not available on ${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}s` });
     }
-
-    if (startDate < new Date()) {
-      return res.status(400).json({ msg: 'Cannot book in the past' });
+    
+    // Check if the booking time is within the court's available time slots
+    const startHour = startDate.getHours();
+    const startMinute = startDate.getMinutes();
+    const endHour = endDate.getHours();
+    const endMinute = endDate.getMinutes();
+    
+    const bookingStartTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
+    const bookingEndTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+    
+    // Check if booking time falls within any of the available time slots
+    const isWithinAvailableHours = dayAvailability.some(slot => {
+      // Convert slot times to comparable format (minutes since midnight)
+      const slotStart = slot.start.split(':').map(Number);
+      const slotEnd = slot.end.split(':').map(Number);
+      const slotStartMinutes = slotStart[0] * 60 + slotStart[1];
+      const slotEndMinutes = slotEnd[0] * 60 + slotEnd[1];
+      
+      // Convert booking times to minutes since midnight
+      const bookingStartMinutes = startHour * 60 + startMinute;
+      const bookingEndMinutes = endHour * 60 + endMinute;
+      
+      // Check if booking falls completely within the slot
+      return bookingStartMinutes >= slotStartMinutes && bookingEndMinutes <= slotEndMinutes;
+    });
+    
+    if (!isWithinAvailableHours) {
+      return res.status(400).json({ 
+        msg: 'Booking time is outside the court\'s available hours for this day',
+        availableSlots: dayAvailability 
+      });
     }
-
-    // Check for overlapping bookings
+    
+    // Check if there's an overlap with existing bookings
     const overlappingBookings = await Booking.find({
       court,
       status: { $ne: 'Cancelled' },
       $or: [
-        { startTime: { $lt: endDate }, endTime: { $gt: startDate } }
+        { 
+          startTime: { $lt: endDate },
+          endTime: { $gt: startDate }
+        }
       ]
     });
 
@@ -68,7 +107,9 @@ exports.createBooking = async (req, res) => {
       endTime: endDate,
       purpose,
       totalPrice,
-      notes
+      notes,
+      isRecurring,
+      recurringDay
     });
 
     // If user is a guest, set status to pending
@@ -78,7 +119,14 @@ exports.createBooking = async (req, res) => {
     }
 
     const booking = await newBooking.save();
-    res.status(201).json(booking);
+    
+    // Return the newly created booking with populated fields
+    const populatedBooking = await Booking.findById(booking._id)
+      .populate('court', 'name location sportType hourlyRate')
+      .populate('user', 'firstName lastName email')
+      .populate('team', 'name sportType');
+      
+    res.status(201).json(populatedBooking);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -110,15 +158,35 @@ exports.getBookings = async (req, res) => {
       if (!isPlayerInTeam) {
         return res.status(403).json({ msg: 'Access denied: You are not a member of this team' });
       }
+    } else if (req.user.role === 'coach') {
+      // For coaches, if no specific team is requested, get all teams they coach
+      if (!req.query.team) {
+        const coachTeams = await Team.find({ 'coaches.coach': req.user.id });
+        if (coachTeams.length > 0) {
+          const teamIds = coachTeams.map(team => team._id);
+          query.team = { $in: teamIds };
+        }
+      } else {
+        // If a specific team is requested, verify coach permission
+        const team = await Team.findById(req.query.team);
+        if (!team) {
+          return res.status(404).json({ msg: 'Team not found' });
+        }
+        
+        const isCoachOfTeam = team.coaches.some(c => c.coach.toString() === req.user.id);
+        if (!isCoachOfTeam) {
+          return res.status(403).json({ msg: 'Access denied: You are not a coach of this team' });
+        }
+      }
     } else if (req.user.role !== 'admin' && req.user.role !== 'supervisor' && !req.query.team) {
-      // If not admin/supervisor and no team filter, restrict access
+      // If not admin/supervisor/coach and no team filter, restrict access
       return res.status(403).json({ msg: 'Access denied' });
     }
     
     const bookings = await Booking.find(query)
-      .populate('court', 'name location sportType')
+      .populate('court', 'name location sportType hourlyRate')
       .populate('user', 'firstName lastName email')
-      .populate('team', 'name')
+      .populate('team', 'name sportType')
       .sort({ startTime: 1 });
     
     res.json(bookings);
@@ -133,9 +201,27 @@ exports.getBookings = async (req, res) => {
 // @access  Private
 exports.getUserBookings = async (req, res) => {
   try {
-    const bookings = await Booking.find({ user: req.user.id })
-      .populate('court', 'name location sportType')
-      .populate('team', 'name')
+    let query = { user: req.user.id };
+    
+    // For coaches, also include bookings for teams they coach
+    if (req.user.role === 'coach') {
+      const coachTeams = await Team.find({ 'coaches.coach': req.user.id });
+      if (coachTeams.length > 0) {
+        const teamIds = coachTeams.map(team => team._id);
+        // Use $or to include both personal bookings and team bookings
+        query = {
+          $or: [
+            { user: req.user.id },
+            { team: { $in: teamIds } }
+          ]
+        };
+      }
+    }
+    
+    const bookings = await Booking.find(query)
+      .populate('court', 'name location sportType hourlyRate')
+      .populate('user', 'firstName lastName email')
+      .populate('team', 'name sportType')
       .sort({ startTime: 1 });
     
     res.json(bookings);

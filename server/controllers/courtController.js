@@ -12,13 +12,12 @@ exports.createCourt = async (req, res) => {
   }
 
   try {
-    const { name, sportType, location, description, capacity, hourlyRate, availability, image } = req.body;
+    const { name, sportType, location, capacity, hourlyRate, availability, image } = req.body;
 
     const newCourt = new Court({
       name,
       sportType,
       location,
-      description,
       capacity,
       hourlyRate,
       availability,
@@ -78,7 +77,7 @@ exports.updateCourt = async (req, res) => {
   }
 
   try {
-    const { name, sportType, location, description, capacity, hourlyRate, availability, image, isActive } = req.body;
+    const { name, sportType, location, capacity, hourlyRate, availability, image, isActive } = req.body;
 
     let court = await Court.findById(req.params.id);
     
@@ -91,7 +90,6 @@ exports.updateCourt = async (req, res) => {
     if (name) courtFields.name = name;
     if (sportType) courtFields.sportType = sportType;
     if (location) courtFields.location = location;
-    if (description) courtFields.description = description;
     if (capacity) courtFields.capacity = capacity;
     if (hourlyRate) courtFields.hourlyRate = hourlyRate;
     if (availability) courtFields.availability = availability;

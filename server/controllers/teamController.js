@@ -12,12 +12,11 @@ exports.createTeam = async (req, res) => {
   }
 
   try {
-    const { name, sportType, description, ageGroup, level, logo } = req.body;
+    const { name, sportType, ageGroup, level, logo } = req.body;
 
     const newTeam = new Team({
       name,
       sportType,
-      description,
       ageGroup,
       level,
       logo,
@@ -81,7 +80,7 @@ exports.updateTeam = async (req, res) => {
   }
 
   try {
-    const { name, sportType, description, ageGroup, level, logo, isActive } = req.body;
+    const { name, sportType, ageGroup, level, logo, isActive } = req.body;
 
     let team = await Team.findById(req.params.id);
     
@@ -93,7 +92,6 @@ exports.updateTeam = async (req, res) => {
     const teamFields = {};
     if (name) teamFields.name = name;
     if (sportType) teamFields.sportType = sportType;
-    if (description) teamFields.description = description;
     if (ageGroup) teamFields.ageGroup = ageGroup;
     if (level) teamFields.level = level;
     if (logo) teamFields.logo = logo;

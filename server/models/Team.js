@@ -9,7 +9,8 @@ const TeamSchema = new mongoose.Schema({
   sportType: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    enum: ['Football', 'Cricket', 'Basketball', 'Tennis', 'Others']
   },
   description: {
     type: String,

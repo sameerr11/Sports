@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Typography, Box, TextField, Button, Grid, Paper, Alert,
-  FormControl, InputLabel, Select, MenuItem, FormHelperText
+  FormControl, InputLabel, Select, MenuItem, FormHelperText,
+  Chip, Stack, CircularProgress
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
@@ -10,7 +11,9 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { createBooking } from '../../services/bookingService';
 import { getTeams } from '../../services/teamService';
+import { getCourtAvailability } from '../../services/courtService';
 import { isAuthenticated, isCoach, isPlayer } from '../../services/authService';
+import { format } from 'date-fns';
 
 const BookingForm = ({ courtId, court }) => {
   const navigate = useNavigate();
@@ -29,6 +32,8 @@ const BookingForm = ({ courtId, court }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [availability, setAvailability] = useState(null);
+  const [fetchingAvailability, setFetchingAvailability] = useState(false);
   const isCoachOrPlayer = isCoach() || isPlayer();
 
   useEffect(() => {
@@ -48,52 +53,80 @@ const BookingForm = ({ courtId, court }) => {
   }, [isCoachOrPlayer]);
 
   useEffect(() => {
-    // Calculate total price when start or end time changes
-    if (formData.startTime && formData.endTime && court) {
+    // Calculate total price when start and end times change
+    if (formData.startTime && formData.endTime && court.hourlyRate) {
       const start = new Date(formData.startTime);
       const end = new Date(formData.endTime);
-      
-      // Calculate duration in hours
       const durationHours = (end - start) / (1000 * 60 * 60);
       
-      if (durationHours > 0) {
-        setTotalPrice(durationHours * court.hourlyRate);
-      } else {
-        setTotalPrice(0);
-      }
+      setTotalPrice(durationHours * court.hourlyRate);
+    } else {
+      setTotalPrice(0);
     }
-  }, [formData.startTime, formData.endTime, court]);
+  }, [formData.startTime, formData.endTime, court.hourlyRate]);
+
+  const fetchCourtAvailability = async (date) => {
+    setFetchingAvailability(true);
+    try {
+      const availabilityData = await getCourtAvailability(courtId, format(date, 'yyyy-MM-dd'));
+      setAvailability(availabilityData);
+      
+      // Reset time selections if the day changes
+      setFormData(prev => ({
+        ...prev,
+        startTime: null,
+        endTime: null
+      }));
+      
+      // Show error if the court is not available on this day
+      if (availabilityData.courtAvailability.length === 0) {
+        setError(`This court is not available on ${format(date, 'EEEE')}s. Please select another day.`);
+      } else {
+        setError(null);
+      }
+    } catch (err) {
+      console.error('Error fetching court availability:', err);
+      setError('Failed to fetch court availability');
+    } finally {
+      setFetchingAvailability(false);
+    }
+  };
 
   const handleDateChange = (date) => {
-    setFormData(prev => ({ ...prev, date }));
+    if (!date) return;
     
-    // Reset times when date changes
-    setFormData(prev => ({ 
-      ...prev, 
+    setFormData(prev => ({
+      ...prev,
       date,
       startTime: null,
       endTime: null
     }));
+    
+    fetchCourtAvailability(date);
   };
 
   const handleStartTimeChange = (time) => {
     if (!time) return;
     
-    // Combine date and time
-    const dateTime = new Date(formData.date);
-    dateTime.setHours(time.getHours(), time.getMinutes(), 0, 0);
+    const combinedDateTime = new Date(formData.date);
+    combinedDateTime.setHours(time.getHours(), time.getMinutes());
     
-    setFormData(prev => ({ ...prev, startTime: dateTime }));
+    setFormData(prev => ({
+      ...prev,
+      startTime: combinedDateTime
+    }));
   };
 
   const handleEndTimeChange = (time) => {
     if (!time) return;
     
-    // Combine date and time
-    const dateTime = new Date(formData.date);
-    dateTime.setHours(time.getHours(), time.getMinutes(), 0, 0);
+    const combinedDateTime = new Date(formData.date);
+    combinedDateTime.setHours(time.getHours(), time.getMinutes());
     
-    setFormData(prev => ({ ...prev, endTime: dateTime }));
+    setFormData(prev => ({
+      ...prev,
+      endTime: combinedDateTime
+    }));
   };
 
   const handleChange = (e) => {
@@ -120,6 +153,35 @@ const BookingForm = ({ courtId, court }) => {
 
     if (start < new Date()) {
       setError('Cannot book in the past');
+      return false;
+    }
+    
+    // Check if the selected day has any availability slots
+    if (!availability || availability.courtAvailability.length === 0) {
+      setError(`This court is not available on ${format(formData.date, 'EEEE')}s. Please select another day.`);
+      return false;
+    }
+    
+    // Check if the selected time range falls within an available slot
+    const startHour = start.getHours();
+    const startMinute = start.getMinutes();
+    const endHour = end.getHours();
+    const endMinute = end.getMinutes();
+    
+    const bookingStartMinutes = startHour * 60 + startMinute;
+    const bookingEndMinutes = endHour * 60 + endMinute;
+    
+    const isWithinAvailableHours = availability.courtAvailability.some(slot => {
+      const slotStart = slot.start.split(':').map(Number);
+      const slotEnd = slot.end.split(':').map(Number);
+      const slotStartMinutes = slotStart[0] * 60 + slotStart[1];
+      const slotEndMinutes = slotEnd[0] * 60 + slotEnd[1];
+      
+      return bookingStartMinutes >= slotStartMinutes && bookingEndMinutes <= slotEndMinutes;
+    });
+    
+    if (!isWithinAvailableHours) {
+      setError('Selected time is outside court\'s available hours for this day');
       return false;
     }
 
@@ -174,11 +236,24 @@ const BookingForm = ({ courtId, court }) => {
         navigate('/bookings/me');
       }, 2000);
     } catch (err) {
-      setError(err.toString());
+      if (err.includes('Court is not available on')) {
+        setError('This court is not available on the selected day. Please choose another day.');
+      } else if (err.includes('Booking time is outside')) {
+        setError('Your booking time is outside the court\'s available hours. Please check the available time slots.');
+      } else {
+        setError(err.toString());
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // Initial load - fetch availability for the current date
+  useEffect(() => {
+    if (courtId) {
+      fetchCourtAvailability(formData.date);
+    }
+  }, [courtId]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -193,14 +268,49 @@ const BookingForm = ({ courtId, court }) => {
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
             <Grid item xs={12}>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  <strong>Note:</strong> Bookings can only be made during the court's available hours. 
+                  Days without any availability slots are not bookable.
+                </Typography>
+              </Alert>
+            </Grid>
+            
+            <Grid item xs={12}>
               <DatePicker
                 label="Date"
                 value={formData.date}
                 onChange={handleDateChange}
                 minDate={new Date()}
-                slotProps={{ textField: { fullWidth: true, required: true } }}
+                renderInput={(params) => <TextField {...params} fullWidth />}
+                disabled={loading}
               />
             </Grid>
+            
+            {fetchingAvailability && (
+              <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
+                <CircularProgress size={24} />
+              </Grid>
+            )}
+            
+            {availability && availability.courtAvailability.length > 0 && (
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Available Time Slots for {format(formData.date, 'EEEE, MMMM d, yyyy')}:
+                </Typography>
+                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                  {availability.courtAvailability.map((slot, index) => (
+                    <Chip 
+                      key={index}
+                      label={`${slot.start} - ${slot.end}`}
+                      color="primary"
+                      variant="outlined"
+                      size="small"
+                    />
+                  ))}
+                </Stack>
+              </Grid>
+            )}
             
             <Grid item xs={12} sm={6}>
               <TimePicker

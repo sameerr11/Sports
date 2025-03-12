@@ -75,7 +75,7 @@ const TrainingPlanManager = () => {
   // Form State
   const [formData, setFormData] = useState({
     title: '',
-    description: '',
+    description: 'Created from scheduling',
     team: '',
     assignedTo: '',
     date: new Date(),
@@ -145,7 +145,7 @@ const TrainingPlanManager = () => {
       
       setFormData({
         title: plan.title,
-        description: plan.description,
+        description: plan.description || 'Created from scheduling',
         team: plan.team._id,
         assignedTo: plan.assignedTo?._id || '',
         date: new Date(plan.date),
@@ -180,7 +180,7 @@ const TrainingPlanManager = () => {
   const resetForm = () => {
     setFormData({
       title: '',
-      description: '',
+      description: 'Created from scheduling',
       team: '',
       assignedTo: '',
       date: new Date(),
@@ -200,17 +200,10 @@ const TrainingPlanManager = () => {
     }));
   };
   
-  const handleDateChange = (newDate) => {
-    setFormData(prev => ({
-      ...prev,
-      date: newDate
-    }));
-  };
-  
   const handleSaveTrainingPlan = async () => {
     try {
       // Validate form
-      if (!formData.title || !formData.description || !formData.team || !formData.date) {
+      if (!formData.title || !formData.team) {
         setAlert({
           open: true,
           message: 'Please fill all required fields',
@@ -704,36 +697,6 @@ const TrainingPlanManager = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12}>
-              <TextField
-                name="description"
-                label="Description"
-                value={formData.description}
-                onChange={handleFormChange}
-                fullWidth
-                multiline
-                rows={2}
-                required
-                disabled={readOnly}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <DateTimePicker
-                  label="Date & Time"
-                  value={formData.date}
-                  onChange={handleDateChange}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      required: true,
-                      disabled: readOnly
-                    }
-                  }}
-                  disabled={readOnly}
-                />
-              </LocalizationProvider>
-            </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 name="duration"
@@ -746,7 +709,7 @@ const TrainingPlanManager = () => {
                 disabled={readOnly}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={6}>
               <FormControl fullWidth disabled={readOnly}>
                 <InputLabel id="coach-label">Assign to Coach</InputLabel>
                 <Select
@@ -767,18 +730,6 @@ const TrainingPlanManager = () => {
                   ))}
                 </Select>
               </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                name="notes"
-                label="Notes"
-                value={formData.notes}
-                onChange={handleFormChange}
-                fullWidth
-                multiline
-                rows={2}
-                disabled={readOnly}
-              />
             </Grid>
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -866,7 +817,7 @@ const TrainingPlanManager = () => {
                       </TableBody>
                     </Table>
                   </TableContainer>
-                  {calculateTotalActivityDuration(formData.activities) !== formData.duration && (
+                  {Math.abs(calculateTotalActivityDuration(formData.activities) - Number(formData.duration)) > 0.001 && (
                     <Alert 
                       severity="warning" 
                       sx={{ mt: 1 }}

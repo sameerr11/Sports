@@ -33,7 +33,10 @@ import {
   Tab,
   CircularProgress,
   useTheme,
-  alpha
+  alpha,
+  FormControlLabel,
+  Switch,
+  FormHelperText
 } from '@mui/material';
 import { 
   Add, 
@@ -76,12 +79,21 @@ const TeamScheduler = () => {
   const [scheduleType, setScheduleType] = useState('Training');
   const [selectedTeam, setSelectedTeam] = useState('');
   const [selectedCourt, setSelectedCourt] = useState('');
-  const [startTime, setStartTime] = useState(new Date());
-  const [endTime, setEndTime] = useState(new Date(new Date().setHours(new Date().getHours() + 2)));
+  
+  // Replace the separate date time pickers with individual date and time selections
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('11:00');
+  
   const [notes, setNotes] = useState('');
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
   const [tabValue, setTabValue] = useState(0);
   const [isSupervisorUser, setIsSupervisorUser] = useState(isSupervisor());
+  
+  // Add new state for recurring schedule
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [selectedDays, setSelectedDays] = useState([]);
+  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   
   // Fetch teams, courts, and schedules
   useEffect(() => {
@@ -181,15 +193,28 @@ const TeamScheduler = () => {
   const resetForm = () => {
     setSelectedTeam('');
     setSelectedCourt('');
-    setStartTime(new Date());
-    setEndTime(new Date(new Date().setHours(new Date().getHours() + 2)));
+    setSelectedDate(new Date());
+    setStartTime('09:00');
+    setEndTime('11:00');
     setNotes('');
+    setIsRecurring(false);
+    setSelectedDays([]);
+  };
+  
+  const handleDayToggle = (day) => {
+    setSelectedDays(prev => {
+      if (prev.includes(day)) {
+        return prev.filter(d => d !== day);
+      } else {
+        return [...prev, day];
+      }
+    });
   };
   
   const handleCreateSchedule = async () => {
     try {
       // Validate form
-      if (!selectedTeam || !selectedCourt || !startTime || !endTime) {
+      if (!selectedTeam || !selectedCourt || !selectedDate || !startTime || !endTime) {
         setAlert({
           open: true,
           message: 'Please fill all required fields',
@@ -198,7 +223,11 @@ const TeamScheduler = () => {
         return;
       }
       
-      if (startTime >= endTime) {
+      // Create date objects by combining the selected date with time strings
+      const startDateTime = combineDateTime(selectedDate, startTime);
+      const endDateTime = combineDateTime(selectedDate, endTime);
+      
+      if (startDateTime >= endDateTime) {
         setAlert({
           open: true,
           message: 'End time must be after start time',
@@ -207,20 +236,62 @@ const TeamScheduler = () => {
         return;
       }
       
-      // Create booking with team and purpose
+      if (isRecurring && selectedDays.length === 0) {
+        setAlert({
+          open: true,
+          message: 'Please select at least one day for recurring schedule',
+          severity: 'error'
+        });
+        return;
+      }
+
+      if (isRecurring) {
+        // Create bookings for each selected day
+        const [startHours, startMinutes] = startTime.split(':').map(Number);
+        const [endHours, endMinutes] = endTime.split(':').map(Number);
+        
+        const bookingPromises = selectedDays.map(async (day) => {
+          // Get the next occurrence of this day
+          const nextDate = getNextDayOfWeek(day);
+          
+          const bookingStartTime = new Date(nextDate);
+          bookingStartTime.setHours(startHours, startMinutes);
+          
+          const bookingEndTime = new Date(nextDate);
+          bookingEndTime.setHours(endHours, endMinutes);
+
+          const newBooking = {
+            court: selectedCourt,
+            team: selectedTeam,
+            startTime: bookingStartTime.toISOString(),
+            endTime: bookingEndTime.toISOString(),
+            purpose: scheduleType,
+            notes: notes,
+            isRecurring: true,
+            recurringDay: day
+          };
+
+          return api.post('/bookings', newBooking);
+        });
+
+        const responses = await Promise.all(bookingPromises);
+        const newSchedules = responses.map(response => response.data);
+        
+        setSchedules(prev => [...prev, ...newSchedules]);
+      } else {
+        // Create single booking
       const newBooking = {
         court: selectedCourt,
         team: selectedTeam,
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
+          startTime: startDateTime.toISOString(),
+          endTime: endDateTime.toISOString(),
         purpose: scheduleType,
         notes: notes
       };
       
       const response = await api.post('/bookings', newBooking);
-      
-      // Add new schedule to the list
-      setSchedules([...schedules, response.data]);
+        setSchedules(prev => [...prev, response.data]);
+      }
       
       // Show success message
       setAlert({
@@ -239,6 +310,31 @@ const TeamScheduler = () => {
         severity: 'error'
       });
     }
+  };
+  
+  // Helper function to combine date and time
+  const combineDateTime = (date, timeString) => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const dateTime = new Date(date);
+    dateTime.setHours(hours, minutes, 0, 0);
+    return dateTime;
+  };
+  
+  // Helper function to get the next occurrence of a day
+  const getNextDayOfWeek = (dayName) => {
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const today = new Date();
+    const targetDay = days.indexOf(dayName.toLowerCase());
+    const todayDay = today.getDay();
+    
+    let daysUntilTarget = targetDay - todayDay;
+    if (daysUntilTarget <= 0) {
+      daysUntilTarget += 7;
+    }
+    
+    const nextDate = new Date();
+    nextDate.setDate(today.getDate() + daysUntilTarget);
+    return nextDate;
   };
   
   const handleDeleteSchedule = async (id) => {
@@ -626,12 +722,12 @@ const TeamScheduler = () => {
                   </FormControl>
                 </Grid>
                 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12}>
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
                     <DateTimePicker
-                      label="Start Time"
-                      value={startTime}
-                      onChange={(newValue) => setStartTime(newValue)}
+                      label="Date"
+                      value={selectedDate}
+                      onChange={(newValue) => setSelectedDate(newValue)}
                       slotProps={{ 
                         textField: { 
                           fullWidth: true, 
@@ -639,28 +735,72 @@ const TeamScheduler = () => {
                           sx: { '& .MuiInputBase-root': { py: 0.5 } }
                         } 
                       }}
-                      minDateTime={new Date()}
+                      minDate={new Date()}
+                      views={['year', 'month', 'day']}
                     />
                   </LocalizationProvider>
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
-                  <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    <DateTimePicker
-                      label="End Time"
-                      value={endTime}
-                      onChange={(newValue) => setEndTime(newValue)}
-                      slotProps={{ 
-                        textField: { 
-                          fullWidth: true, 
-                          required: true,
-                          sx: { '& .MuiInputBase-root': { py: 0.5 } }
-                        } 
-                      }}
-                      minDateTime={startTime}
-                    />
-                  </LocalizationProvider>
+                  <TextField
+                    label="Start Time"
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ step: 300 }}
+                    required
+                  />
                 </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                      label="End Time"
+                    type="time"
+                      value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ step: 300 }}
+                    required
+                  />
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={isRecurring}
+                        onChange={(e) => setIsRecurring(e.target.checked)}
+                      />
+                    }
+                    label="Recurring Weekly Schedule"
+                  />
+                </Grid>
+
+                {isRecurring && (
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Select Days for Weekly Recurrence
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      {days.map((day) => (
+                        <Chip
+                          key={day}
+                          label={day.charAt(0).toUpperCase() + day.slice(1)}
+                          onClick={() => handleDayToggle(day)}
+                          color={selectedDays.includes(day) ? 'primary' : 'default'}
+                          variant={selectedDays.includes(day) ? 'filled' : 'outlined'}
+                          sx={{ textTransform: 'capitalize' }}
+                        />
+                      ))}
+                    </Box>
+                    <FormHelperText>
+                      The schedule will repeat on selected days every week
+                    </FormHelperText>
+                  </Grid>
+                )}
                 
                 <Grid item xs={12}>
                   <TextField

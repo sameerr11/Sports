@@ -159,7 +159,6 @@ router.post(
     auth,
     supervisor,
     check('title', 'Title is required').not().isEmpty(),
-    check('description', 'Description is required').not().isEmpty(),
     check('team', 'Team is required').not().isEmpty(),
     check('date', 'Date is required').not().isEmpty(),
     check('duration', 'Duration is required').isNumeric()

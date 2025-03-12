@@ -196,22 +196,30 @@ const CoachDashboard = () => {
                 
                 <List dense sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
                   {team.players && team.players.length > 0 ? (
-                    team.players.map((playerObj, index) => (
-                      <React.Fragment key={playerObj.player._id || index}>
-                        <ListItem>
-                          <ListItemAvatar>
-                            <Avatar>
-                              <Person />
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText 
-                            primary={`${playerObj.player.firstName} ${playerObj.player.lastName}`}
-                            secondary={playerObj.position || 'No position specified'}
-                          />
-                        </ListItem>
-                        {index < team.players.length - 1 && <Divider variant="inset" component="li" />}
-                      </React.Fragment>
-                    ))
+                    team.players.map((playerObj, index) => {
+                      // Add null check for player object
+                      const playerData = playerObj && playerObj.player ? playerObj.player : {};
+                      const playerId = playerData._id || `player-${index}`;
+                      const firstName = playerData.firstName || 'Unknown';
+                      const lastName = playerData.lastName || 'Player';
+                      
+                      return (
+                        <React.Fragment key={playerId}>
+                          <ListItem>
+                            <ListItemAvatar>
+                              <Avatar>
+                                <Person />
+                              </Avatar>
+                            </ListItemAvatar>
+                            <ListItemText 
+                              primary={`${firstName} ${lastName}`}
+                              secondary={playerObj.position || 'No position specified'}
+                            />
+                          </ListItem>
+                          {index < team.players.length - 1 && <Divider variant="inset" component="li" />}
+                        </React.Fragment>
+                      );
+                    })
                   ) : (
                     <ListItem>
                       <ListItemText primary="No players assigned to this team yet" />
