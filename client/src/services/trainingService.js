@@ -22,6 +22,128 @@ export const getCoachTrainingPlans = async () => {
   }
 };
 
+// Get training sessions (bookings) for coach
+export const getCoachTrainingSessions = async () => {
+  try {
+    console.log('Fetching coach training sessions from bookings...');
+    
+    // First, get the coach's teams
+    const coachTeams = await getCoachTeams();
+    console.log('Coach teams for sessions:', coachTeams);
+    
+    // Get personal bookings
+    const personalBookingsRes = await api.get('/bookings/me');
+    const personalBookings = personalBookingsRes.data;
+    console.log('Personal bookings:', personalBookings);
+    
+    // Fetch team-related bookings for each team
+    let teamBookings = [];
+    if (coachTeams && coachTeams.length > 0) {
+      const teamIds = coachTeams.map(team => team._id);
+      
+      // Fetch bookings for each team
+      const bookingsPromises = teamIds.map(teamId => 
+        api.get('/bookings', { params: { team: teamId } })
+          .catch(err => {
+            console.error(`Error fetching bookings for team ${teamId}:`, err);
+            return { data: [] };
+          })
+      );
+      
+      const bookingsResponses = await Promise.all(bookingsPromises);
+      teamBookings = bookingsResponses.flatMap(res => res.data);
+      console.log('Team bookings:', teamBookings);
+    }
+    
+    // Combine personal and team bookings and remove duplicates
+    const allBookings = [...personalBookings, ...teamBookings];
+    const uniqueBookings = Array.from(
+      new Map(allBookings.map(booking => [booking._id, booking])).values()
+    );
+    
+    // Filter for training sessions (where purpose is 'Training')
+    const trainingSessions = uniqueBookings.filter(
+      booking => booking.purpose === 'Training' && new Date(booking.startTime) >= new Date()
+    ).sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    
+    console.log('Filtered training sessions:', trainingSessions);
+    return trainingSessions;
+  } catch (error) {
+    console.error('Error fetching coach training sessions:', error);
+    throw error.response?.data?.msg || 'Failed to fetch training sessions';
+  }
+};
+
+// Get training schedules for coach (includes both directly assigned plans and team plans)
+export const getCoachTrainingSchedules = async () => {
+  try {
+    console.log('Fetching coach training schedules...');
+    
+    // First get the teams the coach is assigned to
+    const coachTeams = await getCoachTeams();
+    console.log('Coach teams for schedules:', coachTeams);
+    
+    // Get directly assigned training plans
+    const assignedPlans = await getCoachTrainingPlans();
+    console.log('Coach assigned plans:', assignedPlans);
+    
+    // Check if teams array is valid
+    if (!Array.isArray(coachTeams) || coachTeams.length === 0) {
+      console.log('No coach teams found, returning only assigned plans');
+      return assignedPlans;
+    }
+    
+    // Get training plans for each team the coach is part of
+    const teamPlansPromises = coachTeams.map(team => {
+      if (!team || !team._id) {
+        console.error('Invalid team object:', team);
+        return Promise.resolve([]);
+      }
+      return getTeamTrainingPlans(team._id).catch(err => {
+        console.error(`Error fetching plans for team ${team._id}:`, err);
+        return [];
+      });
+    });
+    
+    const teamPlansArrays = await Promise.all(teamPlansPromises);
+    
+    // Flatten array of arrays and filter out duplicates
+    const teamPlans = teamPlansArrays.flat();
+    console.log('Team plans:', teamPlans);
+    
+    // Combine both sets of plans and remove duplicates
+    const allPlans = [...assignedPlans];
+    
+    // Add team plans that aren't already in assigned plans
+    teamPlans.forEach(teamPlan => {
+      if (!teamPlan || !teamPlan._id) {
+        console.error('Invalid team plan:', teamPlan);
+        return;
+      }
+      
+      // Make sure this plan isn't already included
+      if (!allPlans.some(plan => plan._id === teamPlan._id)) {
+        // Ensure team data is populated
+        if (!teamPlan.team || typeof teamPlan.team === 'string') {
+          const teamData = coachTeams.find(team => team._id === teamPlan.team);
+          if (teamData) {
+            teamPlan.team = teamData;
+          }
+        }
+        allPlans.push(teamPlan);
+      }
+    });
+    
+    // Sort by date
+    const sortedPlans = allPlans.sort((a, b) => new Date(a.date) - new Date(b.date));
+    console.log('All sorted plans:', sortedPlans);
+    return sortedPlans;
+  } catch (error) {
+    console.error('Error fetching coach training schedules:', error);
+    throw error.response?.data?.msg || 'Failed to fetch training schedules';
+  }
+};
+
 // Get training plans for a specific team
 export const getTeamTrainingPlans = async (teamId) => {
   try {

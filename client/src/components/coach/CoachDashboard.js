@@ -40,11 +40,18 @@ import {
   FitnessCenter,
   Schedule,
   PlayArrow,
-  Done
+  Done,
+  LocationOn
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router-dom';
-import { getCoachTeams, getCoachTrainingPlans, updateTrainingPlanStatus } from '../../services/trainingService';
+import { 
+  getCoachTeams, 
+  getCoachTrainingPlans, 
+  updateTrainingPlanStatus,
+  getCoachTrainingSchedules,
+  getCoachTrainingSessions
+} from '../../services/trainingService';
 import { getStoredUser, isCoach } from '../../services/authService';
 
 const CoachDashboard = () => {
@@ -56,6 +63,8 @@ const CoachDashboard = () => {
   const [activeTab, setActiveTab] = useState(tabParam ? parseInt(tabParam, 10) : 0);
   const [coachTeams, setCoachTeams] = useState([]);
   const [trainingPlans, setTrainingPlans] = useState([]);
+  const [trainingSchedules, setTrainingSchedules] = useState([]);
+  const [trainingSessions, setTrainingSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -68,11 +77,23 @@ const CoachDashboard = () => {
       try {
         // Fetch teams where the user is a coach
         const teamsData = await getCoachTeams();
+        console.log('Coach teams:', teamsData);
         setCoachTeams(teamsData);
         
         // Fetch training plans assigned to the coach
         const plansData = await getCoachTrainingPlans();
+        console.log('Coach training plans:', plansData);
         setTrainingPlans(plansData);
+        
+        // Fetch all training schedules for the coach (assigned plans + team plans)
+        const schedulesData = await getCoachTrainingSchedules();
+        console.log('Coach training schedules (plans):', schedulesData);
+        setTrainingSchedules(schedulesData);
+        
+        // Fetch training sessions from bookings
+        const sessionsData = await getCoachTrainingSessions();
+        console.log('Coach training sessions (bookings):', sessionsData);
+        setTrainingSessions(sessionsData);
         
         setIsLoading(false);
       } catch (error) {
@@ -95,10 +116,17 @@ const CoachDashboard = () => {
     try {
       await updateTrainingPlanStatus(id, newStatus);
       
-      // Update local state
+      // Update both trainingPlans and trainingSchedules states
       setTrainingPlans(prevPlans => 
         prevPlans.map(plan => 
           plan._id === id ? { ...plan, status: newStatus } : plan
+        )
+      );
+      
+      // Also update training schedules
+      setTrainingSchedules(prevSchedules => 
+        prevSchedules.map(schedule => 
+          schedule._id === id ? { ...schedule, status: newStatus } : schedule
         )
       );
     } catch (error) {
@@ -253,7 +281,38 @@ const CoachDashboard = () => {
   );
   
   // Render training schedules tab
-  const renderSchedulesTab = () => (
+  const renderSchedulesTab = () => {
+    const refreshSchedules = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Refresh both training plans and booking-based sessions
+        const [schedulesData, sessionsData] = await Promise.all([
+          getCoachTrainingSchedules(),
+          getCoachTrainingSessions()
+        ]);
+        
+        console.log('Refreshed training schedules:', schedulesData);
+        console.log('Refreshed training sessions:', sessionsData);
+        
+        setTrainingSchedules(schedulesData);
+        setTrainingSessions(sessionsData);
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error refreshing training data:', error);
+        setError('Failed to refresh training data. Please try again.');
+        setIsLoading(false);
+      }
+    };
+    
+    // Format location for training sessions
+    const formatLocation = (court) => {
+      if (!court) return 'Location not specified';
+      return `${court.name}${court.location ? `, ${court.location}` : ''}`;
+    };
+    
+    return (
     <Grid container spacing={3}>
       {isLoading ? (
         <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
@@ -268,13 +327,24 @@ const CoachDashboard = () => {
                 p: 2, 
                 borderRadius: 2,
                 bgcolor: alpha(theme.palette.info.light, 0.1),
-                border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`
+                border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-                <CalendarMonth sx={{ mr: 1 }} />
+                <FitnessCenter sx={{ mr: 1 }} />
                 Upcoming Training Sessions
               </Typography>
+              <Button 
+                variant="outlined" 
+                size="small"
+                onClick={refreshSchedules}
+                disabled={isLoading}
+              >
+                Refresh Schedules
+              </Button>
             </Paper>
           </Grid>
           
@@ -285,54 +355,115 @@ const CoachDashboard = () => {
                   <TableRow>
                     <TableCell sx={{ fontWeight: 'bold' }}>Date & Time</TableCell>
                     <TableCell sx={{ fontWeight: 'bold' }}>Team</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Title</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Title/Purpose</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Location</TableCell>
                     <TableCell sx={{ fontWeight: 'bold' }}>Duration</TableCell>
                     <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {getUpcomingPlans().length > 0 ? (
-                    getUpcomingPlans().map(plan => (
-                      <TableRow key={plan._id} hover>
-                        <TableCell>
-                          {format(new Date(plan.date), 'MMM d, yyyy h:mm a')}
-                        </TableCell>
-                        <TableCell>{plan.team.name}</TableCell>
-                        <TableCell>{plan.title}</TableCell>
-                        <TableCell>{plan.duration} minutes</TableCell>
-                        <TableCell>
-                          <Chip 
-                            icon={getStatusIcon(plan.status)}
-                            label={plan.status}
-                            color={getStatusColor(plan.status)}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {plan.status === 'Assigned' && (
-                            <IconButton 
-                              size="small" 
-                              color="primary"
-                              onClick={() => handleUpdateStatus(plan._id, 'InProgress')}
-                              title="Mark as In Progress"
-                            >
-                              <PlayArrow />
-                            </IconButton>
-                          )}
-                          {plan.status === 'InProgress' && (
-                            <IconButton 
-                              size="small" 
-                              color="success"
-                              onClick={() => handleUpdateStatus(plan._id, 'Completed')}
-                              title="Mark as Completed"
-                            >
-                              <Check />
-                            </IconButton>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                  {console.log('Rendering sessions:', trainingSessions)}
+                  {console.log('Rendering schedules:', trainingSchedules)}
+                  
+                  {(trainingSessions.length > 0 || (trainingSchedules && trainingSchedules.length > 0)) ? (
+                    <>
+                      {/* Display booking-based training sessions */}
+                      {trainingSessions.filter(session => new Date(session.startTime) >= new Date())
+                        .map(session => {
+                          try {
+                            const startTime = new Date(session.startTime);
+                            const endTime = new Date(session.endTime);
+                            const durationHours = (endTime - startTime) / (1000 * 60 * 60);
+                            const teamName = session.team && session.team.name ? session.team.name : 'Personal Training';
+                            
+                            return (
+                              <TableRow key={`session-${session._id}`} hover>
+                                <TableCell>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                    <Typography variant="body2" fontWeight={500}>
+                                      {format(startTime, 'EEEE, MMMM d, yyyy')}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                      {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
+                                    </Typography>
+                                  </Box>
+                                </TableCell>
+                                <TableCell>{teamName}</TableCell>
+                                <TableCell>Training Session</TableCell>
+                                <TableCell>
+                                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <LocationOn fontSize="small" sx={{ mr: 0.5, color: 'text.secondary' }} />
+                                    {formatLocation(session.court)}
+                                  </Box>
+                                </TableCell>
+                                <TableCell>{Math.round(durationHours * 10) / 10} hours</TableCell>
+                                <TableCell>
+                                  <Chip 
+                                    label={session.status}
+                                    color={
+                                      session.status === 'Confirmed' ? 'success' :
+                                      session.status === 'Pending' ? 'warning' :
+                                      session.status === 'Cancelled' ? 'error' : 'default'
+                                    }
+                                    size="small"
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            );
+                          } catch (err) {
+                            console.error('Error rendering session row:', err, session);
+                            return null;
+                          }
+                        })}
+                      
+                      {/* Display training plans */}
+                      {trainingSchedules && trainingSchedules.filter(schedule => {
+                        try {
+                          const scheduleDate = new Date(schedule.date);
+                          return scheduleDate >= new Date();
+                        } catch (err) {
+                          console.error('Error filtering schedule:', err, schedule);
+                          return false;
+                        }
+                      })
+                      .map(schedule => {
+                        try {
+                          const teamName = schedule.team && schedule.team.name ? schedule.team.name : 'Unknown Team';
+                          // Calculate duration in hours for consistency with sessions
+                          const durationHours = schedule.duration / 60;
+                          
+                          return (
+                            <TableRow key={`plan-${schedule._id}`} hover>
+                              <TableCell>
+                                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                  <Typography variant="body2" fontWeight={500}>
+                                    {format(new Date(schedule.date), 'EEEE, MMMM d, yyyy')}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary">
+                                    {format(new Date(schedule.date), 'h:mm a')}
+                                  </Typography>
+                                </Box>
+                              </TableCell>
+                              <TableCell>{teamName}</TableCell>
+                              <TableCell>{schedule.title}</TableCell>
+                              <TableCell>Not specified</TableCell>
+                              <TableCell>{Math.round(durationHours * 10) / 10} hours</TableCell>
+                              <TableCell>
+                                <Chip 
+                                  icon={getStatusIcon(schedule.status)}
+                                  label={schedule.status}
+                                  color={getStatusColor(schedule.status)}
+                                  size="small"
+                                />
+                              </TableCell>
+                            </TableRow>
+                          );
+                        } catch (err) {
+                          console.error('Error rendering schedule row:', err, schedule);
+                          return null;
+                        }
+                      })}
+                    </>
                   ) : (
                     <TableRow>
                       <TableCell colSpan={6} align="center">
@@ -347,7 +478,8 @@ const CoachDashboard = () => {
         </>
       )}
     </Grid>
-  );
+    );
+  };
   
   // Render training plans tab
   const renderPlansTab = () => (
@@ -608,9 +740,44 @@ const CoachDashboard = () => {
       
       {/* Tab Panels */}
       <Box sx={{ mt: 2 }}>
-        {activeTab === 0 && renderTeamsTab()}
-        {activeTab === 1 && renderSchedulesTab()}
-        {activeTab === 2 && renderPlansTab()}
+        {activeTab === 0 && (() => {
+          try {
+            return renderTeamsTab();
+          } catch (err) {
+            console.error('Error rendering Teams tab:', err);
+            return (
+              <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Typography color="error">There was an error loading the Teams & Players tab. Please try again later.</Typography>
+              </Paper>
+            );
+          }
+        })()}
+        
+        {activeTab === 1 && (() => {
+          try {
+            return renderSchedulesTab();
+          } catch (err) {
+            console.error('Error rendering Schedules tab:', err);
+            return (
+              <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Typography color="error">There was an error loading the Training Schedules tab. Please try again later.</Typography>
+              </Paper>
+            );
+          }
+        })()}
+        
+        {activeTab === 2 && (() => {
+          try {
+            return renderPlansTab();
+          } catch (err) {
+            console.error('Error rendering Plans tab:', err);
+            return (
+              <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Typography color="error">There was an error loading the Training Plans tab. Please try again later.</Typography>
+              </Paper>
+            );
+          }
+        })()}
       </Box>
       
       {/* Error message */}
