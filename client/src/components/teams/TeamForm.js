@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container, Typography, Box, TextField, Button, Grid, Paper,
-  FormControl, InputLabel, Select, MenuItem, Alert, CircularProgress, FormHelperText
+  FormControl, InputLabel, Select, MenuItem, Alert, CircularProgress,
+  FormHelperText
 } from '@mui/material';
 import { ArrowBack, Save, CloudUpload } from '@mui/icons-material';
 import { createTeam, getTeamById, updateTeam } from '../../services/teamService';

@@ -19,6 +19,7 @@ import {
 import { getUsersByRole } from '../../services/userService';
 import { isSupervisor, isCoach, isPlayer, isParent } from '../../services/authService';
 import AlertMessage from '../common/AlertMessage';
+import { getSportIcon } from '../../utils/sportIcons';
 
 const TeamDetail = () => {
   const { id } = useParams();
@@ -327,8 +328,8 @@ const TeamDetail = () => {
             </Box>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <SportsSoccer color="action" sx={{ mr: 1 }} />
-                <Typography variant="body1">Sport: {team.sportType}</Typography>
+                {React.cloneElement(getSportIcon(team?.sportType || 'Sports'), { color: "action", sx: { mr: 1 } })}
+                <Typography variant="body1">Sport: {team?.sportType || 'Not specified'}</Typography>
               </Box>
               
               {team.ageGroup && (

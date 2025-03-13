@@ -6,12 +6,12 @@ import {
   Card, CardContent, Alert, Tab, Tabs
 } from '@mui/material';
 import { 
-  ArrowBack, Edit, EventAvailable, SportsTennis, 
-  AccessTime, LocationOn, Group
+  ArrowBack, Edit, EventAvailable, AccessTime, LocationOn, Group
 } from '@mui/icons-material';
 import { getCourtById, getCourtAvailability } from '../../services/courtService';
 import { isSupervisor } from '../../services/authService';
 import BookingForm from '../bookings/BookingForm';
+import { getSportIcon } from '../../utils/sportIcons';
 
 const CourtDetail = () => {
   const { id } = useParams();
@@ -168,7 +168,7 @@ const CourtDetail = () => {
               sx={{ mb: 3 }}
             >
               <Tab label="Availability" icon={<EventAvailable />} iconPosition="start" />
-              <Tab label="Book Court" icon={<SportsTennis />} iconPosition="start" />
+              <Tab label="Book Court" icon={getSportIcon(court.sportType)} iconPosition="start" />
             </Tabs>
 
             {tabValue === 0 && (

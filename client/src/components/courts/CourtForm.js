@@ -5,6 +5,7 @@ import {
   FormControl, InputLabel, Select, MenuItem, Divider, IconButton,
   InputAdornment, FormHelperText, Alert, Avatar, CircularProgress
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { ArrowBack, Save, Add, Delete, CloudUpload } from '@mui/icons-material';
 import { createCourt, getCourtById, updateCourt } from '../../services/courtService';
 
@@ -350,7 +351,8 @@ const CourtForm = () => {
                 Availability Schedule
               </Typography>
               <FormHelperText sx={{ mb: 2 }}>
-                Set the time slots when this court is available for booking
+                Set the time slots when this court is available for booking. 
+                Days without any time slots will be considered as not available.
               </FormHelperText>
 
               {days.map((day) => (
@@ -369,8 +371,21 @@ const CourtForm = () => {
                   </Box>
                   
                   {formData.availability[day].length === 0 ? (
-                    <Typography variant="body2" color="text.secondary">
-                      No time slots added for {day}
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ 
+                        bgcolor: (theme) => alpha(theme.palette.error.light, 0.1),
+                        p: 1,
+                        borderRadius: 1,
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <Box component="span" sx={{ color: 'error.main', mr: 1, display: 'flex', alignItems: 'center' }}>
+                        •
+                      </Box>
+                      No availability for {day} - This court will not be bookable on {day}s
                     </Typography>
                   ) : (
                     formData.availability[day].map((slot, index) => (

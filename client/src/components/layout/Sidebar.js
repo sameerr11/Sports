@@ -15,7 +15,7 @@ import {
     alpha
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
+import Sports from '@mui/icons-material/Sports';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -45,7 +45,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const menuItems = [
         { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
         { text: 'Courts', icon: <LocationOnIcon />, path: '/courts' },
-        { text: 'Teams', icon: <SportsSoccerIcon />, path: '/teams' },
+        { text: 'Teams', icon: <Sports />, path: '/teams' },
         { text: 'My Bookings', icon: <EventIcon />, path: '/bookings/me' }
     ];
 
@@ -55,7 +55,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
 
     const supervisorItems = [
         { text: 'All Bookings', icon: <EventIcon />, path: '/bookings' },
-        { text: 'Team Scheduling', icon: <SportsSoccerIcon />, path: '/teams/schedule' },
+        { text: 'Team Scheduling', icon: <Sports />, path: '/teams/schedule' },
         { text: 'Training Plans', icon: <AssignmentIcon />, path: '/training-plans' },
         { text: 'Manage Cafeteria', icon: <FastfoodIcon />, path: '/cafeteria/manage' }
     ];
@@ -113,7 +113,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 flexShrink: 0
                             }}
                         >
-                            <SportsSoccerIcon />
+                            <Sports />
                         </Avatar>
                         <Box sx={{ ml: 1, overflow: 'hidden', whiteSpace: 'nowrap' }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>

@@ -38,6 +38,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import api from '../../services/api';
 import { getStoredUser, isPlayerOnly } from '../../services/authService';
+import { getSportIcon } from '../../utils/sportIcons';
 
 const PlayerDashboard = () => {
   const theme = useTheme();
@@ -189,91 +190,101 @@ const PlayerDashboard = () => {
   );
   
   // Render the training schedule tab
-  const renderTrainingScheduleTab = () => (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <Paper 
-          elevation={0}
-          sx={{ 
-            p: 2, 
-            mb: 3, 
-            borderRadius: 2,
-            bgcolor: alpha(theme.palette.primary.main, 0.05),
-            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
-          }}
-        >
-          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-            <FitnessCenter sx={{ mr: 1 }} />
-            Your Upcoming Training Sessions
-          </Typography>
-        </Paper>
-        
-        {trainingSessions.length === 0 ? (
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="body1">
-              You have no upcoming training sessions scheduled.
+  const renderTrainingScheduleTab = () => {
+    // Get the default sport type from the first training session's team if available
+    const defaultSportType = trainingSessions.length > 0 && trainingSessions[0].team 
+      ? trainingSessions[0].team.sportType 
+      : null;
+      
+    return (
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2, 
+              mb: 3, 
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.primary.main, 0.05),
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+              {defaultSportType ? 
+                React.cloneElement(getSportIcon(defaultSportType), { sx: { mr: 1 } }) : 
+                <FitnessCenter sx={{ mr: 1 }} />
+              }
+              Your Upcoming Training Sessions
             </Typography>
           </Paper>
-        ) : (
-          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-            <Table>
-              <TableHead sx={{ bgcolor: alpha(theme.palette.background.default, 0.8) }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Date & Time</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Team</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Location</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Duration</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {trainingSessions.map((session) => {
-                  const startTime = new Date(session.startTime);
-                  const endTime = new Date(session.endTime);
-                  const durationHours = (endTime - startTime) / (1000 * 60 * 60);
-                  
-                  return (
-                    <TableRow key={session._id} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                          <Typography variant="body2" fontWeight={500}>
-                            {format(startTime, 'EEEE, MMMM d, yyyy')}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        {session.team ? session.team.name : 'No team specified'}
-                      </TableCell>
-                      <TableCell>
-                        {formatLocation(session.court)}
-                      </TableCell>
-                      <TableCell>
-                        {Math.round(durationHours * 10) / 10} hours
-                      </TableCell>
-                      <TableCell>
-                        <Chip 
-                          label={session.status}
-                          color={
-                            session.status === 'Confirmed' ? 'success' :
-                            session.status === 'Pending' ? 'warning' :
-                            session.status === 'Cancelled' ? 'error' : 'default'
-                          }
-                          size="small"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
+          
+          {trainingSessions.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1">
+                You have no upcoming training sessions scheduled.
+              </Typography>
+            </Paper>
+          ) : (
+            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+              <Table>
+                <TableHead sx={{ bgcolor: alpha(theme.palette.background.default, 0.8) }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Date & Time</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Team</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Location</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Duration</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {trainingSessions.map((session) => {
+                    const startTime = new Date(session.startTime);
+                    const endTime = new Date(session.endTime);
+                    const durationHours = (endTime - startTime) / (1000 * 60 * 60);
+                    
+                    return (
+                      <TableRow key={session._id} hover>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                            <Typography variant="body2" fontWeight={500}>
+                              {format(startTime, 'EEEE, MMMM d, yyyy')}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          {session.team ? session.team.name : 'No team specified'}
+                        </TableCell>
+                        <TableCell>
+                          {formatLocation(session.court)}
+                        </TableCell>
+                        <TableCell>
+                          {Math.round(durationHours * 10) / 10} hours
+                        </TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={session.status}
+                            color={
+                              session.status === 'Confirmed' ? 'success' :
+                              session.status === 'Pending' ? 'warning' :
+                              session.status === 'Cancelled' ? 'error' : 'default'
+                            }
+                            size="small"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Grid>
       </Grid>
-    </Grid>
-  );
+    );
+  };
   
   // Render the training plans tab
   const renderTrainingPlansTab = () => (
@@ -422,113 +433,123 @@ const PlayerDashboard = () => {
   );
   
   // Render the matches tab
-  const renderMatchesTab = () => (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <Paper 
-          elevation={0}
-          sx={{ 
-            p: 2, 
-            mb: 3, 
-            borderRadius: 2,
-            bgcolor: alpha(theme.palette.secondary.main, 0.05),
-            border: `1px solid ${alpha(theme.palette.secondary.main, 0.1)}`
-          }}
-        >
-          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-            <SportsScore sx={{ mr: 1 }} />
-            Your Upcoming Matches
-          </Typography>
-        </Paper>
-        
-        {upcomingMatches.length === 0 ? (
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="body1">
-              You have no upcoming matches scheduled.
+  const renderMatchesTab = () => {
+    // Get the default sport type from the first match's team if available
+    const defaultSportType = upcomingMatches.length > 0 && upcomingMatches[0].team 
+      ? upcomingMatches[0].team.sportType 
+      : null;
+      
+    return (
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2, 
+              mb: 3, 
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.secondary.main, 0.05),
+              border: `1px solid ${alpha(theme.palette.secondary.main, 0.1)}`
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+              {defaultSportType ? 
+                React.cloneElement(getSportIcon(defaultSportType), { sx: { mr: 1 } }) : 
+                <SportsScore sx={{ mr: 1 }} />
+              }
+              Your Upcoming Matches
             </Typography>
           </Paper>
-        ) : (
-          upcomingMatches.map(match => {
-            const startTime = new Date(match.startTime);
-            const endTime = new Date(match.endTime);
-            
-            return (
-              <Card 
-                key={match._id} 
-                sx={{ 
-                  mb: 3, 
-                  borderRadius: 2,
-                  transition: 'transform 0.2s',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: theme.shadows[6]
-                  }
-                }}
-              >
-                <CardContent sx={{ p: 0 }}>
-                  <Box sx={{ 
-                    p: 2, 
-                    bgcolor: alpha(theme.palette.secondary.main, 0.1),
-                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`
-                  }}>
-                    <Typography variant="h6" component="div" fontWeight="bold">
-                      {match.team ? match.team.name : 'No team specified'} Match
-                    </Typography>
-                    <Typography variant="subtitle1" color="text.secondary">
-                      {format(startTime, 'EEEE, MMMM d, yyyy')}
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ p: 2 }}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={4}>
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                          <AccessTime sx={{ mt: 0.5, mr: 1, color: theme.palette.text.secondary }} />
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">
-                              Time
-                            </Typography>
-                            <Typography variant="body1" fontWeight={500}>
-                              {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
-                            </Typography>
+          
+          {upcomingMatches.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1">
+                You have no upcoming matches scheduled.
+              </Typography>
+            </Paper>
+          ) : (
+            upcomingMatches.map(match => {
+              const startTime = new Date(match.startTime);
+              const endTime = new Date(match.endTime);
+              
+              return (
+                <Card 
+                  key={match._id} 
+                  sx={{ 
+                    mb: 3, 
+                    borderRadius: 2,
+                    transition: 'transform 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: theme.shadows[6]
+                    }
+                  }}
+                >
+                  <CardContent sx={{ p: 0 }}>
+                    <Box sx={{ 
+                      p: 2, 
+                      bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                      borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                    }}>
+                      <Typography variant="h6" component="div" fontWeight="bold">
+                        {match.team ? match.team.name : 'No team specified'} Match
+                      </Typography>
+                      <Typography variant="subtitle1" color="text.secondary">
+                        {format(startTime, 'EEEE, MMMM d, yyyy')}
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ p: 2 }}>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={4}>
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                            <AccessTime sx={{ mt: 0.5, mr: 1, color: theme.palette.text.secondary }} />
+                            <Box>
+                              <Typography variant="body2" color="text.secondary">
+                                Time
+                              </Typography>
+                              <Typography variant="body1" fontWeight={500}>
+                                {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
+                              </Typography>
+                            </Box>
                           </Box>
-                        </Box>
+                        </Grid>
+                        
+                        <Grid item xs={12} sm={8}>
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                            <LocationOn sx={{ mt: 0.5, mr: 1, color: theme.palette.text.secondary }} />
+                            <Box>
+                              <Typography variant="body2" color="text.secondary">
+                                Location
+                              </Typography>
+                              <Typography variant="body1" fontWeight={500}>
+                                {formatLocation(match.court)}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Grid>
                       </Grid>
                       
-                      <Grid item xs={12} sm={8}>
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                          <LocationOn sx={{ mt: 0.5, mr: 1, color: theme.palette.text.secondary }} />
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">
-                              Location
-                            </Typography>
-                            <Typography variant="body1" fontWeight={500}>
-                              {formatLocation(match.court)}
-                            </Typography>
-                          </Box>
+                      {match.notes && (
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Notes:
+                          </Typography>
+                          <Typography variant="body2">
+                            {match.notes}
+                          </Typography>
                         </Box>
-                      </Grid>
-                    </Grid>
-                    
-                    {match.notes && (
-                      <Box sx={{ mt: 2 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          Notes:
-                        </Typography>
-                        <Typography variant="body2">
-                          {match.notes}
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </Grid>
       </Grid>
-    </Grid>
-  );
+    );
+  };
   
   // If not a player, show access denied
   if (!playerAccess) {

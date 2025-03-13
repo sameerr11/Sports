@@ -35,6 +35,7 @@ import {
 import { Link } from 'react-router-dom';
 import { getStoredUser, isSupervisor } from '../../services/authService';
 import { getDashboardData } from '../../services/dashboardService';
+import { getSportIcon } from '../../utils/sportIcons';
 import './Dashboard.css';
 
 // Removed mock data as we'll use real data from the API
@@ -435,7 +436,12 @@ const Dashboard = () => {
                         bgcolor: alpha(theme.palette.primary.main, 0.1)
                       }}
                     >
-                      <FitnessCenter sx={{ fontSize: 40, color: theme.palette.primary.main, mb: 1 }} />
+                      {userTeams.length > 0 && userTeams[0].sportType ? 
+                        React.cloneElement(getSportIcon(userTeams[0].sportType), { 
+                          sx: { fontSize: 40, color: theme.palette.primary.main, mb: 1 } 
+                        }) : 
+                        <FitnessCenter sx={{ fontSize: 40, color: theme.palette.primary.main, mb: 1 }} />
+                      }
                       <Typography variant="h6" gutterBottom>Schedule Training</Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center' }}>
                         Plan team training sessions
@@ -462,7 +468,12 @@ const Dashboard = () => {
                         bgcolor: alpha(theme.palette.secondary.main, 0.1)
                       }}
                     >
-                      <SportsScore sx={{ fontSize: 40, color: theme.palette.secondary.main, mb: 1 }} />
+                      {userTeams.length > 0 && userTeams[0].sportType ? 
+                        React.cloneElement(getSportIcon(userTeams[0].sportType), { 
+                          sx: { fontSize: 40, color: theme.palette.secondary.main, mb: 1 } 
+                        }) : 
+                        <SportsScore sx={{ fontSize: 40, color: theme.palette.secondary.main, mb: 1 }} />
+                      }
                       <Typography variant="h6" gutterBottom>Schedule Matches</Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center' }}>
                         Plan team matches and events

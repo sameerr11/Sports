@@ -5,10 +5,11 @@ import {
   CardMedia, CardActions, IconButton, Chip, Box, Dialog,
   DialogTitle, DialogContent, DialogContentText, DialogActions
 } from '@mui/material';
-import { Edit, Delete, Visibility, SportsTennis } from '@mui/icons-material';
+import { Edit, Delete, Visibility } from '@mui/icons-material';
 import { getCourts, deleteCourt } from '../../services/courtService';
 import { isSupervisor } from '../../services/authService';
 import AlertMessage from '../common/AlertMessage';
+import { getSportIcon } from '../../utils/sportIcons';
 
 const CourtList = () => {
   const [courts, setCourts] = useState([]);
@@ -66,9 +67,9 @@ const CourtList = () => {
             color="primary" 
             component={Link} 
             to="/courts/new"
-            startIcon={<SportsTennis />}
+            startIcon={getSportIcon("Sports")}
           >
-            Add New Court
+            Add Court
           </Button>
         )}
       </Box>

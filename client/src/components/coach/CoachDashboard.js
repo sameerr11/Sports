@@ -53,6 +53,7 @@ import {
   getCoachTrainingSessions
 } from '../../services/trainingService';
 import { getStoredUser, isCoach } from '../../services/authService';
+import { getSportIcon } from '../../utils/sportIcons';
 
 const CoachDashboard = () => {
   const theme = useTheme();
@@ -200,7 +201,7 @@ const CoachDashboard = () => {
                 subheader={`${team.sportType} - ${team.level || 'Not specified'}`}
                 avatar={
                   <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
-                    <SportsSoccer />
+                    {getSportIcon(team?.sportType || 'Sports')}
                   </Avatar>
                 }
               />
@@ -334,7 +335,10 @@ const CoachDashboard = () => {
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-                <FitnessCenter sx={{ mr: 1 }} />
+                {coachTeams.length > 0 ?
+                  React.cloneElement(getSportIcon(coachTeams[0]?.sportType || 'Sports'), { sx: { mr: 1 } }) :
+                  <FitnessCenter sx={{ mr: 1 }} />
+                }
                 Upcoming Training Sessions
               </Typography>
               <Button 
@@ -563,7 +567,10 @@ const CoachDashboard = () => {
                 title="In Progress Plans"
                 avatar={
                   <Avatar sx={{ bgcolor: theme.palette.warning.main }}>
-                    <FitnessCenter />
+                    {getPlansByStatus('InProgress').length > 0 && getPlansByStatus('InProgress')[0].team?.sportType ? 
+                      getSportIcon(getPlansByStatus('InProgress')[0].team.sportType) : 
+                      <FitnessCenter />
+                    }
                   </Avatar>
                 }
               />

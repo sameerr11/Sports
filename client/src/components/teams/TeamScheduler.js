@@ -54,6 +54,7 @@ import { format } from 'date-fns';
 import axios from 'axios';
 import api from '../../services/api';
 import { getAuthHeader, isSupervisor } from '../../services/authService';
+import { getSportIcon } from '../../utils/sportIcons';
 
 // Add function to make a direct test call
 async function testApiCall() {
@@ -386,7 +387,13 @@ const TeamScheduler = () => {
     return new Date(a) - new Date(b);
   });
   
-  const getScheduleTypeIcon = (type) => {
+  const getScheduleTypeIcon = (type, sportType) => {
+    // If we have a sport type, use the appropriate sport icon
+    if (sportType) {
+      return getSportIcon(sportType);
+    }
+    
+    // Fallback to default icons if no sport type is available
     switch(type) {
       case 'Training':
         return <FitnessCenter />;
@@ -575,7 +582,7 @@ const TeamScheduler = () => {
                             <TableRow key={schedule._id} hover>
                               <TableCell>
                                 <Chip 
-                                  icon={getScheduleTypeIcon(schedule.purpose)} 
+                                  icon={getScheduleTypeIcon(schedule.purpose, schedule.team?.sportType)} 
                                   label={schedule.purpose}
                                   color={schedule.purpose === 'Training' ? 'primary' : 'secondary'}
                                   variant="outlined"

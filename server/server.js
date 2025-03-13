@@ -13,9 +13,7 @@ connectDB();
 
 // Middleware
 app.use(cors());
-// Increase JSON payload size limit to 50MB for image uploads
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json());
 
 // Routes
 app.use('/api', routes);

@@ -17,6 +17,10 @@ const CourtSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  description: {
+    type: String,
+    trim: true
+  },
   capacity: {
     type: Number,
     required: true,

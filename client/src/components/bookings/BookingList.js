@@ -13,6 +13,7 @@ import {
 import { getBookings, getUserBookings, cancelBooking, updateBookingStatus } from '../../services/bookingService';
 import { isAdmin } from '../../services/authService';
 import AlertMessage from '../common/AlertMessage';
+import { getSportIcon } from '../../utils/sportIcons';
 
 const BookingList = ({ userOnly = false }) => {
   const [bookings, setBookings] = useState([]);
@@ -171,9 +172,13 @@ const BookingList = ({ userOnly = false }) => {
                 return (
                   <TableRow key={booking._id}>
                     <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <SportsTennis sx={{ mr: 1 }} />
-                        {booking.court.name}
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        {booking.court ? 
+                          React.cloneElement(getSportIcon(booking.court.sportType), { sx: { mr: 1 } }) : 
+                          getSportIcon(null, { sx: { mr: 1 } })}
+                        <Typography variant="body2">
+                          {booking.court ? booking.court.name : 'Court not available'}
+                        </Typography>
                       </Box>
                     </TableCell>
                     <TableCell>
