@@ -41,7 +41,8 @@ import {
   Schedule,
   PlayArrow,
   Done,
-  LocationOn
+  LocationOn,
+  Sports
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router-dom';
@@ -569,7 +570,7 @@ const CoachDashboard = () => {
                   <Avatar sx={{ bgcolor: theme.palette.warning.main }}>
                     {getPlansByStatus('InProgress').length > 0 && getPlansByStatus('InProgress')[0].team?.sportType ? 
                       getSportIcon(getPlansByStatus('InProgress')[0].team.sportType) : 
-                      <FitnessCenter />
+                      <Sports />
                     }
                   </Avatar>
                 }

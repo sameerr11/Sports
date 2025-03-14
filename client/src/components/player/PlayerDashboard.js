@@ -33,6 +33,7 @@ import {
   LocationOn, 
   AccessTime, 
   ArrowForward,
+  Sports
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -212,7 +213,7 @@ const PlayerDashboard = () => {
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
               {defaultSportType ? 
                 React.cloneElement(getSportIcon(defaultSportType), { sx: { mr: 1 } }) : 
-                <FitnessCenter sx={{ mr: 1 }} />
+                <Sports sx={{ mr: 1 }} />
               }
               Your Upcoming Training Sessions
             </Typography>
@@ -631,7 +632,7 @@ const PlayerDashboard = () => {
               />
               <Tab 
                 label="Training Schedule" 
-                icon={<FitnessCenter />} 
+                icon={<Sports />} 
                 iconPosition="start"
               />
               <Tab 

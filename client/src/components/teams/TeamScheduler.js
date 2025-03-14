@@ -46,7 +46,8 @@ import {
   SportsScore,
   SportsSoccer,
   FitnessCenter,
-  CalendarMonth
+  CalendarMonth,
+  Sports
 } from '@mui/icons-material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
@@ -474,7 +475,7 @@ const TeamScheduler = () => {
               <Button 
                 variant="contained" 
                 color="primary" 
-                startIcon={<FitnessCenter />}
+                startIcon={<Sports />}
                 onClick={() => handleOpenDialog('Training')}
                 sx={{ px: 2, py: 1 }}
               >

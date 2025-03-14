@@ -66,7 +66,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     ];
 
     const coachItems = [
-        { text: 'Coach Dashboard', icon: <FitnessCenterIcon />, path: '/coach' }
+        { text: 'Coach Dashboard', icon: <Sports />, path: '/coach' }
     ];
 
     const playerItems = [
