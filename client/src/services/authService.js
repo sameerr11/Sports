@@ -82,6 +82,34 @@ export const isSupervisor = () => {
   return hasRole(['admin', 'supervisor']);
 };
 
+// Check if user is a cafeteria supervisor
+export const isCafeteriaSupervisor = () => {
+  const user = getStoredUser();
+  return user && user.role === 'supervisor' && user.supervisorType === 'cafeteria';
+};
+
+// Check if user is a sports supervisor
+export const isSportsSupervisor = () => {
+  const user = getStoredUser();
+  return user && user.role === 'supervisor' && user.supervisorType === 'sports';
+};
+
+// Check if user is a general supervisor with access to all areas
+export const isGeneralSupervisor = () => {
+  const user = getStoredUser();
+  return user && user.role === 'supervisor' && user.supervisorType === 'general';
+};
+
+// Check if user is a supervisor for a specific sport type
+export const isSportTypeSupervisor = (sportType) => {
+  const user = getStoredUser();
+  return user && 
+         user.role === 'supervisor' && 
+         user.supervisorType === 'sports' && 
+         user.supervisorSportTypes && 
+         user.supervisorSportTypes.includes(sportType);
+};
+
 // Check if user is cashier
 export const isCashier = () => {
   const user = getStoredUser();

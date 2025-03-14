@@ -27,7 +27,18 @@ import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PersonIcon from '@mui/icons-material/Person';
 import FamilyRestroomIcon from '@mui/icons-material/FamilyRestroom';
-import { isAdmin, isSupervisor, isCashier, isCoach, isPlayerOnly, isParent } from '../../services/authService';
+import { 
+    isAdmin, 
+    isSupervisor, 
+    isCashier, 
+    isCoach, 
+    isPlayerOnly, 
+    isParent,
+    isCafeteriaSupervisor,
+    isSportsSupervisor,
+    isGeneralSupervisor,
+    getStoredUser
+} from '../../services/authService';
 import './Sidebar.css';
 
 const drawerWidth = 280;
@@ -36,12 +47,17 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const location = useLocation();
     const admin = isAdmin();
     const supervisor = isSupervisor();
+    const cafeteriaSupervisor = isCafeteriaSupervisor();
+    const sportsSupervisor = isSportsSupervisor();
+    const generalSupervisor = isGeneralSupervisor();
     const cashier = isCashier();
     const coach = isCoach();
     const player = isPlayerOnly();
     const parent = isParent();
     const theme = useTheme();
+    const user = getStoredUser();
 
+    // Regular menu items - not shown to cafeteria supervisors
     const menuItems = [
         { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
         { text: 'Courts', icon: <LocationOnIcon />, path: '/courts' },
@@ -53,7 +69,20 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'Cafeteria POS', icon: <RestaurantIcon />, path: '/cafeteria' }
     ];
 
-    const supervisorItems = [
+    // Cafeteria supervisor only sees cafeteria management
+    const cafeteriaSupervisorItems = [
+        { text: 'Manage Cafeteria', icon: <FastfoodIcon />, path: '/cafeteria/manage' }
+    ];
+
+    // Sports supervisor items - they handle courts, teams, schedules, and training plans
+    const sportsSupervisorItems = [
+        { text: 'All Bookings', icon: <EventIcon />, path: '/bookings' },
+        { text: 'Team Scheduling', icon: <Sports />, path: '/teams/schedule' },
+        { text: 'Training Plans', icon: <AssignmentIcon />, path: '/training-plans' }
+    ];
+
+    // General supervisor sees everything
+    const generalSupervisorItems = [
         { text: 'All Bookings', icon: <EventIcon />, path: '/bookings' },
         { text: 'Team Scheduling', icon: <Sports />, path: '/teams/schedule' },
         { text: 'Training Plans', icon: <AssignmentIcon />, path: '/training-plans' },
@@ -70,12 +99,20 @@ const Sidebar = ({ open, toggleSidebar }) => {
     ];
 
     const playerItems = [
-        { text: 'Player Dashboard', icon: <PersonIcon />, path: '/player' }
+        { text: 'Player Dashboard', icon: <Sports />, path: '/player' }
     ];
     
     const parentItems = [
         { text: 'Parent Dashboard', icon: <FamilyRestroomIcon />, path: '/parent' }
     ];
+
+    // Function to determine which supervisor items to show
+    const getSupervisorItems = () => {
+        if (generalSupervisor) return generalSupervisorItems;
+        if (cafeteriaSupervisor) return cafeteriaSupervisorItems;
+        if (sportsSupervisor) return sportsSupervisorItems;
+        return generalSupervisorItems; // Fallback to general items for backward compatibility
+    };
 
     return (
         <Drawer
@@ -132,9 +169,68 @@ const Sidebar = ({ open, toggleSidebar }) => {
             <Divider />
             
             {/* Show regular menu items if user is admin/supervisor OR not a cashier/parent/player/coach */}
-            {(admin || supervisor || (!cashier && !parent && !player && !coach)) && (
+            {/* Don't show them to cafeteria supervisors */}
+            {(admin || (supervisor && !cafeteriaSupervisor) || (!cashier && !parent && !player && !coach && !cafeteriaSupervisor)) && (
                 <List component="nav" className="sidebar-nav">
                     {menuItems.map((item) => (
+                        <ListItem 
+                            button 
+                            key={item.text} 
+                            component={Link} 
+                            to={item.path}
+                            selected={location.pathname === item.path}
+                            className={location.pathname === item.path ? 'active' : ''}
+                            sx={{
+                                borderRadius: '0 20px 20px 0',
+                                mx: 1,
+                                mb: 0.5,
+                                position: 'relative',
+                                overflow: 'hidden',
+                                width: 'calc(100% - 16px)',
+                                '&.active': {
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                    color: theme.palette.primary.main,
+                                    '&::before': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        left: 0,
+                                        top: 0,
+                                        bottom: 0,
+                                        width: 4,
+                                        backgroundColor: theme.palette.primary.main,
+                                        borderRadius: '0 4px 4px 0'
+                                    }
+                                },
+                                '&:hover': {
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                }
+                            }}
+                        >
+                            <ListItemIcon sx={{ 
+                                color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                minWidth: 40,
+                                flexShrink: 0
+                            }}>
+                                {item.icon}
+                            </ListItemIcon>
+                            <ListItemText 
+                                primary={item.text} 
+                                primaryTypographyProps={{ 
+                                    fontSize: '0.95rem',
+                                    fontWeight: location.pathname === item.path ? 600 : 400,
+                                    noWrap: true
+                                }}
+                                sx={{ overflow: 'hidden' }}
+                            />
+                        </ListItem>
+                    ))}
+                </List>
+            )}
+
+            {/* For cafeteria supervisors, show their specific items directly without the Management header */}
+            {cafeteriaSupervisor && (
+                <List component="nav" className="sidebar-nav">
+                    {cafeteriaSupervisorItems.map((item) => (
                         <ListItem 
                             button 
                             key={item.text} 
@@ -306,7 +402,8 @@ const Sidebar = ({ open, toggleSidebar }) => {
                 </>
             )}
             
-            {supervisor && (
+            {/* Only show this section for non-cafeteria supervisors */}
+            {supervisor && !cafeteriaSupervisor && (
                 <>
                     <Divider sx={{ my: 1 }} />
                     <List component="nav" className="sidebar-nav">
@@ -321,7 +418,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 }} 
                             />
                         </ListItem>
-                        {supervisorItems.map((item) => (
+                        {getSupervisorItems().map((item) => (
                             <ListItem 
                                 button 
                                 key={item.text} 

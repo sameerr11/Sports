@@ -29,12 +29,28 @@ const ROLES = [
   { value: 'parent', label: 'Parent' }
 ];
 
+const SUPERVISOR_TYPES = [
+  { value: 'cafeteria', label: 'Cafeteria Supervisor' },
+  { value: 'sports', label: 'Sports Supervisor' },
+  { value: 'general', label: 'General Supervisor' }
+];
+
+const SPORT_TYPES = [
+  { value: 'Football', label: 'Football' },
+  { value: 'Cricket', label: 'Cricket' },
+  { value: 'Basketball', label: 'Basketball' },
+  { value: 'Tennis', label: 'Tennis' },
+  { value: 'Others', label: 'Others' }
+];
+
 const initialState = {
   firstName: '',
   lastName: '',
   email: '',
   password: '',
   role: '',
+  supervisorType: 'general',
+  supervisorSportTypes: [],
   parentId: '',
   phoneNumber: '',
   address: {
@@ -264,6 +280,52 @@ const UserForm = () => {
                 <FormHelperText>Select the user's role in the system</FormHelperText>
               </FormControl>
             </Grid>
+            
+            {/* Supervisor Type Selection (only visible when role is 'supervisor') */}
+            {formData.role === 'supervisor' && (
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth required>
+                  <InputLabel>Supervisor Type</InputLabel>
+                  <Select
+                    name="supervisorType"
+                    value={formData.supervisorType || 'general'}
+                    onChange={handleChange}
+                    label="Supervisor Type"
+                  >
+                    {SUPERVISOR_TYPES.map((type) => (
+                      <MenuItem key={type.value} value={type.value}>
+                        {type.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText>Specify the supervisor's area of responsibility</FormHelperText>
+                </FormControl>
+              </Grid>
+            )}
+            
+            {/* Sport Types Multiple Selection (only visible when supervisor type is 'sports') */}
+            {formData.role === 'supervisor' && formData.supervisorType === 'sports' && (
+              <Grid item xs={12}>
+                <FormControl fullWidth required>
+                  <InputLabel>Sport Types</InputLabel>
+                  <Select
+                    name="supervisorSportTypes"
+                    multiple
+                    value={formData.supervisorSportTypes || []}
+                    onChange={handleChange}
+                    label="Sport Types"
+                    renderValue={(selected) => selected.join(', ')}
+                  >
+                    {SPORT_TYPES.map((sport) => (
+                      <MenuItem key={sport.value} value={sport.value}>
+                        {sport.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText>Select the sport types this supervisor will manage</FormHelperText>
+                </FormControl>
+              </Grid>
+            )}
             
             {/* Parent Selection Dropdown (only visible when role is 'player') */}
             {formData.role === 'player' && (

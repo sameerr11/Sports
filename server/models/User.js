@@ -30,6 +30,16 @@ const UserSchema = new mongoose.Schema({
     enum: ['admin', 'supervisor', 'cashier', 'coach', 'player', 'parent', 'accounting', 'guest'],
     default: 'guest'
   },
+  supervisorType: {
+    type: String,
+    enum: ['cafeteria', 'sports', 'general'],
+    default: 'general'
+  },
+  supervisorSportTypes: {
+    type: [String],
+    enum: ['Football', 'Cricket', 'Basketball', 'Tennis', 'Others'],
+    default: []
+  },
   parentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

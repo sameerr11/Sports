@@ -22,11 +22,45 @@ exports.createBooking = async (req, res) => {
       return res.status(404).json({ msg: 'Court not found' });
     }
     
+    // Check if sports supervisor is trying to create a booking for a court with sport type they're not assigned to
+    if (req.user.role === 'supervisor') {
+      const supervisor = await User.findById(req.user.id);
+      
+      if (supervisor.supervisorType === 'sports' && 
+          Array.isArray(supervisor.supervisorSportTypes) && 
+          supervisor.supervisorSportTypes.length > 0) {
+        
+        // If the court's sport type is not in the supervisor's assigned types
+        if (!supervisor.supervisorSportTypes.includes(courtDoc.sportType)) {
+          return res.status(403).json({ 
+            msg: 'Not authorized to create bookings for this sport type' 
+          });
+        }
+      }
+    }
+    
     // Validate team exists if team is provided
     if (team) {
       const teamDoc = await Team.findById(team);
       if (!teamDoc) {
         return res.status(404).json({ msg: 'Team not found' });
+      }
+      
+      // Additional check: If team is provided, check if sports supervisor has permission for this team's sport type
+      if (req.user.role === 'supervisor') {
+        const supervisor = await User.findById(req.user.id);
+        
+        if (supervisor.supervisorType === 'sports' && 
+            Array.isArray(supervisor.supervisorSportTypes) && 
+            supervisor.supervisorSportTypes.length > 0) {
+          
+          // If the team's sport type is not in the supervisor's assigned types
+          if (!supervisor.supervisorSportTypes.includes(teamDoc.sportType)) {
+            return res.status(403).json({ 
+              msg: 'Not authorized to create bookings for this team\'s sport type' 
+            });
+          }
+        }
       }
     }
     
@@ -145,6 +179,45 @@ exports.getBookings = async (req, res) => {
     if (req.query.team) {
       query.team = req.query.team;
     }
+
+    // Handle different types of supervisors
+    if (req.user.role === 'supervisor') {
+      // Get the supervisor details
+      const supervisor = await User.findById(req.user.id);
+      
+      // Cafeteria supervisors shouldn't see bookings
+      if (supervisor.supervisorType === 'cafeteria') {
+        return res.status(403).json({ msg: 'Access denied: Cafeteria supervisors cannot view bookings' });
+      }
+      
+      // Sports supervisors can only see bookings for their assigned sports
+      if (supervisor.supervisorType === 'sports') {
+        if (Array.isArray(supervisor.supervisorSportTypes) && supervisor.supervisorSportTypes.length > 0) {
+          // We need to join with courts and teams to filter by sport type
+          const sportTypes = supervisor.supervisorSportTypes;
+          
+          // First, find courts with the supervisor's sport types
+          const courts = await Court.find({ sportType: { $in: sportTypes } });
+          const courtIds = courts.map(court => court._id);
+          
+          // Then, find teams with the supervisor's sport types
+          const teams = await Team.find({ sportType: { $in: sportTypes } });
+          const teamIds = teams.map(team => team._id);
+          
+          // Build a query that includes either:
+          // 1. Bookings for courts with the supervisor's sport types
+          // 2. Bookings for teams with the supervisor's sport types
+          query.$or = [
+            { court: { $in: courtIds } },
+            { team: { $in: teamIds } }
+          ];
+        } else {
+          // If they don't have any assigned sport types, they shouldn't see any bookings
+          return res.status(403).json({ msg: 'Access denied: No sport types assigned to your profile' });
+        }
+      }
+      // General supervisors can see all bookings (no additional filtering needed)
+    }
     
     // Allow players to see team bookings when team parameter is specified
     if (req.query.team && req.user.role === 'player') {
@@ -239,17 +312,39 @@ exports.getBookingById = async (req, res) => {
     const booking = await Booking.findById(req.params.id)
       .populate('court', 'name location sportType hourlyRate')
       .populate('user', 'firstName lastName email')
-      .populate('team', 'name');
+      .populate('team', 'name sportType');
     
     if (!booking) {
       return res.status(404).json({ msg: 'Booking not found' });
     }
 
     // Check if user is authorized to view this booking
-    if (
-      booking.user._id.toString() !== req.user.id && 
-      !['admin', 'supervisor', 'accounting'].includes(req.user.role)
-    ) {
+    if (req.user.role === 'supervisor') {
+      const supervisor = await User.findById(req.user.id);
+      
+      // Cafeteria supervisors can't view bookings
+      if (supervisor.supervisorType === 'cafeteria') {
+        return res.status(403).json({ msg: 'Access denied: Cafeteria supervisors cannot view bookings' });
+      }
+      
+      // Sports supervisors can only view bookings for their assigned sports
+      if (supervisor.supervisorType === 'sports') {
+        if (Array.isArray(supervisor.supervisorSportTypes) && supervisor.supervisorSportTypes.length > 0) {
+          // Check if the booking's court or team has a sport type matching the supervisor's assigned types
+          const courtSportType = booking.court ? booking.court.sportType : null;
+          const teamSportType = booking.team ? booking.team.sportType : null;
+          
+          // If neither court nor team sport type matches supervisor's assigned types
+          if ((!courtSportType || !supervisor.supervisorSportTypes.includes(courtSportType)) && 
+              (!teamSportType || !supervisor.supervisorSportTypes.includes(teamSportType))) {
+            return res.status(403).json({ msg: 'Not authorized to view this booking' });
+          }
+        } else {
+          return res.status(403).json({ msg: 'Access denied: No sport types assigned to your profile' });
+        }
+      }
+      // General supervisors can view all bookings
+    } else if (booking.user._id.toString() !== req.user.id && !['admin', 'accounting'].includes(req.user.role)) {
       return res.status(403).json({ msg: 'Not authorized to view this booking' });
     }
 
@@ -275,10 +370,40 @@ exports.updateBookingStatus = async (req, res) => {
   try {
     const { status } = req.body;
 
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findById(req.params.id)
+      .populate('court', 'sportType')
+      .populate('team', 'sportType');
     
     if (!booking) {
       return res.status(404).json({ msg: 'Booking not found' });
+    }
+
+    // Check supervisor permissions
+    if (req.user.role === 'supervisor') {
+      const supervisor = await User.findById(req.user.id);
+      
+      // Cafeteria supervisors can't update bookings
+      if (supervisor.supervisorType === 'cafeteria') {
+        return res.status(403).json({ msg: 'Access denied: Cafeteria supervisors cannot update bookings' });
+      }
+      
+      // Sports supervisors can only update bookings for their assigned sports
+      if (supervisor.supervisorType === 'sports') {
+        if (Array.isArray(supervisor.supervisorSportTypes) && supervisor.supervisorSportTypes.length > 0) {
+          // Check if the booking's court or team has a sport type matching the supervisor's assigned types
+          const courtSportType = booking.court ? booking.court.sportType : null;
+          const teamSportType = booking.team ? booking.team.sportType : null;
+          
+          // If neither court nor team sport type matches supervisor's assigned types
+          if ((!courtSportType || !supervisor.supervisorSportTypes.includes(courtSportType)) && 
+              (!teamSportType || !supervisor.supervisorSportTypes.includes(teamSportType))) {
+            return res.status(403).json({ msg: 'Not authorized to update this booking' });
+          }
+        } else {
+          return res.status(403).json({ msg: 'Access denied: No sport types assigned to your profile' });
+        }
+      }
+      // General supervisors can update all bookings
     }
 
     booking.status = status;
@@ -296,17 +421,43 @@ exports.updateBookingStatus = async (req, res) => {
 // @access  Private
 exports.cancelBooking = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findById(req.params.id)
+      .populate('court', 'sportType')
+      .populate('team', 'sportType');
     
     if (!booking) {
       return res.status(404).json({ msg: 'Booking not found' });
     }
 
     // Check if user is authorized to cancel this booking
-    if (
-      booking.user.toString() !== req.user.id && 
-      !['admin', 'supervisor'].includes(req.user.role)
-    ) {
+    if (booking.user.toString() === req.user.id) {
+      // User can cancel their own booking
+    } else if (req.user.role === 'supervisor') {
+      const supervisor = await User.findById(req.user.id);
+      
+      // Cafeteria supervisors can't cancel bookings
+      if (supervisor.supervisorType === 'cafeteria') {
+        return res.status(403).json({ msg: 'Access denied: Cafeteria supervisors cannot cancel bookings' });
+      }
+      
+      // Sports supervisors can only cancel bookings for their assigned sports
+      if (supervisor.supervisorType === 'sports') {
+        if (Array.isArray(supervisor.supervisorSportTypes) && supervisor.supervisorSportTypes.length > 0) {
+          // Check if the booking's court or team has a sport type matching the supervisor's assigned types
+          const courtSportType = booking.court ? booking.court.sportType : null;
+          const teamSportType = booking.team ? booking.team.sportType : null;
+          
+          // If neither court nor team sport type matches supervisor's assigned types
+          if ((!courtSportType || !supervisor.supervisorSportTypes.includes(courtSportType)) && 
+              (!teamSportType || !supervisor.supervisorSportTypes.includes(teamSportType))) {
+            return res.status(403).json({ msg: 'Not authorized to cancel this booking' });
+          }
+        } else {
+          return res.status(403).json({ msg: 'Access denied: No sport types assigned to your profile' });
+        }
+      }
+      // General supervisors can cancel all bookings
+    } else if (req.user.role !== 'admin') {
       return res.status(403).json({ msg: 'Not authorized to cancel this booking' });
     }
 

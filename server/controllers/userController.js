@@ -14,7 +14,7 @@ exports.registerUser = async (req, res) => {
   }
 
   console.log('Register user request body:', req.body);
-  const { firstName, lastName, email, password, role, phoneNumber, address, parentId } = req.body;
+  const { firstName, lastName, email, password, role, phoneNumber, address, parentId, supervisorType, supervisorSportTypes } = req.body;
 
   try {
     // Check if user already exists
@@ -39,6 +39,15 @@ exports.registerUser = async (req, res) => {
       phoneNumber,
       address
     };
+    
+    // Add supervisor specific fields if role is supervisor
+    if (role === 'supervisor') {
+      userFields.supervisorType = supervisorType || 'general';
+      
+      if (supervisorType === 'sports' && Array.isArray(supervisorSportTypes)) {
+        userFields.supervisorSportTypes = supervisorSportTypes;
+      }
+    }
     
     // Only set parentId if it exists and is not empty string
     if (parentId && parentId.trim() !== '') {
@@ -146,7 +155,7 @@ exports.getUserById = async (req, res) => {
 // @access  Admin
 exports.updateUser = async (req, res) => {
   console.log('Update user request body:', req.body);
-  const { firstName, lastName, email, role, phoneNumber, address, isActive, parentId } = req.body;
+  const { firstName, lastName, email, role, phoneNumber, address, isActive, parentId, supervisorType, supervisorSportTypes } = req.body;
 
   // Validate role if provided
   if (role) {
@@ -168,12 +177,26 @@ exports.updateUser = async (req, res) => {
   
   // Handle parentId - Set it if provided as non-empty string, otherwise set to null if explicitly provided
   if (parentId !== undefined) {
-    if (parentId && parentId.trim() !== '') {
+    if (parentId && parentId.trim()) {
       userFields.parentId = parentId;
       console.log(`Setting parentId to: ${parentId}`);
     } else {
       userFields.parentId = null;
       console.log('Setting parentId to null');
+    }
+  }
+  
+  // Handle supervisor specific fields
+  if (role === 'supervisor' || (req.body.supervisorType && !role)) {
+    if (supervisorType) {
+      userFields.supervisorType = supervisorType;
+    }
+    
+    if (supervisorType === 'sports' && Array.isArray(supervisorSportTypes)) {
+      userFields.supervisorSportTypes = supervisorSportTypes;
+    } else if (supervisorType !== 'sports') {
+      // Clear sport types if supervisor type is not sports
+      userFields.supervisorSportTypes = [];
     }
   }
   

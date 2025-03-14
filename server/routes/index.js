@@ -68,7 +68,7 @@ router.post(
   ],
   courtController.createCourt
 );
-router.get('/courts', courtController.getCourts);
+router.get('/courts', auth, courtController.getCourts);
 router.get('/courts/:id', courtController.getCourtById);
 router.put(
   '/courts/:id',
@@ -117,7 +117,7 @@ router.post(
   ],
   teamController.createTeam
 );
-router.get('/teams', teamController.getTeams);
+router.get('/teams', auth, teamController.getTeams);
 router.get('/teams/coach', [auth, coach], teamController.getTeamsByCoach);
 router.get('/teams/player', [auth, player], teamController.getTeamsByPlayer);
 router.get('/teams/player/:playerId', [auth], teamController.getTeamsByPlayerId);

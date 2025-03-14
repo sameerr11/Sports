@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
 const Court = require('../models/Court');
 const Booking = require('../models/Booking');
+const User = require('../models/User');
 
 // @desc    Create a new court
 // @route   POST /api/courts
@@ -13,6 +14,23 @@ exports.createCourt = async (req, res) => {
 
   try {
     const { name, sportType, location, capacity, hourlyRate, availability, image } = req.body;
+
+    // Check if sports supervisor is trying to create a court for a sport they're not assigned to
+    if (req.user.role === 'supervisor') {
+      const supervisor = await User.findById(req.user.id);
+      
+      if (supervisor.supervisorType === 'sports' && 
+          Array.isArray(supervisor.supervisorSportTypes) && 
+          supervisor.supervisorSportTypes.length > 0) {
+        
+        // If the requested sport type is not in the supervisor's assigned types
+        if (!supervisor.supervisorSportTypes.includes(sportType)) {
+          return res.status(403).json({ 
+            msg: 'Not authorized to create courts for this sport type' 
+          });
+        }
+      }
+    }
 
     const newCourt = new Court({
       name,
@@ -38,7 +56,24 @@ exports.createCourt = async (req, res) => {
 // @access  Public
 exports.getCourts = async (req, res) => {
   try {
-    const courts = await Court.find({ isActive: true }).sort({ createdAt: -1 });
+    let query = { isActive: true };
+    
+    // Filter courts by sport type for sports supervisors
+    if (req.user && req.user.role === 'supervisor') {
+      // Get the supervisor details
+      const supervisor = await User.findById(req.user.id);
+      
+      // If supervisor is a sports supervisor, filter by their assigned sport types
+      if (supervisor.supervisorType === 'sports' && 
+          Array.isArray(supervisor.supervisorSportTypes) && 
+          supervisor.supervisorSportTypes.length > 0) {
+        
+        query.sportType = { $in: supervisor.supervisorSportTypes };
+      }
+      // General supervisors and cafeteria supervisors see all courts (or none for cafeteria)
+    }
+    
+    const courts = await Court.find(query).sort({ createdAt: -1 });
     res.json(courts);
   } catch (err) {
     console.error(err.message);
@@ -85,6 +120,30 @@ exports.updateCourt = async (req, res) => {
       return res.status(404).json({ msg: 'Court not found' });
     }
 
+    // Check if sports supervisor is trying to update a court for a sport they're not assigned to
+    if (req.user.role === 'supervisor' && sportType) {
+      const supervisor = await User.findById(req.user.id);
+      
+      if (supervisor.supervisorType === 'sports' && 
+          Array.isArray(supervisor.supervisorSportTypes) && 
+          supervisor.supervisorSportTypes.length > 0) {
+        
+        // If the court's current sport type is not in supervisor's assigned types
+        if (!supervisor.supervisorSportTypes.includes(court.sportType)) {
+          return res.status(403).json({ 
+            msg: 'Not authorized to update courts for this sport type' 
+          });
+        }
+        
+        // If the new sport type is not in supervisor's assigned types
+        if (!supervisor.supervisorSportTypes.includes(sportType)) {
+          return res.status(403).json({ 
+            msg: 'Not authorized to update courts to this sport type' 
+          });
+        }
+      }
+    }
+
     // Build court object
     const courtFields = {};
     if (name) courtFields.name = name;
@@ -120,6 +179,23 @@ exports.deleteCourt = async (req, res) => {
     if (!court) {
       return res.status(404).json({ msg: 'Court not found' });
     }
+    
+    // Check if sports supervisor is trying to delete a court for a sport they're not assigned to
+    if (req.user.role === 'supervisor') {
+      const supervisor = await User.findById(req.user.id);
+      
+      if (supervisor.supervisorType === 'sports' && 
+          Array.isArray(supervisor.supervisorSportTypes) && 
+          supervisor.supervisorSportTypes.length > 0) {
+        
+        // If the court's sport type is not in the supervisor's assigned types
+        if (!supervisor.supervisorSportTypes.includes(court.sportType)) {
+          return res.status(403).json({ 
+            msg: 'Not authorized to delete courts for this sport type' 
+          });
+        }
+      }
+    }
 
     // Check if there are any future bookings for this court
     const futureBookings = await Booking.find({
@@ -131,7 +207,8 @@ exports.deleteCourt = async (req, res) => {
       return res.status(400).json({ msg: 'Cannot delete court with future bookings' });
     }
 
-    await court.remove();
+    // Use findByIdAndDelete instead of remove()
+    await Court.findByIdAndDelete(req.params.id);
     res.json({ msg: 'Court removed' });
   } catch (err) {
     console.error(err.message);

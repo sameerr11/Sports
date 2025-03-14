@@ -14,6 +14,23 @@ exports.createTeam = async (req, res) => {
   try {
     const { name, sportType, ageGroup, level, logo } = req.body;
 
+    // Check if sports supervisor is trying to create a team for a sport they're not assigned to
+    if (req.user.role === 'supervisor') {
+      const supervisor = await User.findById(req.user.id);
+      
+      if (supervisor.supervisorType === 'sports' && 
+          Array.isArray(supervisor.supervisorSportTypes) && 
+          supervisor.supervisorSportTypes.length > 0) {
+        
+        // If the requested sport type is not in the supervisor's assigned types
+        if (!supervisor.supervisorSportTypes.includes(sportType)) {
+          return res.status(403).json({ 
+            msg: 'Not authorized to create teams for this sport type' 
+          });
+        }
+      }
+    }
+
     const newTeam = new Team({
       name,
       sportType,
@@ -36,7 +53,24 @@ exports.createTeam = async (req, res) => {
 // @access  Public
 exports.getTeams = async (req, res) => {
   try {
-    const teams = await Team.find({ isActive: true })
+    let query = { isActive: true };
+    
+    // Filter teams by sport type for sports supervisors
+    if (req.user && req.user.role === 'supervisor') {
+      // Get the supervisor details
+      const supervisor = await User.findById(req.user.id);
+      
+      // If supervisor is a sports supervisor, filter by their assigned sport types
+      if (supervisor.supervisorType === 'sports' && 
+          Array.isArray(supervisor.supervisorSportTypes) && 
+          supervisor.supervisorSportTypes.length > 0) {
+        
+        query.sportType = { $in: supervisor.supervisorSportTypes };
+      }
+      // General supervisors and cafeteria supervisors see all teams (or none for cafeteria)
+    }
+    
+    const teams = await Team.find(query)
       .populate('coaches.coach', 'firstName lastName email')
       .sort({ createdAt: -1 });
     
@@ -86,6 +120,30 @@ exports.updateTeam = async (req, res) => {
     
     if (!team) {
       return res.status(404).json({ msg: 'Team not found' });
+    }
+
+    // Check if sports supervisor is trying to update a team for a sport they're not assigned to
+    if (req.user.role === 'supervisor') {
+      const supervisor = await User.findById(req.user.id);
+      
+      if (supervisor.supervisorType === 'sports' && 
+          Array.isArray(supervisor.supervisorSportTypes) && 
+          supervisor.supervisorSportTypes.length > 0) {
+        
+        // If the team's current sport type is not in supervisor's assigned types
+        if (!supervisor.supervisorSportTypes.includes(team.sportType)) {
+          return res.status(403).json({ 
+            msg: 'Not authorized to update teams for this sport type' 
+          });
+        }
+        
+        // If trying to change sport type, check if new type is in supervisor's assigned types
+        if (sportType && !supervisor.supervisorSportTypes.includes(sportType)) {
+          return res.status(403).json({ 
+            msg: 'Not authorized to update teams to this sport type' 
+          });
+        }
+      }
     }
 
     // Build team object
