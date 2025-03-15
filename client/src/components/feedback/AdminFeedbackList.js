@@ -48,7 +48,6 @@ const AdminFeedbackList = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [roleFilter, setRoleFilter] = useState('all');
   const [detailsDialog, setDetailsDialog] = useState({ open: false, feedback: null });
   const [statusDialog, setStatusDialog] = useState({ open: false, feedback: null, newStatus: '' });
 
@@ -58,7 +57,7 @@ const AdminFeedbackList = () => {
 
   useEffect(() => {
     filterFeedbacks();
-  }, [feedbacks, searchTerm, statusFilter, roleFilter]);
+  }, [feedbacks, searchTerm, statusFilter]);
 
   const fetchFeedbacks = async () => {
     setLoading(true);
@@ -90,11 +89,6 @@ const AdminFeedbackList = () => {
       filtered = filtered.filter((feedback) => feedback.status === statusFilter);
     }
 
-    // Filter by role
-    if (roleFilter !== 'all') {
-      filtered = filtered.filter((feedback) => feedback.role === roleFilter);
-    }
-
     setFilteredFeedbacks(filtered);
   };
 
@@ -104,10 +98,6 @@ const AdminFeedbackList = () => {
 
   const handleStatusFilterChange = (e) => {
     setStatusFilter(e.target.value);
-  };
-
-  const handleRoleFilterChange = (e) => {
-    setRoleFilter(e.target.value);
   };
 
   const handleViewDetails = (feedback) => {
@@ -228,22 +218,6 @@ const AdminFeedbackList = () => {
               <MenuItem value="pending">Pending</MenuItem>
               <MenuItem value="reviewed">Reviewed</MenuItem>
               <MenuItem value="resolved">Resolved</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth: '150px' }}>
-            <Select
-              value={roleFilter}
-              onChange={handleRoleFilterChange}
-              displayEmpty
-              startAdornment={<FilterList sx={{ mr: 1 }} />}
-            >
-              <MenuItem value="all">All Roles</MenuItem>
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="supervisor">Supervisor</MenuItem>
-              <MenuItem value="coach">Coach</MenuItem>
-              <MenuItem value="parent">Parent</MenuItem>
-              <MenuItem value="player">Player</MenuItem>
-              <MenuItem value="cashier">Cashier</MenuItem>
             </Select>
           </FormControl>
         </Box>
