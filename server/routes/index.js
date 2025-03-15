@@ -11,6 +11,7 @@ const bookingController = require('../controllers/bookingController');
 const teamController = require('../controllers/teamController');
 const cafeteriaRoutes = require('./cafeteriaRoutes');
 const trainingPlanController = require('../controllers/trainingPlanController');
+const feedbackController = require('../controllers/feedbackController');
 
 // Middleware
 const { auth, admin, supervisor, coach, player, parent } = require('../middleware/auth');
@@ -179,6 +180,28 @@ router.put(
     check('status', 'Status is required').isIn(['Draft', 'Assigned', 'InProgress', 'Completed'])
   ],
   trainingPlanController.updateTrainingPlanStatus
+);
+
+// Feedback routes
+router.post(
+  '/feedback',
+  [
+    auth,
+    check('message', 'Message is required').not().isEmpty()
+  ],
+  feedbackController.submitFeedback
+);
+
+router.get('/feedback', [auth, admin], feedbackController.getAllFeedback);
+router.get('/feedback/user', auth, feedbackController.getUserFeedback);
+router.put(
+  '/feedback/:id',
+  [
+    auth,
+    admin,
+    check('status', 'Status is required').not().isEmpty()
+  ],
+  feedbackController.updateFeedbackStatus
 );
 
 module.exports = router; 

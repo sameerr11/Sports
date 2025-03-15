@@ -27,6 +27,7 @@ import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PersonIcon from '@mui/icons-material/Person';
 import FamilyRestroomIcon from '@mui/icons-material/FamilyRestroom';
+import FeedbackIcon from '@mui/icons-material/Feedback';
 import { 
     isAdmin, 
     isSupervisor, 
@@ -92,6 +93,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const adminItems = [
         { text: 'User Management', icon: <AdminPanelSettingsIcon />, path: '/users' },
         { text: 'Add User', icon: <PersonAddIcon />, path: '/users/new' },
+        { text: 'Feedback Management', icon: <FeedbackIcon />, path: '/admin/feedback' },
     ];
 
     const coachItems = [
@@ -103,7 +105,8 @@ const Sidebar = ({ open, toggleSidebar }) => {
     ];
     
     const parentItems = [
-        { text: 'Parent Dashboard', icon: <FamilyRestroomIcon />, path: '/parent' }
+        { text: 'Parent Dashboard', icon: <FamilyRestroomIcon />, path: '/parent' },
+        { text: 'Feedback', icon: <FeedbackIcon />, path: '/parent/feedback' }
     ];
 
     // Function to determine which supervisor items to show

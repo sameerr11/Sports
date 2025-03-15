@@ -26,6 +26,8 @@ import TrainingPlanManager from './components/training/TrainingPlanManager';
 import TrainingPlanDetail from './components/training/TrainingPlanDetail';
 import PlayerDashboard from './components/player/PlayerDashboard';
 import ParentDashboard from './components/parent/ParentDashboard';
+import FeedbackPage from './components/feedback/FeedbackPage';
+import AdminFeedbackList from './components/feedback/AdminFeedbackList';
 import './App.css';
 
 // Placeholder components for routes
@@ -216,6 +218,14 @@ function App() {
           </ProtectedRoute>
         } />
         
+        <Route path="/parent/feedback" element={
+          <ProtectedRoute requiredRole="parent">
+            <MainLayout>
+              <FeedbackPage />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
         {/* Booking Routes */}
         <Route path="/bookings" element={
           <ProtectedRoute requiredRole="supervisor">
@@ -286,6 +296,14 @@ function App() {
           <ProtectedRoute requiredRole="admin">
             <MainLayout>
               <UserForm />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/admin/feedback" element={
+          <ProtectedRoute requiredRole="admin">
+            <MainLayout>
+              <AdminFeedbackList />
             </MainLayout>
           </ProtectedRoute>
         } />

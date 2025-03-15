@@ -47,7 +47,6 @@ import {
   StarOutline,
   Star,
   KeyboardArrowRight,
-  Image,
   People
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
@@ -63,7 +62,6 @@ const ParentDashboard = () => {
   const [upcomingMatches, setUpcomingMatches] = useState([]);
   const [children, setChildren] = useState([]);
   const [selectedChild, setSelectedChild] = useState('');
-  const [matchGallery, setMatchGallery] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -109,30 +107,6 @@ const ParentDashboard = () => {
             booking => booking.purpose === 'Match' && new Date(booking.startTime) >= new Date()
           );
           setUpcomingMatches(matchSessions);
-          
-          // 5. Fetch match gallery (Mock data for now)
-          // In a real implementation, you would fetch actual gallery images for matches
-          setMatchGallery([
-            {
-              matchId: '1',
-              title: 'Championship Finals',
-              date: '2023-06-15',
-              images: [
-                { id: '1', url: 'https://via.placeholder.com/300x200?text=Match+Photo+1', caption: 'Team huddle before the game' },
-                { id: '2', url: 'https://via.placeholder.com/300x200?text=Match+Photo+2', caption: 'Winning goal celebration' },
-                { id: '3', url: 'https://via.placeholder.com/300x200?text=Match+Photo+3', caption: 'Trophy ceremony' }
-              ]
-            },
-            {
-              matchId: '2',
-              title: 'League Match vs. Tigers',
-              date: '2023-05-28',
-              images: [
-                { id: '4', url: 'https://via.placeholder.com/300x200?text=Match+Photo+4', caption: 'Pre-match warm-up' },
-                { id: '5', url: 'https://via.placeholder.com/300x200?text=Match+Photo+5', caption: 'Defense in action' }
-              ]
-            }
-          ]);
         }
         
         setLoading(false);
@@ -338,71 +312,6 @@ const ParentDashboard = () => {
     </Box>
   );
   
-  const renderGalleryTab = () => (
-    <Box>
-      <Card elevation={2}>
-        <CardHeader 
-          title="Match Gallery" 
-          titleTypographyProps={{ variant: 'h6' }}
-        />
-        <Divider />
-        <CardContent>
-          {matchGallery.length === 0 ? (
-            <Typography variant="body1" sx={{ textAlign: 'center', py: 3 }}>
-              No match photos available.
-            </Typography>
-          ) : (
-            <Box>
-              {matchGallery.map((album) => (
-                <Box key={album.matchId} sx={{ mb: 4 }}>
-                  <Typography variant="h6" gutterBottom>
-                    {album.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {format(new Date(album.date), 'MMMM dd, yyyy')}
-                  </Typography>
-                  <Grid container spacing={2}>
-                    {album.images.map((image) => (
-                      <Grid item xs={12} sm={6} md={4} key={image.id}>
-                        <Paper 
-                          elevation={2}
-                          sx={{ 
-                            overflow: 'hidden', 
-                            height: '100%',
-                            '&:hover': {
-                              boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.15)}`,
-                            }
-                          }}
-                        >
-                          <Box 
-                            component="img" 
-                            src={image.url}
-                            alt={image.caption}
-                            sx={{ 
-                              width: '100%', 
-                              height: 200, 
-                              objectFit: 'cover',
-                              display: 'block'
-                            }}
-                          />
-                          <Box sx={{ p: 1 }}>
-                            <Typography variant="body2">
-                              {image.caption}
-                            </Typography>
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    ))}
-                  </Grid>
-                </Box>
-              ))}
-            </Box>
-          )}
-        </CardContent>
-      </Card>
-    </Box>
-  );
-  
   return (
     <Box sx={{ py: 3 }}>
       {/* Header */}
@@ -475,11 +384,6 @@ const ParentDashboard = () => {
                 icon={<SportsScore />} 
                 iconPosition="start"
               />
-              <Tab 
-                label="Match Gallery" 
-                icon={<Image />} 
-                iconPosition="start"
-              />
             </Tabs>
           </Box>
           
@@ -487,7 +391,6 @@ const ParentDashboard = () => {
           <Box sx={{ mt: 2 }}>
             {activeTab === 0 && renderTrainingScheduleTab()}
             {activeTab === 1 && renderMatchesTab()}
-            {activeTab === 2 && renderGalleryTab()}
           </Box>
         </>
       )}
