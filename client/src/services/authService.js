@@ -143,6 +143,18 @@ export const isGuest = () => {
   return hasRole('guest');
 };
 
+// Check if user is support
+export const isSupport = () => {
+  const user = getStoredUser();
+  return user && user.role === 'support';
+};
+
+// Check if user is admin or support
+export const isAdminOrSupport = () => {
+  const user = getStoredUser();
+  return user && (user.role === 'admin' || user.role === 'support');
+};
+
 export const getAuthHeader = () => {
   const token = getToken();
   return {

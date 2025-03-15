@@ -26,7 +26,8 @@ const ROLES = [
   { value: 'cashier', label: 'Cashier' },
   { value: 'coach', label: 'Coach' },
   { value: 'player', label: 'Player' },
-  { value: 'parent', label: 'Parent' }
+  { value: 'parent', label: 'Parent' },
+  { value: 'support', label: 'Support' }
 ];
 
 const SUPERVISOR_TYPES = [

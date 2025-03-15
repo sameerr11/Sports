@@ -85,6 +85,8 @@ const UserList = () => {
         return 'secondary';
       case 'accounting':
         return 'info';
+      case 'support':
+        return 'info';
       default:
         return 'default';
     }

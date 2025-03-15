@@ -14,7 +14,7 @@ const trainingPlanController = require('../controllers/trainingPlanController');
 const feedbackController = require('../controllers/feedbackController');
 
 // Middleware
-const { auth, admin, supervisor, coach, player, parent } = require('../middleware/auth');
+const { auth, admin, supervisor, coach, player, parent, adminOrSupport, support } = require('../middleware/auth');
 
 // Auth routes
 router.post(
@@ -41,13 +41,30 @@ router.post(
   ],
   userController.registerUser
 );
-router.get('/users', [auth, admin], userController.getUsers);
-router.get('/users/role/:role', [auth, supervisor], userController.getUsersByRole);
+router.get('/users', [auth, adminOrSupport], userController.getUsers);
+router.get('/users/role/:role', [auth, adminOrSupport], userController.getUsersByRole);
 router.get('/users/parent/children', [auth, parent], userController.getParentChildren);
-router.get('/users/:id', [auth, admin], userController.getUserById);
+router.get('/users/:id', [auth, adminOrSupport], userController.getUserById);
 router.put('/users/:id', [auth, admin], userController.updateUser);
 router.delete('/users/:id', [auth, admin], userController.deleteUser);
 router.put('/users/:id/password', [auth, admin], userController.changePassword);
+
+// Document routes
+router.post(
+  '/users/:id/documents',
+  [
+    auth,
+    adminOrSupport,
+    // Document upload middleware will be handled here
+  ],
+  userController.uploadDocument
+);
+
+router.delete(
+  '/users/:id/documents/:documentId',
+  [auth, adminOrSupport],
+  userController.deleteDocument
+);
 
 // Notification routes
 router.get('/notifications', auth, notificationController.getUserNotifications);
@@ -192,13 +209,13 @@ router.post(
   feedbackController.submitFeedback
 );
 
-router.get('/feedback', [auth, admin], feedbackController.getAllFeedback);
+router.get('/feedback', [auth, adminOrSupport], feedbackController.getAllFeedback);
 router.get('/feedback/user', auth, feedbackController.getUserFeedback);
 router.put(
   '/feedback/:id',
   [
     auth,
-    admin,
+    adminOrSupport,
     check('status', 'Status is required').not().isEmpty()
   ],
   feedbackController.updateFeedbackStatus

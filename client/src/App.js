@@ -17,7 +17,7 @@ import Dashboard from './components/dashboard/Dashboard';
 import Profile from './components/profile/Profile';
 import { 
   isAuthenticated, isAdmin, isSupervisor, 
-  isCoach, isPlayer, isParent, isCashier, isPlayerOnly 
+  isCoach, isPlayer, isParent, isCashier, isPlayerOnly, isAdminOrSupport 
 } from './services/authService';
 import Cafeteria from './components/cafeteria/Cafeteria';
 import CafeteriaManagement from './components/cafeteria/CafeteriaManagement';
@@ -28,6 +28,8 @@ import PlayerDashboard from './components/player/PlayerDashboard';
 import ParentDashboard from './components/parent/ParentDashboard';
 import FeedbackPage from './components/feedback/FeedbackPage';
 import AdminFeedbackList from './components/feedback/AdminFeedbackList';
+import DocumentManagement from './components/support/DocumentManagement';
+import SupportDashboard from './components/support/SupportDashboard';
 import './App.css';
 
 // Placeholder components for routes
@@ -59,6 +61,11 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   if (isCoach() && !isSupervisor() && !isAdmin() && window.location.pathname === '/' && !requiredRole) {
     return <Navigate to="/coach" />;
   }
+  
+  // Redirect support users to support dashboard if they try to access the main dashboard
+  if (isAdminOrSupport() && !isAdmin() && window.location.pathname === '/' && !requiredRole) {
+    return <Navigate to="/support/dashboard" />;
+  }
 
   if (requiredRole === 'admin' && !isAdmin()) {
     return <Navigate to="/" />;
@@ -81,6 +88,10 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   }
 
   if (requiredRole === 'parent' && !isParent()) {
+    return <Navigate to="/" />;
+  }
+
+  if (requiredRole === 'adminOrSupport' && !isAdminOrSupport()) {
     return <Navigate to="/" />;
   }
 
@@ -301,9 +312,33 @@ function App() {
         } />
         
         <Route path="/admin/feedback" element={
-          <ProtectedRoute requiredRole="admin">
+          <ProtectedRoute requiredRole="adminOrSupport">
             <MainLayout>
               <AdminFeedbackList />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/support/dashboard" element={
+          <ProtectedRoute requiredRoles={['adminOrSupport']}>
+            <MainLayout>
+              <SupportDashboard />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/support/feedback" element={
+          <ProtectedRoute requiredRoles={['adminOrSupport']}>
+            <MainLayout>
+              <AdminFeedbackList />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/support/documents" element={
+          <ProtectedRoute requiredRoles={['adminOrSupport']}>
+            <MainLayout>
+              <DocumentManagement />
             </MainLayout>
           </ProtectedRoute>
         } />

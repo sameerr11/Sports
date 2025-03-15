@@ -27,7 +27,7 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'supervisor', 'cashier', 'coach', 'player', 'parent', 'accounting', 'guest'],
+    enum: ['admin', 'supervisor', 'cashier', 'coach', 'player', 'parent', 'accounting', 'guest', 'support'],
     default: 'guest'
   },
   supervisorType: {
@@ -60,14 +60,27 @@ const UserSchema = new mongoose.Schema({
     zipCode: String,
     country: String
   },
-  documents: [{
-    name: String,
-    fileUrl: String,
-    uploadDate: {
-      type: Date,
-      default: Date.now
+  documents: [
+    {
+      name: {
+        type: String,
+        required: true
+      },
+      url: {
+        type: String,
+        required: true
+      },
+      type: {
+        type: String,
+        enum: ['healthCard', 'healthAid', 'other'],
+        default: 'other'
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now
+      }
     }
-  }],
+  ],
   isActive: {
     type: Boolean,
     default: true

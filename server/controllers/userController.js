@@ -3,6 +3,7 @@ const Notification = require('../models/Notification');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
+const mongoose = require('mongoose');
 
 // @desc    Register a new user
 // @route   POST /api/users
@@ -24,7 +25,7 @@ exports.registerUser = async (req, res) => {
     }
     
     // Validate role
-    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier'];
+    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier', 'support'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ msg: 'Invalid role selected' });
     }
@@ -159,7 +160,7 @@ exports.updateUser = async (req, res) => {
 
   // Validate role if provided
   if (role) {
-    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier'];
+    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier', 'support'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ msg: 'Invalid role selected' });
     }
@@ -347,13 +348,13 @@ exports.changePassword = async (req, res) => {
 
 // @desc    Get users by role
 // @route   GET /api/users/role/:role
-// @access  Supervisor
+// @access  Supervisor, Admin, Support
 exports.getUsersByRole = async (req, res) => {
   try {
     const { role } = req.params;
     
     // Validate role
-    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent'];
+    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier', 'support'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ msg: 'Invalid role' });
     }
@@ -393,6 +394,110 @@ exports.getParentChildren = async (req, res) => {
     res.json(children);
   } catch (err) {
     console.error('Error fetching parent children:', err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// @desc    Upload document for user
+// @route   POST /api/users/:id/documents
+// @access  Private - Admin and Support
+exports.uploadDocument = async (req, res) => {
+  try {
+    console.log('Upload document request body:', req.body);
+    console.log('Upload document for user ID:', req.params.id);
+    
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    
+    const { name, type } = req.body;
+    
+    if (!name) {
+      return res.status(400).json({ msg: 'Document name is required' });
+    }
+    
+    console.log('Creating document with name:', name, 'and type:', type);
+    
+    // In a real application, we would handle file upload to cloud storage
+    // For this example, we'll create a mock document with simulated URL
+    const documentType = type || 'other'; // Default to 'other' if no type provided
+    
+    // Create document with simulated URL
+    const newDocument = {
+      _id: new mongoose.Types.ObjectId(),
+      name,
+      type: documentType,
+      url: `https://example.com/documents/${req.params.id}/${Date.now()}`,
+      createdAt: new Date()
+    };
+    
+    console.log('New document object:', newDocument);
+    
+    // Add document to user's documents array
+    user.documents = user.documents || [];
+    user.documents.push(newDocument);
+    
+    await user.save();
+    console.log('Document saved to user:', user._id);
+    
+    // Create notification for the user
+    try {
+      const notification = new Notification({
+        recipient: user._id,
+        type: 'document_upload',
+        title: 'New Document Added',
+        message: `A new document "${name}" has been uploaded to your profile.`,
+        relatedTo: {
+          model: 'User',
+          id: user._id
+        }
+      });
+      
+      await notification.save();
+      console.log('Notification created for document upload');
+    } catch (notificationErr) {
+      console.error('Error creating notification:', notificationErr);
+      // Continue execution even if notification fails
+    }
+    
+    res.json(newDocument);
+  } catch (err) {
+    console.error('Error in uploadDocument:', err.message);
+    res.status(500).json({ msg: 'Server Error' });
+  }
+};
+
+// @desc    Delete a document from a user
+// @route   DELETE /api/users/:id/documents/:documentId
+// @access  Private (Admin and Support)
+exports.deleteDocument = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    
+    // Find the document in the user's documents array
+    const documentIndex = user.documents.findIndex(
+      doc => doc._id.toString() === req.params.documentId
+    );
+    
+    if (documentIndex === -1) {
+      return res.status(404).json({ msg: 'Document not found' });
+    }
+    
+    // In a real implementation, you would delete the file from storage here
+    
+    // Remove the document from the array
+    user.documents.splice(documentIndex, 1);
+    await user.save();
+    
+    res.json({ msg: 'Document deleted' });
+  } catch (err) {
+    console.error('Error deleting document:', err.message);
     res.status(500).send('Server Error');
   }
 }; 

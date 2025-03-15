@@ -39,6 +39,22 @@ exports.admin = (req, res, next) => {
   next();
 };
 
+// Middleware to check if user has support role
+exports.support = (req, res, next) => {
+  if (req.user.role !== 'support' && req.user.role !== 'admin') {
+    return res.status(403).json({ msg: 'Access denied. Support privileges required.' });
+  }
+  next();
+};
+
+// Middleware to check if user has admin or support role
+exports.adminOrSupport = (req, res, next) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'support') {
+    return res.status(403).json({ msg: 'Access denied. Admin or Support privileges required.' });
+  }
+  next();
+};
+
 // Middleware to check if user has supervisor role
 exports.supervisor = (req, res, next) => {
   if (req.user.role !== 'supervisor' && req.user.role !== 'admin') {

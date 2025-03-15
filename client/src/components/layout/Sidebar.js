@@ -28,6 +28,9 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import PersonIcon from '@mui/icons-material/Person';
 import FamilyRestroomIcon from '@mui/icons-material/FamilyRestroom';
 import FeedbackIcon from '@mui/icons-material/Feedback';
+import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
+import PeopleIcon from '@mui/icons-material/People';
+import SupportIcon from '@mui/icons-material/Support';
 import { 
     isAdmin, 
     isSupervisor, 
@@ -38,6 +41,8 @@ import {
     isCafeteriaSupervisor,
     isSportsSupervisor,
     isGeneralSupervisor,
+    isSupport,
+    isAdminOrSupport,
     getStoredUser
 } from '../../services/authService';
 import './Sidebar.css';
@@ -55,6 +60,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const coach = isCoach();
     const player = isPlayerOnly();
     const parent = isParent();
+    const support = isSupport();
     const theme = useTheme();
     const user = getStoredUser();
 
@@ -107,6 +113,24 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const parentItems = [
         { text: 'Parent Dashboard', icon: <FamilyRestroomIcon />, path: '/parent' },
         { text: 'Feedback', icon: <FeedbackIcon />, path: '/parent/feedback' }
+    ];
+
+    const supportItems = [
+        {
+            text: 'Dashboard',
+            path: '/support/dashboard',
+            icon: <DashboardIcon />
+        },
+        {
+            text: 'Feedback Management',
+            path: '/support/feedback',
+            icon: <FeedbackIcon />
+        },
+        {
+            text: 'Health Documents',
+            path: '/support/documents',
+            icon: <HealthAndSafetyIcon />
+        }
     ];
 
     // Function to determine which supervisor items to show
@@ -171,9 +195,9 @@ const Sidebar = ({ open, toggleSidebar }) => {
             </Box>
             <Divider />
             
-            {/* Show regular menu items if user is admin/supervisor OR not a cashier/parent/player/coach */}
+            {/* Show regular menu items if user is admin/supervisor OR not a cashier/parent/player/coach/support */}
             {/* Don't show them to cafeteria supervisors */}
-            {(admin || (supervisor && !cafeteriaSupervisor) || (!cashier && !parent && !player && !coach && !cafeteriaSupervisor)) && (
+            {(admin || (supervisor && !cafeteriaSupervisor) || (!cashier && !parent && !player && !coach && !cafeteriaSupervisor && !support)) && (
                 <List component="nav" className="sidebar-nav">
                     {menuItems.map((item) => (
                         <ListItem 
@@ -621,6 +645,78 @@ const Sidebar = ({ open, toggleSidebar }) => {
                             />
                         </ListItem>
                         {parentItems.map((item) => (
+                            <ListItem 
+                                button 
+                                key={item.text} 
+                                component={Link} 
+                                to={item.path}
+                                selected={location.pathname === item.path}
+                                className={location.pathname === item.path ? 'active' : ''}
+                                sx={{
+                                    borderRadius: '0 20px 20px 0',
+                                    mx: 1,
+                                    mb: 0.5,
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    width: 'calc(100% - 16px)',
+                                    '&.active': {
+                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                        color: theme.palette.primary.main,
+                                        '&::before': {
+                                            content: '""',
+                                            position: 'absolute',
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: 4,
+                                            backgroundColor: theme.palette.primary.main,
+                                            borderRadius: '0 4px 4px 0'
+                                        }
+                                    },
+                                    '&:hover': {
+                                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                    }
+                                }}
+                            >
+                                <ListItemIcon sx={{ 
+                                    color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                    minWidth: 40,
+                                    flexShrink: 0
+                                }}>
+                                    {item.icon}
+                                </ListItemIcon>
+                                <ListItemText 
+                                    primary={item.text} 
+                                    primaryTypographyProps={{ 
+                                        fontSize: '0.95rem',
+                                        fontWeight: location.pathname === item.path ? 600 : 400,
+                                        noWrap: true
+                                    }}
+                                    sx={{ overflow: 'hidden' }}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                </>
+            )}
+            
+            {/* Support Items */}
+            {support && (
+                <>
+                    <Divider sx={{ my: 1 }} />
+                    <List component="nav" className="sidebar-nav">
+                        <ListItem sx={{ px: 3 }}>
+                            <ListItemText 
+                                primary="Support Tools" 
+                                primaryTypographyProps={{ 
+                                    variant: 'overline',
+                                    color: 'text.secondary',
+                                    fontWeight: 600,
+                                    noWrap: true
+                                }} 
+                            />
+                        </ListItem>
+                        {supportItems.map((item) => (
                             <ListItem 
                                 button 
                                 key={item.text} 
