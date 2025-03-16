@@ -17,7 +17,7 @@ import Dashboard from './components/dashboard/Dashboard';
 import Profile from './components/profile/Profile';
 import { 
   isAuthenticated, isAdmin, isSupervisor, 
-  isCoach, isPlayer, isParent, isCashier, isPlayerOnly, isAdminOrSupport 
+  isCoach, isPlayer, isParent, isCashier, isPlayerOnly, isAdminOrSupport, isCafeteriaSupervisor 
 } from './services/authService';
 import Cafeteria from './components/cafeteria/Cafeteria';
 import CafeteriaManagement from './components/cafeteria/CafeteriaManagement';
@@ -45,6 +45,11 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   // Redirect cashiers to POS if they try to access any other route
   if (isCashier() && window.location.pathname !== '/cafeteria') {
     return <Navigate to="/cafeteria" />;
+  }
+  
+  // Redirect cafeteria supervisors to cafeteria management if they try to access the main dashboard
+  if (isCafeteriaSupervisor() && window.location.pathname === '/' && !requiredRole) {
+    return <Navigate to="/cafeteria/manage" />;
   }
   
   // Redirect parents to parent dashboard if they try to access the main dashboard

@@ -359,6 +359,11 @@ exports.getUsersByRole = async (req, res) => {
       return res.status(400).json({ msg: 'Invalid role' });
     }
     
+    // Only admin, support, and supervisor roles should access this endpoint
+    if (req.user.role !== 'admin' && req.user.role !== 'support' && req.user.role !== 'supervisor') {
+      return res.status(403).json({ msg: 'Access denied. Admin, Support, or Supervisor privileges required.' });
+    }
+    
     const users = await User.find({ role, isActive: true }).select('-password');
     res.json(users);
   } catch (err) {

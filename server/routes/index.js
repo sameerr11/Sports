@@ -42,7 +42,7 @@ router.post(
   userController.registerUser
 );
 router.get('/users', [auth, adminOrSupport], userController.getUsers);
-router.get('/users/role/:role', [auth, adminOrSupport], userController.getUsersByRole);
+router.get('/users/role/:role', [auth], userController.getUsersByRole);
 router.get('/users/parent/children', [auth, parent], userController.getParentChildren);
 router.get('/users/:id', [auth, adminOrSupport], userController.getUserById);
 router.put('/users/:id', [auth, admin], userController.updateUser);
