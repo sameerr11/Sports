@@ -30,6 +30,7 @@ import FeedbackPage from './components/feedback/FeedbackPage';
 import AdminFeedbackList from './components/feedback/AdminFeedbackList';
 import DocumentManagement from './components/support/DocumentManagement';
 import SupportDashboard from './components/support/SupportDashboard';
+import PlayerStats from './components/support/PlayerStats';
 import './App.css';
 
 // Placeholder components for routes
@@ -344,6 +345,14 @@ function App() {
           <ProtectedRoute requiredRoles={['adminOrSupport']}>
             <MainLayout>
               <DocumentManagement />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/player-stats" element={
+          <ProtectedRoute requiredRole="adminOrSupport">
+            <MainLayout>
+              <PlayerStats />
             </MainLayout>
           </ProtectedRoute>
         } />

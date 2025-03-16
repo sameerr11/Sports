@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Typography, Box, Paper, Table, TableBody, TableCell, 
-  TableContainer, TableHead, TableRow, Chip, Alert, CircularProgress 
+  TableContainer, TableHead, TableRow, Chip, Alert, CircularProgress,
+  Button, Grid, Card, CardContent, CardActions
 } from '@mui/material';
 import { getStoredUser } from '../../services/authService';
 import { getAllUsers } from '../../services/userService';
+import { Link } from 'react-router-dom';
+import { 
+  Description, 
+  Assessment, 
+  SportsSoccer, 
+  FitnessCenter
+} from '@mui/icons-material';
 
 // Add a helper function to format address objects
 const formatAddress = (address) => {
@@ -64,6 +72,78 @@ const SupportDashboard = () => {
           This dashboard provides access to player information and documents.
         </Typography>
       </Paper>
+      
+      {/* Quick Actions Section */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={4}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Description sx={{ mr: 1, color: 'primary.main' }} />
+                <Typography variant="h6">Health Documents</Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Manage health documents and certificates for players.
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button 
+                component={Link} 
+                to="/support/documents" 
+                color="primary"
+              >
+                Manage Documents
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={4}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Assessment sx={{ mr: 1, color: 'secondary.main' }} />
+                <Typography variant="h6">Player Statistics</Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Add and update player statistics, performance metrics, and skills by sport.
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button 
+                component={Link} 
+                to="/player-stats" 
+                color="secondary"
+              >
+                Manage Stats
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={4}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <SportsSoccer sx={{ mr: 1, color: 'success.main' }} />
+                <Typography variant="h6">Teams Overview</Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                View team information and player assignments.
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button 
+                component={Link} 
+                to="/teams" 
+                color="success"
+              >
+                View Teams
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+      </Grid>
       
       <Paper elevation={1} sx={{ p: 3 }}>
         <Typography variant="h5" gutterBottom>
