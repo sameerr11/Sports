@@ -42,7 +42,10 @@ import {
   PlayArrow,
   Done,
   LocationOn,
-  Sports
+  Sports,
+  DirectionsRun,
+  AccessTime,
+  PeopleAlt
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router-dom';
@@ -69,6 +72,7 @@ const CoachDashboard = () => {
   const [trainingSessions, setTrainingSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [plansTab, setPlansTab] = useState(0);
   
   // Check if user is a coach
   const coach = isCoach();
@@ -152,6 +156,22 @@ const CoachDashboard = () => {
   // Get training plans by status
   const getPlansByStatus = (status) => {
     return trainingPlans.filter(plan => plan.status === status);
+  };
+  
+  // Get filtered plans based on selected tab
+  const getFilteredPlans = () => {
+    switch(plansTab) {
+      case 0: // Upcoming
+        return trainingPlans.filter(plan => 
+          plan.status === 'Draft' || plan.status === 'Assigned'
+        ).sort((a, b) => new Date(a.date) - new Date(b.date));
+      case 1: // In Progress
+        return trainingPlans.filter(plan => plan.status === 'InProgress');
+      case 2: // Completed
+        return trainingPlans.filter(plan => plan.status === 'Completed');
+      default:
+        return trainingPlans;
+    }
   };
   
   // Get status color
@@ -488,203 +508,135 @@ const CoachDashboard = () => {
   
   // Render training plans tab
   const renderPlansTab = () => (
-    <Grid container spacing={3}>
-      {isLoading ? (
-        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <CircularProgress />
-        </Grid>
+    <Box sx={{ mt: 3 }}>
+      <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+        Training Plans
+      </Typography>
+      
+      {/* Plan status tabs */}
+      <Paper sx={{ mb: 3 }}>
+        <Tabs 
+          value={plansTab} 
+          onChange={(e, v) => setPlansTab(v)} 
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{ px: 2, pt: 1 }}
+        >
+          <Tab label="Upcoming" />
+          <Tab label="In Progress" />
+          <Tab label="Completed" />
+        </Tabs>
+      </Paper>
+      
+      {/* Plans list */}
+      {getFilteredPlans().length === 0 ? (
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Typography color="textSecondary">
+            No {plansTab === 0 ? 'upcoming' : plansTab === 1 ? 'in progress' : 'completed'} training plans.
+          </Typography>
+        </Paper>
       ) : (
-        <>
-          <Grid item xs={12} md={6}>
-            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
-              <CardHeader 
-                title="Assigned Plans"
-                avatar={
-                  <Avatar sx={{ bgcolor: theme.palette.info.main }}>
-                    <Assignment />
-                  </Avatar>
-                }
-              />
-              <CardContent>
-                <List dense>
-                  {getPlansByStatus('Assigned').length > 0 ? (
-                    getPlansByStatus('Assigned').map(plan => (
-                      <React.Fragment key={plan._id}>
-                        <ListItem
-                          secondaryAction={
-                            <Box>
-                              <IconButton 
-                                edge="end" 
-                                size="small"
-                                onClick={() => handleUpdateStatus(plan._id, 'InProgress')}
-                                sx={{ mr: 1 }}
-                              >
-                                <PlayArrow />
-                              </IconButton>
-                              <IconButton 
-                                edge="end" 
-                                size="small"
-                                component={Link}
-                                to={`/training-plans/${plan._id}`}
-                              >
-                                <Visibility />
-                              </IconButton>
-                            </Box>
-                          }
-                        >
-                          <ListItemAvatar>
-                            <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
-                              <SportsHandball />
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={plan.title}
-                            secondary={
-                              <React.Fragment>
-                                <Typography variant="body2" component="span" color="text.primary">
-                                  {plan.team.name}
-                                </Typography>
-                                {` - ${format(new Date(plan.date), 'MMM d, yyyy')}`}
-                              </React.Fragment>
-                            }
-                          />
-                        </ListItem>
-                        <Divider variant="inset" component="li" />
-                      </React.Fragment>
-                    ))
-                  ) : (
-                    <ListItem>
-                      <ListItemText primary="No assigned training plans" />
-                    </ListItem>
-                  )}
-                </List>
-              </CardContent>
-            </Card>
-          </Grid>
-          
-          <Grid item xs={12} md={6}>
-            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
-              <CardHeader 
-                title="In Progress Plans"
-                avatar={
-                  <Avatar sx={{ bgcolor: theme.palette.warning.main }}>
-                    {getPlansByStatus('InProgress').length > 0 && getPlansByStatus('InProgress')[0].team?.sportType ? 
-                      getSportIcon(getPlansByStatus('InProgress')[0].team.sportType) : 
-                      <Sports />
-                    }
-                  </Avatar>
-                }
-              />
-              <CardContent>
-                <List dense>
-                  {getPlansByStatus('InProgress').length > 0 ? (
-                    getPlansByStatus('InProgress').map(plan => (
-                      <React.Fragment key={plan._id}>
-                        <ListItem
-                          secondaryAction={
-                            <Box>
-                              <IconButton 
-                                edge="end" 
-                                size="small"
-                                onClick={() => handleUpdateStatus(plan._id, 'Completed')}
-                                sx={{ mr: 1 }}
-                              >
-                                <Check />
-                              </IconButton>
-                              <IconButton 
-                                edge="end" 
-                                size="small"
-                                component={Link}
-                                to={`/training-plans/${plan._id}`}
-                              >
-                                <Visibility />
-                              </IconButton>
-                            </Box>
-                          }
-                        >
-                          <ListItemAvatar>
-                            <Avatar sx={{ bgcolor: theme.palette.warning.light }}>
-                              <SportsHandball />
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={plan.title}
-                            secondary={
-                              <React.Fragment>
-                                <Typography variant="body2" component="span" color="text.primary">
-                                  {plan.team.name}
-                                </Typography>
-                                {` - ${format(new Date(plan.date), 'MMM d, yyyy')}`}
-                              </React.Fragment>
-                            }
-                          />
-                        </ListItem>
-                        <Divider variant="inset" component="li" />
-                      </React.Fragment>
-                    ))
-                  ) : (
-                    <ListItem>
-                      <ListItemText primary="No in-progress training plans" />
-                    </ListItem>
-                  )}
-                </List>
-              </CardContent>
-            </Card>
-          </Grid>
-          
-          <Grid item xs={12} mt={3}>
-            <Card elevation={2} sx={{ borderRadius: 2 }}>
-              <CardHeader 
-                title="Completed Plans"
-                avatar={
-                  <Avatar sx={{ bgcolor: theme.palette.success.main }}>
-                    <Done />
-                  </Avatar>
-                }
-              />
-              <CardContent>
-                {getPlansByStatus('Completed').length > 0 ? (
-                  <TableContainer>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Title</TableCell>
-                          <TableCell>Team</TableCell>
-                          <TableCell>Date</TableCell>
-                          <TableCell>Actions</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {getPlansByStatus('Completed').map(plan => (
-                          <TableRow key={plan._id}>
-                            <TableCell>{plan.title}</TableCell>
-                            <TableCell>{plan.team.name}</TableCell>
-                            <TableCell>{format(new Date(plan.date), 'MMM d, yyyy')}</TableCell>
-                            <TableCell>
-                              <IconButton 
-                                size="small"
-                                component={Link}
-                                to={`/training-plans/${plan._id}`}
-                              >
-                                <Visibility fontSize="small" />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                ) : (
-                  <Typography variant="body1" sx={{ p: 2, textAlign: 'center' }}>
-                    No completed training plans
+        <Grid container spacing={2}>
+          {getFilteredPlans().map(plan => (
+            <Grid item xs={12} md={6} lg={4} key={plan._id}>
+              <Card elevation={2} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <CardHeader
+                  title={
+                    <Typography variant="h6" component="h3">
+                      {plan.title}
+                    </Typography>
+                  }
+                  subheader={
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+                      <CalendarMonth sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
+                      <Typography variant="body2" color="text.secondary">
+                        {format(new Date(plan.date), 'PPP')}
+                      </Typography>
+                    </Box>
+                  }
+                  action={
+                    <Chip 
+                      label={plan.status}
+                      color={getStatusColor(plan.status)}
+                      size="small"
+                      sx={{ mt: 1, mr: 1 }}
+                    />
+                  }
+                />
+                <Divider />
+                <CardContent sx={{ pt: 1, pb: 1, flexGrow: 1 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    {plan.description?.substring(0, 100)}
+                    {plan.description?.length > 100 ? '...' : ''}
                   </Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        </>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, mb: 1 }}>
+                    <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+                      <DirectionsRun sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
+                      {plan.activities?.length || 0} activities
+                    </Typography>
+                    
+                    <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center' }}>
+                      <AccessTime sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
+                      {plan.duration} min
+                    </Typography>
+                  </Box>
+                </CardContent>
+                <Divider />
+                <Box sx={{ display: 'flex', p: 1, bgcolor: 'background.default' }}>
+                  <Button
+                    size="small"
+                    startIcon={<Visibility />}
+                    component={Link}
+                    to={`/training-plans/${plan._id}`}
+                    sx={{ flexGrow: 1 }}
+                  >
+                    Details
+                  </Button>
+                  
+                  {plan.status === 'InProgress' && (
+                    <Button
+                      size="small"
+                      startIcon={<PeopleAlt />}
+                      component={Link}
+                      to={`/training-plans/${plan._id}?tab=2`}
+                      sx={{ flexGrow: 1 }}
+                      color="primary"
+                    >
+                      Attendance
+                    </Button>
+                  )}
+                  
+                  {plan.status === 'Assigned' && (
+                    <Button
+                      size="small"
+                      startIcon={<PlayArrow />}
+                      color="primary"
+                      onClick={() => handleUpdateStatus(plan._id, 'InProgress')}
+                      sx={{ flexGrow: 1 }}
+                    >
+                      Start
+                    </Button>
+                  )}
+                  
+                  {plan.status === 'InProgress' && (
+                    <Button
+                      size="small"
+                      startIcon={<Done />}
+                      color="success"
+                      onClick={() => handleUpdateStatus(plan._id, 'Completed')}
+                      sx={{ flexGrow: 1 }}
+                    >
+                      Complete
+                    </Button>
+                  )}
+                </Box>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       )}
-    </Grid>
+    </Box>
   );
   
   // If not a coach, show access denied

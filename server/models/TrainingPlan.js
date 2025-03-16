@@ -55,6 +55,30 @@ const TrainingPlanSchema = new mongoose.Schema({
       required: true
     }
   }],
+  attendance: [{
+    player: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ['Present', 'Absent', 'Late', 'Excused'],
+      default: 'Absent'
+    },
+    notes: {
+      type: String,
+      trim: true
+    },
+    markedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    markedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   notes: {
     type: String,
     trim: true

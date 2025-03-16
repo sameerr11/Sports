@@ -175,4 +175,24 @@ export const updateTrainingPlanStatus = async (id, status) => {
     console.error('Error updating training plan status:', error);
     throw error.response?.data?.msg || 'Failed to update training plan';
   }
+};
+
+// Get attendance for training plan
+export const getTrainingPlanAttendance = async (id) => {
+  try {
+    const response = await api.get(`/training-plans/${id}/attendance`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'Failed to fetch attendance';
+  }
+};
+
+// Update attendance for training plan
+export const updateTrainingPlanAttendance = async (id, attendance) => {
+  try {
+    const response = await api.put(`/training-plans/${id}/attendance`, { attendance });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'Failed to update attendance';
+  }
 }; 

@@ -383,4 +383,102 @@ exports.deleteTrainingPlan = async (req, res) => {
       error: err.message
     });
   }
+};
+
+// @desc    Update player attendance for a training plan
+// @route   PUT /api/training-plans/:id/attendance
+// @access  Private (Assigned Coach, Supervisor, Admin)
+exports.updateAttendance = async (req, res) => {
+  try {
+    const { attendance } = req.body;
+    
+    // Validate input
+    if (!attendance || !Array.isArray(attendance)) {
+      return res.status(400).json({ msg: 'Attendance data is required as an array' });
+    }
+
+    // Check if plan exists
+    const plan = await TrainingPlan.findById(req.params.id);
+    if (!plan) {
+      return res.status(404).json({ msg: 'Training plan not found' });
+    }
+    
+    // Check if user is authorized
+    const isAssignedCoach = 
+      plan.assignedTo && 
+      ((plan.assignedTo._id && plan.assignedTo._id.toString() === req.user.id) || 
+       (typeof plan.assignedTo === 'string' && plan.assignedTo === req.user.id));
+    
+    if (!['admin', 'supervisor'].includes(req.user.role) && !isAssignedCoach) {
+      return res.status(403).json({ msg: 'Not authorized to update attendance for this plan' });
+    }
+    
+    // Check if attendance can be updated based on plan status
+    if (plan.status === 'Draft') {
+      return res.status(400).json({ msg: 'Cannot mark attendance for a draft plan' });
+    }
+    
+    // Set the attendance data
+    plan.attendance = attendance.map(item => ({
+      ...item,
+      markedBy: req.user.id,
+      markedAt: new Date()
+    }));
+    
+    await plan.save();
+    
+    // Populate relevant fields for the response
+    await plan.populate('attendance.player', 'firstName lastName');
+    await plan.populate('attendance.markedBy', 'firstName lastName');
+    
+    res.json({
+      success: true,
+      attendance: plan.attendance,
+      message: 'Attendance updated successfully'
+    });
+  } catch (err) {
+    console.error('Error updating attendance:', err.message);
+    res.status(500).json({ msg: 'Server Error', error: err.message });
+  }
+};
+
+// @desc    Get player attendance for a training plan
+// @route   GET /api/training-plans/:id/attendance
+// @access  Private (Coaches of team, Supervisor, Admin)
+exports.getAttendance = async (req, res) => {
+  try {
+    const plan = await TrainingPlan.findById(req.params.id)
+      .populate('attendance.player', 'firstName lastName')
+      .populate('attendance.markedBy', 'firstName lastName');
+    
+    if (!plan) {
+      return res.status(404).json({ msg: 'Training plan not found' });
+    }
+    
+    // Check if user is authorized
+    const isAssignedCoach = 
+      plan.assignedTo && 
+      ((plan.assignedTo._id && plan.assignedTo._id.toString() === req.user.id) || 
+       (typeof plan.assignedTo === 'string' && plan.assignedTo === req.user.id));
+    
+    if (!['admin', 'supervisor'].includes(req.user.role) && !isAssignedCoach) {
+      // Check if user is any coach of the team
+      const team = await Team.findOne({
+        _id: plan.team,
+        'coaches.coach': req.user.id
+      });
+      
+      if (!team) {
+        return res.status(403).json({ msg: 'Not authorized to view attendance for this plan' });
+      }
+    }
+    
+    res.json({
+      success: true,
+      attendance: plan.attendance || []
+    });
+  } catch (err) {
+    console.error('Error getting attendance:', err.message);
+    res.status(500).json({ msg: 'Server Error', error: err.message });
+  }
 }; 

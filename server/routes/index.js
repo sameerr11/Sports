@@ -189,15 +189,10 @@ router.get('/training-plans/coach', [auth, coach], trainingPlanController.getCoa
 router.get('/training-plans/team/:teamId', auth, trainingPlanController.getTeamTrainingPlans);
 router.get('/training-plans/:id', auth, trainingPlanController.getTrainingPlanById);
 router.put('/training-plans/:id', [auth, supervisor], trainingPlanController.updateTrainingPlan);
+router.put('/training-plans/:id/status', auth, trainingPlanController.updateTrainingPlanStatus);
+router.get('/training-plans/:id/attendance', auth, trainingPlanController.getAttendance);
+router.put('/training-plans/:id/attendance', auth, trainingPlanController.updateAttendance);
 router.delete('/training-plans/:id', [auth, supervisor], trainingPlanController.deleteTrainingPlan);
-router.put(
-  '/training-plans/:id/status',
-  [
-    auth,
-    check('status', 'Status is required').isIn(['Draft', 'Assigned', 'InProgress', 'Completed'])
-  ],
-  trainingPlanController.updateTrainingPlanStatus
-);
 
 // Feedback routes
 router.post(
