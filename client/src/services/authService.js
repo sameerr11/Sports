@@ -1,7 +1,12 @@
 import api from './api';
-
-const TOKEN_KEY = 'token';
-const USER_KEY = 'user';
+import { 
+  saveAuthToken, 
+  removeAuthToken, 
+  saveUserToStorage, 
+  removeUserFromStorage, 
+  getAuthToken, 
+  getStoredUser as utilGetStoredUser 
+} from '../utils/auth';
 
 // Login user
 export const login = async (email, password) => {
@@ -9,8 +14,8 @@ export const login = async (email, password) => {
     const response = await api.post('/auth/login', { email, password });
     const { token } = response.data;
     
-    // Store token in localStorage
-    localStorage.setItem(TOKEN_KEY, token);
+    // Store token using the utility function
+    saveAuthToken(token);
     
     // Get user data
     const userData = await getCurrentUser();
@@ -27,8 +32,8 @@ export const getCurrentUser = async () => {
     const response = await api.get('/auth/me');
     const user = response.data;
     
-    // Store user in localStorage
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    // Store user using the utility function
+    saveUserToStorage(user);
     
     return user;
   } catch (error) {
@@ -38,25 +43,24 @@ export const getCurrentUser = async () => {
 
 // Logout user
 export const logout = () => {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
+  removeAuthToken();
+  removeUserFromStorage();
   window.location.href = '/login';
 };
 
 // Check if user is authenticated
 export const isAuthenticated = () => {
-  return localStorage.getItem(TOKEN_KEY) !== null;
+  return getAuthToken() !== null;
 };
 
 // Get stored user
 export const getStoredUser = () => {
-  const user = localStorage.getItem(USER_KEY);
-  return user ? JSON.parse(user) : null;
+  return utilGetStoredUser();
 };
 
 // Get token
 export const getToken = () => {
-  return localStorage.getItem(TOKEN_KEY);
+  return getAuthToken();
 };
 
 // Check if user has role
@@ -153,6 +157,12 @@ export const isSupport = () => {
 export const isAdminOrSupport = () => {
   const user = getStoredUser();
   return user && (user.role === 'admin' || user.role === 'support');
+};
+
+// Check if user is accounting
+export const isAccounting = () => {
+  const user = getStoredUser();
+  return user && (user.role === 'admin' || user.role === 'accounting');
 };
 
 export const getAuthHeader = () => {

@@ -16,7 +16,8 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
+        // Use sports_auth_token to match the key in utils/auth.js
+        const token = localStorage.getItem('sports_auth_token');
         if (token) {
             // Use x-auth-token header as expected by the server
             config.headers['x-auth-token'] = token;
@@ -37,8 +38,9 @@ api.interceptors.response.use(
             console.error('Response error:', error.response.status, error.response.data);
             
             if (error.response.status === 401) {
-                // Handle unauthorized access
-                localStorage.removeItem('token');
+                // Handle unauthorized access - use sports_auth_token to match utils/auth.js
+                localStorage.removeItem('sports_auth_token');
+                localStorage.removeItem('sports_user');
                 window.location.href = '/login';
             }
         } else if (error.request) {

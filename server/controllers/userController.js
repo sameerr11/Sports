@@ -25,7 +25,7 @@ exports.registerUser = async (req, res) => {
     }
     
     // Validate role
-    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier', 'support'];
+    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier', 'support', 'accounting'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ msg: 'Invalid role selected' });
     }
@@ -160,7 +160,7 @@ exports.updateUser = async (req, res) => {
 
   // Validate role if provided
   if (role) {
-    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier', 'support'];
+    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier', 'support', 'accounting'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ msg: 'Invalid role selected' });
     }
@@ -354,7 +354,7 @@ exports.getUsersByRole = async (req, res) => {
     const { role } = req.params;
     
     // Validate role
-    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier', 'support'];
+    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier', 'support', 'accounting'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ msg: 'Invalid role' });
     }

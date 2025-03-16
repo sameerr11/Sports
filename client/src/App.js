@@ -17,7 +17,7 @@ import Dashboard from './components/dashboard/Dashboard';
 import Profile from './components/profile/Profile';
 import { 
   isAuthenticated, isAdmin, isSupervisor, 
-  isCoach, isPlayer, isParent, isCashier, isPlayerOnly, isAdminOrSupport, isCafeteriaSupervisor 
+  isCoach, isPlayer, isParent, isCashier, isPlayerOnly, isAdminOrSupport, isCafeteriaSupervisor, isAccounting
 } from './services/authService';
 import Cafeteria from './components/cafeteria/Cafeteria';
 import CafeteriaManagement from './components/cafeteria/CafeteriaManagement';
@@ -31,6 +31,11 @@ import AdminFeedbackList from './components/feedback/AdminFeedbackList';
 import DocumentManagement from './components/support/DocumentManagement';
 import SupportDashboard from './components/support/SupportDashboard';
 import PlayerStats from './components/support/PlayerStats';
+// Import registration components
+import RegistrationList from './components/registration/RegistrationList';
+import RegistrationForm from './components/registration/RegistrationForm';
+import RegistrationDetail from './components/registration/RegistrationDetail';
+import RegistrationFeeManager from './components/registration/RegistrationFeeManager';
 import './App.css';
 
 // Placeholder components for routes
@@ -72,6 +77,12 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   if (isAdminOrSupport() && !isAdmin() && window.location.pathname === '/' && !requiredRole) {
     return <Navigate to="/support/dashboard" />;
   }
+  
+  // Redirect accounting users to registrations if they try to access the main dashboard
+  // Only redirect if NOT an admin user
+  if (isAccounting() && !isAdmin() && window.location.pathname === '/' && !requiredRole) {
+    return <Navigate to="/registrations" />;
+  }
 
   if (requiredRole === 'admin' && !isAdmin()) {
     return <Navigate to="/" />;
@@ -100,6 +111,10 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   if (requiredRole === 'adminOrSupport' && !isAdminOrSupport()) {
     return <Navigate to="/" />;
   }
+  
+  if (requiredRole === 'accounting' && !isAccounting()) {
+    return <Navigate to="/" />;
+  }
 
   return children;
 };
@@ -114,6 +129,39 @@ function App() {
           <ProtectedRoute>
             <MainLayout>
               <Dashboard />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        {/* Registration Routes */}
+        <Route path="/registrations" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <RegistrationList />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/registrations/new" element={
+          <ProtectedRoute requiredRole="accounting">
+            <MainLayout>
+              <RegistrationForm />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/registrations/:id" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <RegistrationDetail />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/registration-fees" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <RegistrationFeeManager />
             </MainLayout>
           </ProtectedRoute>
         } />

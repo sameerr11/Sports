@@ -31,6 +31,9 @@ import FeedbackIcon from '@mui/icons-material/Feedback';
 import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
 import PeopleIcon from '@mui/icons-material/People';
 import SupportIcon from '@mui/icons-material/Support';
+import ReceiptIcon from '@mui/icons-material/Receipt';
+import HowToRegIcon from '@mui/icons-material/HowToReg';
+import PaymentIcon from '@mui/icons-material/Payment';
 import { 
     isAdmin, 
     isSupervisor, 
@@ -43,6 +46,7 @@ import {
     isGeneralSupervisor,
     isSupport,
     isAdminOrSupport,
+    isAccounting,
     getStoredUser
 } from '../../services/authService';
 import './Sidebar.css';
@@ -61,6 +65,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const player = isPlayerOnly();
     const parent = isParent();
     const support = isSupport();
+    const accounting = isAccounting() && !admin;
     const theme = useTheme();
     const user = getStoredUser();
 
@@ -97,9 +102,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
     ];
 
     const adminItems = [
-        { text: 'User Management', icon: <AdminPanelSettingsIcon />, path: '/users' },
+        { text: 'Users', icon: <PeopleIcon />, path: '/users' },
         { text: 'Add User', icon: <PersonAddIcon />, path: '/users/new' },
-        { text: 'Feedback Management', icon: <FeedbackIcon />, path: '/admin/feedback' },
+        { text: 'Feedback', icon: <FeedbackIcon />, path: '/admin/feedback' },
+        { text: 'Player Registration', icon: <HowToRegIcon />, path: '/registrations' },
     ];
 
     const coachItems = [
@@ -131,6 +137,12 @@ const Sidebar = ({ open, toggleSidebar }) => {
             path: '/support/documents',
             icon: <HealthAndSafetyIcon />
         }
+    ];
+
+    // New registration items for accounting
+    const accountingItems = [
+        { text: 'Dashboard', icon: <DashboardIcon />, path: '/registrations' },
+        { text: 'New Registration', icon: <HowToRegIcon />, path: '/registrations/new' },
     ];
 
     // Function to determine which supervisor items to show
@@ -195,9 +207,8 @@ const Sidebar = ({ open, toggleSidebar }) => {
             </Box>
             <Divider />
             
-            {/* Show regular menu items if user is admin/supervisor OR not a cashier/parent/player/coach/support */}
-            {/* Don't show them to cafeteria supervisors */}
-            {(admin || (supervisor && !cafeteriaSupervisor) || (!cashier && !parent && !player && !coach && !cafeteriaSupervisor && !support)) && (
+            {/* Show regular menu items if user is admin/supervisor OR not a cashier/parent/player/coach/support/accounting */}
+            {(admin || (supervisor && !cafeteriaSupervisor) || (!cashier && !parent && !player && !coach && !cafeteriaSupervisor && !support && !accounting)) && (
                 <List component="nav" className="sidebar-nav">
                     {menuItems.map((item) => (
                         <ListItem 
@@ -501,6 +512,78 @@ const Sidebar = ({ open, toggleSidebar }) => {
                 </>
             )}
             
+            {/* Accounting Dashboard Link */}
+            {accounting && (
+                <>
+                    <Divider sx={{ my: 1 }} />
+                    <List component="nav" className="sidebar-nav">
+                        <ListItem sx={{ px: 3 }}>
+                            <ListItemText 
+                                primary="Registration" 
+                                primaryTypographyProps={{ 
+                                    variant: 'overline',
+                                    color: 'text.secondary',
+                                    fontWeight: 600,
+                                    noWrap: true
+                                }} 
+                            />
+                        </ListItem>
+                        {accountingItems.map((item) => (
+                            <ListItem 
+                                button 
+                                key={item.text} 
+                                component={Link} 
+                                to={item.path}
+                                selected={location.pathname === item.path}
+                                className={location.pathname === item.path ? 'active' : ''}
+                                sx={{
+                                    borderRadius: '0 20px 20px 0',
+                                    mx: 1,
+                                    mb: 0.5,
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    width: 'calc(100% - 16px)',
+                                    '&.active': {
+                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                        color: theme.palette.primary.main,
+                                        '&::before': {
+                                            content: '""',
+                                            position: 'absolute',
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: 4,
+                                            backgroundColor: theme.palette.primary.main,
+                                            borderRadius: '0 4px 4px 0'
+                                        }
+                                    },
+                                    '&:hover': {
+                                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                    }
+                                }}
+                            >
+                                <ListItemIcon sx={{ 
+                                    color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                    minWidth: 40,
+                                    flexShrink: 0
+                                }}>
+                                    {item.icon}
+                                </ListItemIcon>
+                                <ListItemText 
+                                    primary={item.text} 
+                                    primaryTypographyProps={{ 
+                                        fontSize: '0.95rem',
+                                        fontWeight: location.pathname === item.path ? 600 : 400,
+                                        noWrap: true
+                                    }}
+                                    sx={{ overflow: 'hidden' }}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                </>
+            )}
+            
             {admin && (
                 <>
                     <Divider sx={{ my: 1 }} />
@@ -522,6 +605,11 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 key={item.text} 
                                 component={Link} 
                                 to={item.path}
+                                onClick={() => {
+                                    if (item.text === 'Dashboard') {
+                                        console.log('Admin Dashboard clicked, redirecting to:', item.path);
+                                    }
+                                }}
                                 selected={location.pathname === item.path}
                                 className={location.pathname === item.path ? 'active' : ''}
                                 sx={{

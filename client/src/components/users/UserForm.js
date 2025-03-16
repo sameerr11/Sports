@@ -27,7 +27,8 @@ const ROLES = [
   { value: 'coach', label: 'Coach' },
   { value: 'player', label: 'Player' },
   { value: 'parent', label: 'Parent' },
-  { value: 'support', label: 'Support' }
+  { value: 'support', label: 'Support' },
+  { value: 'accounting', label: 'Accounting' }
 ];
 
 const SUPERVISOR_TYPES = [

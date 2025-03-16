@@ -13,6 +13,7 @@ const cafeteriaRoutes = require('./cafeteriaRoutes');
 const trainingPlanController = require('../controllers/trainingPlanController');
 const feedbackController = require('../controllers/feedbackController');
 const playerStatsRoutes = require('./playerStatsRoutes');
+const registrationRoutes = require('./registrationRoutes');
 
 // Middleware
 const { auth, admin, supervisor, coach, player, parent, adminOrSupport, support } = require('../middleware/auth');
@@ -216,6 +217,9 @@ router.put(
   ],
   feedbackController.updateFeedbackStatus
 );
+
+// Registration routes
+router.use('/registrations', registrationRoutes);
 
 // Player Stats Routes
 router.use('/player-stats', playerStatsRoutes);
