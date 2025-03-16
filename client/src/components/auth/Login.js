@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TextField, Button, Paper, Typography, Container, Box, Alert } from '@mui/material';
 import { login } from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -11,8 +12,16 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user, login: authLogin } = useAuth();
 
   const { email, password } = formData;
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const onChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,7 +33,8 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(email, password);
+      const userData = await login(email, password);
+      authLogin(userData); // Update auth context with user data
       navigate('/');
     } catch (err) {
       setError(err.toString());

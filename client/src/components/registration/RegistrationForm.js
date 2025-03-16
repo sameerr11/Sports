@@ -26,7 +26,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const RegistrationForm = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, initialized } = useAuth();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
@@ -34,19 +34,20 @@ const RegistrationForm = () => {
 
   // Debug auth state
   useEffect(() => {
-    console.log("Auth state in RegistrationForm:", { user, authLoading });
-  }, [user, authLoading]);
+    console.log("Auth state in RegistrationForm:", { user, authLoading, initialized });
+  }, [user, authLoading, initialized]);
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated after auth is initialized
   useEffect(() => {
-    if (!authLoading && !user) {
-      console.log('User not authenticated, redirecting to login');
+    // Only check authentication after auth context is fully initialized
+    if (!initialized) return;
+    
+    if (!user) {
+      console.log('User not authenticated after auth initialization, redirecting to login');
       setError('You must be logged in to create a registration');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      navigate('/login');
     }
-  }, [user, authLoading, navigate]);
+  }, [user, initialized, navigate]);
 
   const [formData, setFormData] = useState({
     player: {

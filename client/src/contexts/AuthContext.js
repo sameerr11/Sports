@@ -10,11 +10,18 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [initialized, setInitialized] = useState(false);
 
+  // Load user data on mount
   useEffect(() => {
+    // Mark context as not initialized
+    setInitialized(false);
+    setLoading(true);
+    
     // Check if user exists in local storage
     const storedUser = getStoredUser();
     if (storedUser) {
+      // Set user immediately from storage to prevent UI flashing
       setUser(storedUser);
     }
     
@@ -22,6 +29,7 @@ export const AuthProvider = ({ children }) => {
     const fetchCurrentUser = async () => {
       try {
         const userData = await getCurrentUser();
+        console.log("Fetched user data:", userData);
         setUser(userData);
         saveUserToStorage(userData);
       } catch (err) {
@@ -30,19 +38,17 @@ export const AuthProvider = ({ children }) => {
         if (err.response && err.response.status !== 401) {
           setError('Failed to fetch current user');
         }
+        // Only clear user if there was an error
         removeUserFromStorage();
         setUser(null);
       } finally {
         setLoading(false);
+        setInitialized(true);
       }
     };
 
-    if (storedUser) {
-      // If we have a stored user, still fetch updated data
-      fetchCurrentUser();
-    } else {
-      setLoading(false);
-    }
+    // Always try to fetch current user data
+    fetchCurrentUser();
   }, []);
 
   // Login function, typically called after successful API authentication
@@ -57,12 +63,14 @@ export const AuthProvider = ({ children }) => {
     removeUserFromStorage();
   };
 
+  // Return additional state to help components know if auth is properly initialized
   const value = {
     user,
     loading,
     error,
     login,
     logout,
+    initialized,
     isAuthenticated: !!user
   };
 

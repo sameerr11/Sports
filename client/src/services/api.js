@@ -41,7 +41,12 @@ api.interceptors.response.use(
                 // Handle unauthorized access - use sports_auth_token to match utils/auth.js
                 localStorage.removeItem('sports_auth_token');
                 localStorage.removeItem('sports_user');
-                window.location.href = '/login';
+                
+                // Only redirect to login if we're not already on the login page
+                const currentPath = window.location.pathname;
+                if (currentPath !== '/login') {
+                    window.location.href = '/login';
+                }
             }
         } else if (error.request) {
             console.error('No response received:', error.request);

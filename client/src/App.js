@@ -17,7 +17,8 @@ import Dashboard from './components/dashboard/Dashboard';
 import Profile from './components/profile/Profile';
 import { 
   isAuthenticated, isAdmin, isSupervisor, 
-  isCoach, isPlayer, isParent, isCashier, isPlayerOnly, isAdminOrSupport, isCafeteriaSupervisor, isAccounting
+  isCoach, isPlayer, isParent, isCashier, isPlayerOnly, isAdminOrSupport, isCafeteriaSupervisor, isAccounting,
+  isSupport, hasRole
 } from './services/authService';
 import Cafeteria from './components/cafeteria/Cafeteria';
 import CafeteriaManagement from './components/cafeteria/CafeteriaManagement';
@@ -37,6 +38,8 @@ import RegistrationForm from './components/registration/RegistrationForm';
 import RegistrationDetail from './components/registration/RegistrationDetail';
 import RegistrationFeeManager from './components/registration/RegistrationFeeManager';
 import './App.css';
+import { useAuth } from './contexts/AuthContext';
+import { Box, CircularProgress } from '@mui/material';
 
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
@@ -46,6 +49,19 @@ const Payments = () => <div>Payments Page</div>;
 const ProtectedRoute = ({ children, requiredRole }) => {
   if (!isAuthenticated()) {
     return <Navigate to="/login" />;
+  }
+
+  // Check for required role if specified
+  // This function uses the local storage user object
+  if (requiredRole) {
+    const hasRequiredRole = Array.isArray(requiredRole)
+      ? requiredRole.some(role => hasRole(role))
+      : hasRole(requiredRole);
+
+    if (!hasRequiredRole) {
+      // Redirect to main page if user doesn't have required role
+      return <Navigate to="/" />;
+    }
   }
 
   // Redirect cashiers to POS if they try to access any other route
@@ -74,7 +90,7 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   }
   
   // Redirect support users to support dashboard if they try to access the main dashboard
-  if (isAdminOrSupport() && !isAdmin() && window.location.pathname === '/' && !requiredRole) {
+  if (isSupport() && !isAdmin() && window.location.pathname === '/' && !requiredRole) {
     return <Navigate to="/support/dashboard" />;
   }
   
@@ -84,38 +100,63 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/registrations" />;
   }
 
-  if (requiredRole === 'admin' && !isAdmin()) {
-    return <Navigate to="/" />;
-  }
+  // If everything is ok, render the child component
+  return children;
+};
 
-  if (requiredRole === 'supervisor' && !isSupervisor()) {
-    return <Navigate to="/" />;
+// Enhanced Protected Route that uses the AuthContext directly
+const EnhancedProtectedRoute = ({ children, requiredRole }) => {
+  const { user, loading, initialized } = useAuth();
+  
+  // Show loading indicator while auth state is initializing
+  if (loading || !initialized) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
   }
-
-  if (requiredRole === 'cashier' && !isCashier()) {
-    return <Navigate to="/" />;
+  
+  // Redirect to login if not authenticated
+  if (!user) {
+    return <Navigate to="/login" />;
   }
-
-  if (requiredRole === 'coach' && !isCoach()) {
-    return <Navigate to="/" />;
+  
+  // Check for required role if specified
+  if (requiredRole) {
+    const hasRequiredRole = Array.isArray(requiredRole)
+      ? requiredRole.some(role => user.role === role)
+      : user.role === requiredRole;
+      
+    if (!hasRequiredRole) {
+      // Redirect to main page if user doesn't have required role
+      return <Navigate to="/" />;
+    }
   }
+  
+  // If everything is ok, render the child component
+  return children;
+};
 
-  if (requiredRole === 'player' && !isPlayerOnly()) {
-    return <Navigate to="/" />;
+// Public Route - redirects to home if already authenticated
+const PublicRoute = ({ children }) => {
+  const { user, loading, initialized } = useAuth();
+  
+  // Show loading indicator while auth state is initializing
+  if (loading || !initialized) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
   }
-
-  if (requiredRole === 'parent' && !isParent()) {
-    return <Navigate to="/" />;
-  }
-
-  if (requiredRole === 'adminOrSupport' && !isAdminOrSupport()) {
+  
+  // If user is already authenticated, redirect to home
+  if (user) {
     return <Navigate to="/" />;
   }
   
-  if (requiredRole === 'accounting' && !isAccounting()) {
-    return <Navigate to="/" />;
-  }
-
+  // Otherwise, render the login page
   return children;
 };
 
@@ -123,7 +164,11 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        } />
         
         <Route path="/" element={
           <ProtectedRoute>
@@ -135,35 +180,35 @@ function App() {
         
         {/* Registration Routes */}
         <Route path="/registrations" element={
-          <ProtectedRoute>
+          <EnhancedProtectedRoute>
             <MainLayout>
               <RegistrationList />
             </MainLayout>
-          </ProtectedRoute>
+          </EnhancedProtectedRoute>
         } />
         
         <Route path="/registrations/new" element={
-          <ProtectedRoute requiredRole="accounting">
+          <EnhancedProtectedRoute requiredRole="accounting">
             <MainLayout>
               <RegistrationForm />
             </MainLayout>
-          </ProtectedRoute>
+          </EnhancedProtectedRoute>
         } />
         
         <Route path="/registrations/:id" element={
-          <ProtectedRoute>
+          <EnhancedProtectedRoute>
             <MainLayout>
               <RegistrationDetail />
             </MainLayout>
-          </ProtectedRoute>
+          </EnhancedProtectedRoute>
         } />
         
         <Route path="/registration-fees" element={
-          <ProtectedRoute>
+          <EnhancedProtectedRoute>
             <MainLayout>
               <RegistrationFeeManager />
             </MainLayout>
-          </ProtectedRoute>
+          </EnhancedProtectedRoute>
         } />
         
         {/* Court Routes */}

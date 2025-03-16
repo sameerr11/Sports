@@ -45,7 +45,12 @@ export const getCurrentUser = async () => {
 export const logout = () => {
   removeAuthToken();
   removeUserFromStorage();
-  window.location.href = '/login';
+  
+  // Only redirect to login if we're not already on the login page
+  const currentPath = window.location.pathname;
+  if (currentPath !== '/login') {
+    window.location.href = '/login';
+  }
 };
 
 // Check if user is authenticated
@@ -172,4 +177,32 @@ export const getAuthHeader = () => {
       Authorization: `Bearer ${token}`
     }
   };
-}; 
+};
+
+// Response interceptor
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response) {
+            console.error('Response error:', error.response.status, error.response.data);
+            
+            if (error.response.status === 401) {
+                // Handle unauthorized access - use sports_auth_token to match utils/auth.js
+                localStorage.removeItem('sports_auth_token');
+                localStorage.removeItem('sports_user');
+                
+                // Only redirect to login if we're not already on the login page
+                const currentPath = window.location.pathname;
+                if (currentPath !== '/login') {
+                    window.location.href = '/login';
+                }
+            }
+        } else if (error.request) {
+            console.error('No response received:', error.request);
+        } else {
+            console.error('Error setting up request:', error.message);
+        }
+        
+        return Promise.reject(error);
+    }
+); 
