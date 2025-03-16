@@ -263,6 +263,17 @@ const TeamDetail = () => {
     }
   };
 
+  // Function to handle back navigation based on user role
+  const handleBackNavigation = () => {
+    if (isCoach()) {
+      navigate('/coach'); // Navigate back to coach dashboard
+    } else if (isPlayer()) {
+      navigate('/player'); // Navigate back to player dashboard
+    } else {
+      navigate('/teams'); // Default navigation to teams page
+    }
+  };
+
   if (loading) {
     return <Typography>Loading team details...</Typography>;
   }
@@ -280,10 +291,10 @@ const TeamDetail = () => {
       <Box sx={{ mb: 4 }}>
         <Button
           startIcon={<ArrowBack />}
-          onClick={() => navigate('/teams')}
+          onClick={handleBackNavigation}
           sx={{ mb: 2 }}
         >
-          Back to Teams
+          {isCoach() ? 'Back to Dashboard' : isPlayer() ? 'Back to Dashboard' : 'Back to Teams'}
         </Button>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h4" component="h1" gutterBottom>

@@ -297,7 +297,7 @@ const ParentDashboard = () => {
                         size="small"
                         fullWidth
                         component={Link}
-                        to={`/bookings/${match._id}`}
+                        to={`/parent/match/${match._id}`}
                       >
                         View Details
                       </Button>

@@ -17,31 +17,24 @@ import {
 import {
     Person,
     Security,
-    Settings,
-    History,
     Edit,
     PhotoCamera
 } from '@mui/icons-material';
 import { 
     getMockUserProfile, 
-    getMockUserActivity, 
     getCurrentUserProfile, 
     updateUserProfile,
-    uploadProfilePicture,
-    getUserActivity
+    uploadProfilePicture
 } from '../../services/userService';
 import { getStoredUser } from '../../services/authService';
 import PersonalInfoForm from './PersonalInfoForm';
 import SecurityForm from './SecurityForm';
-import PreferencesForm from './PreferencesForm';
-import ActivityHistory from './ActivityHistory';
 import './Profile.css';
 
 const Profile = () => {
     const theme = useTheme();
     const [tabValue, setTabValue] = useState(0);
     const [profile, setProfile] = useState(null);
-    const [activity, setActivity] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
@@ -58,10 +51,6 @@ const Profile = () => {
                     // Get user profile from API
                     const profileData = await getCurrentUserProfile();
                     setProfile(profileData);
-                    
-                    // Get user activity from API
-                    const activityData = await getUserActivity();
-                    setActivity(activityData);
                 } catch (apiError) {
                     console.warn('Could not fetch from API, using stored/mock data', apiError);
                     
@@ -73,9 +62,6 @@ const Profile = () => {
                         // Last resort: use mock data
                         setProfile(getMockUserProfile());
                     }
-                    
-                    // Use mock activity data
-                    setActivity(getMockUserActivity());
                 }
                 
                 setLoading(false);
@@ -253,7 +239,7 @@ const Profile = () => {
                             </Box>
                             
                             <Box className="profile-actions">
-                                {tabValue !== 3 && (
+                                {tabValue !== 1 && (
                                     <Button
                                         variant={editMode ? "outlined" : "contained"}
                                         color={editMode ? "secondary" : "primary"}
@@ -281,8 +267,6 @@ const Profile = () => {
                         >
                             <Tab icon={<Person />} label="Personal Info" />
                             <Tab icon={<Security />} label="Security" />
-                            <Tab icon={<Settings />} label="Preferences" />
-                            <Tab icon={<History />} label="Activity" />
                         </Tabs>
                         
                         <Divider />
@@ -305,21 +289,6 @@ const Profile = () => {
                                     onSave={handleProfileUpdate}
                                     loading={loading}
                                 />
-                            )}
-                            
-                            {/* Preferences Tab */}
-                            {tabValue === 2 && (
-                                <PreferencesForm 
-                                    profile={profile} 
-                                    editMode={editMode} 
-                                    onSave={handleProfileUpdate}
-                                    loading={loading}
-                                />
-                            )}
-                            
-                            {/* Activity Tab */}
-                            {tabValue === 3 && (
-                                <ActivityHistory activity={activity} />
                             )}
                         </Box>
                     </Paper>

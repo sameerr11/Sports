@@ -344,6 +344,28 @@ exports.getBookingById = async (req, res) => {
         }
       }
       // General supervisors can view all bookings
+    } else if (req.user.role === 'parent') {
+      // Check if this booking is for one of the parent's children's teams
+      const children = await User.find({ parentId: req.user.id });
+      const childrenIds = children.map(child => child._id.toString());
+      
+      // If the booking has a team, check if any of the parent's children are in the team
+      if (booking.team) {
+        const team = await Team.findById(booking.team._id);
+        if (team) {
+          const isChildInTeam = team.players.some(p => 
+            childrenIds.includes(p.player.toString())
+          );
+          
+          if (isChildInTeam) {
+            // Child is in this team, allow access
+            return res.json(booking);
+          }
+        }
+      }
+      
+      // If we get here, parent is not authorized
+      return res.status(403).json({ msg: 'Not authorized to view this booking' });
     } else if (booking.user._id.toString() !== req.user.id && !['admin', 'accounting'].includes(req.user.role)) {
       return res.status(403).json({ msg: 'Not authorized to view this booking' });
     }

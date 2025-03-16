@@ -27,6 +27,7 @@ import TrainingPlanManager from './components/training/TrainingPlanManager';
 import TrainingPlanDetail from './components/training/TrainingPlanDetail';
 import PlayerDashboard from './components/player/PlayerDashboard';
 import ParentDashboard from './components/parent/ParentDashboard';
+import MatchDetail from './components/parent/MatchDetail';
 import FeedbackPage from './components/feedback/FeedbackPage';
 import AdminFeedbackList from './components/feedback/AdminFeedbackList';
 import DocumentManagement from './components/support/DocumentManagement';
@@ -336,6 +337,14 @@ function App() {
           </ProtectedRoute>
         } />
         
+        <Route path="/parent/match/:id" element={
+          <ProtectedRoute requiredRole="parent">
+            <MainLayout>
+              <MatchDetail />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
         {/* Booking Routes */}
         <Route path="/bookings" element={
           <ProtectedRoute requiredRole="supervisor">
@@ -443,7 +452,7 @@ function App() {
         } />
         
         <Route path="/player-stats" element={
-          <ProtectedRoute requiredRole="adminOrSupport">
+          <ProtectedRoute requiredRoles={['adminOrSupport']}>
             <MainLayout>
               <PlayerStats />
             </MainLayout>
