@@ -13,28 +13,30 @@ exports.createTrainingPlan = async (req, res) => {
   }
 
   try {
-    const { title, description, team, assignedTo, date, duration, activities, notes, attachments } = req.body;
+    const { title, description, team, date, duration, activities, notes, attachments } = req.body;
 
     // Use default description if empty
     const planDescription = description || 'Created from scheduling';
 
     // Verify team exists
-    const teamExists = await Team.findById(team);
+    const teamExists = await Team.findById(team).populate('coaches.coach');
     if (!teamExists) {
       return res.status(404).json({ msg: 'Team not found' });
     }
-
-    // Verify assignedTo user exists if provided
-    if (assignedTo) {
-      const coach = await User.findById(assignedTo);
-      if (!coach) {
-        return res.status(404).json({ msg: 'Assigned coach not found' });
-      }
+    
+    // Automatically assign to the first coach of the team if available
+    let assignedTo = null;
+    let planStatus = 'Draft';
+    
+    if (teamExists.coaches && teamExists.coaches.length > 0) {
+      // Get the first coach from the team
+      assignedTo = teamExists.coaches[0].coach._id;
+      planStatus = 'Assigned';
     }
 
     const newTrainingPlan = new TrainingPlan({
       title,
-      description: planDescription, // Use the default or provided description
+      description: planDescription,
       team,
       createdBy: req.user.id,
       assignedTo,
@@ -43,7 +45,7 @@ exports.createTrainingPlan = async (req, res) => {
       activities: activities || [],
       notes,
       attachments: attachments || [],
-      status: assignedTo ? 'Assigned' : 'Draft'
+      status: planStatus
     });
 
     const trainingPlan = await newTrainingPlan.save();
@@ -262,7 +264,7 @@ exports.updateTrainingPlan = async (req, res) => {
   }
 
   try {
-    const { title, description, team, assignedTo, date, duration, activities, notes, attachments } = req.body;
+    const { title, description, team, date, duration, activities, notes, attachments } = req.body;
 
     // Use default description if empty
     const planDescription = description || 'Created from scheduling';
@@ -280,36 +282,60 @@ exports.updateTrainingPlan = async (req, res) => {
       });
     }
 
+    // Check if team is being changed
+    const isTeamChanged = team !== plan.team.toString();
+    
+    // If team is changed, get the new team's coaches
+    let assignedTo = plan.assignedTo;
+    if (isTeamChanged) {
+      const newTeam = await Team.findById(team).populate('coaches.coach');
+      if (!newTeam) {
+        return res.status(404).json({ msg: 'Team not found' });
+      }
+      
+      // Automatically assign to the first coach of the new team if available
+      if (newTeam.coaches && newTeam.coaches.length > 0) {
+        assignedTo = newTeam.coaches[0].coach._id;
+        
+        // If the plan was in Draft status, update it to Assigned now that we have a coach
+        if (plan.status === 'Draft') {
+          plan.status = 'Assigned';
+        }
+      } else {
+        // No coaches on the new team, set to null
+        assignedTo = null;
+        
+        // If the plan was Assigned or InProgress, revert to Draft since there's no coach
+        if (plan.status === 'Assigned' || plan.status === 'InProgress') {
+          plan.status = 'Draft';
+        }
+      }
+    }
+
     // Update plan fields
     plan.title = title;
     plan.description = planDescription;
     plan.team = team;
+    plan.assignedTo = assignedTo;
     plan.date = new Date(date);
     plan.duration = duration;
     plan.activities = activities || [];
     plan.notes = notes;
     plan.attachments = attachments || [];
 
-    // Update assignment if changed
-    if (assignedTo !== plan.assignedTo?.toString()) {
-      plan.assignedTo = assignedTo || null;
-      
-      // If being assigned to a coach, update status
-      if (assignedTo && plan.status === 'Draft') {
-        plan.status = 'Assigned';
-      }
-    }
-
-    const updatedPlan = await plan.save();
+    await plan.save();
     
-    // Populate related fields
-    await updatedPlan.populate('team', 'name sportType');
-    await updatedPlan.populate('createdBy', 'firstName lastName');
-    await updatedPlan.populate('assignedTo', 'firstName lastName');
+    // Populate response
+    await plan.populate('team', 'name sportType');
+    await plan.populate('createdBy', 'firstName lastName');
+    await plan.populate('assignedTo', 'firstName lastName');
     
-    res.json(updatedPlan);
+    res.json(plan);
   } catch (err) {
     console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'Training plan not found' });
+    }
     res.status(500).send('Server Error');
   }
 };

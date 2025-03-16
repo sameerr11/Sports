@@ -77,7 +77,6 @@ const TrainingPlanManager = () => {
     title: '',
     description: 'Created from scheduling',
     team: '',
-    assignedTo: '',
     date: new Date(),
     duration: 60,
     activities: [],
@@ -147,7 +146,6 @@ const TrainingPlanManager = () => {
         title: plan.title,
         description: plan.description || 'Created from scheduling',
         team: plan.team._id,
-        assignedTo: plan.assignedTo?._id || '',
         date: new Date(plan.date),
         duration: plan.duration,
         activities: [...plan.activities],
@@ -182,7 +180,6 @@ const TrainingPlanManager = () => {
       title: '',
       description: 'Created from scheduling',
       team: '',
-      assignedTo: '',
       date: new Date(),
       duration: 60,
       activities: [],
@@ -578,12 +575,6 @@ const TrainingPlanManager = () => {
                             {plan.activities?.length || 0}
                           </Typography>
                         </Grid>
-                        <Grid item xs={6}>
-                          <Typography variant="caption" color="text.secondary">Assigned To</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {plan.assignedTo ? `${plan.assignedTo.firstName} ${plan.assignedTo.lastName}` : 'Not assigned'}
-                          </Typography>
-                        </Grid>
                       </Grid>
                       
                       {plan.activities && plan.activities.length > 0 && (
@@ -708,28 +699,6 @@ const TrainingPlanManager = () => {
                 required
                 disabled={readOnly}
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth disabled={readOnly}>
-                <InputLabel id="coach-label">Assign to Coach</InputLabel>
-                <Select
-                  labelId="coach-label"
-                  name="assignedTo"
-                  value={formData.assignedTo}
-                  onChange={handleFormChange}
-                  label="Assign to Coach"
-                  disabled={readOnly}
-                >
-                  <MenuItem value="">
-                    <em>Not assigned</em>
-                  </MenuItem>
-                  {coaches.map(coach => (
-                    <MenuItem key={coach._id} value={coach._id}>
-                      {coach.firstName} {coach.lastName}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
             </Grid>
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
