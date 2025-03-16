@@ -51,14 +51,15 @@ import {
   Schedule,
   PlayArrow,
   Done,
-  Close
+  Close,
+  Sports
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { getAuthHeader } from '../../services/authService';
+import { getAuthHeader, isSportsSupervisor, getStoredUser } from '../../services/authService';
 
 const TrainingPlanManager = () => {
   const theme = useTheme();
@@ -102,9 +103,19 @@ const TrainingPlanManager = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch training plans
+        // Fetch training plans based on user role
         const plansRes = await api.get('/training-plans');
-        setTrainingPlans(plansRes.data);
+        
+        // For sports supervisors, filter plans to only show those for their assigned sport types
+        const user = getStoredUser();
+        let filteredPlans = plansRes.data;
+        
+        if (isSportsSupervisor() && user.supervisorSportTypes && user.supervisorSportTypes.length > 0) {
+          // The backend already filters plans for sports supervisors, but we can add a visual indicator
+          console.log(`Showing training plans for sport types: ${user.supervisorSportTypes.join(', ')}`);
+        }
+        
+        setTrainingPlans(filteredPlans);
         
         // Fetch teams
         const teamsRes = await api.get('/teams');
@@ -458,6 +469,34 @@ const TrainingPlanManager = () => {
           Create Training Plan
         </Button>
       </Box>
+      
+      {/* Sport Type Filter Indicator for Sports Supervisors */}
+      {isSportsSupervisor() && getStoredUser()?.supervisorSportTypes?.length > 0 && (
+        <Paper 
+          sx={{ 
+            p: 2, 
+            mb: 3, 
+            bgcolor: alpha(theme.palette.info.main, 0.1),
+            border: `1px solid ${theme.palette.info.main}` 
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Sports sx={{ mr: 1, color: theme.palette.info.main }} />
+            <Typography variant="body1">
+              Showing training plans for your assigned sport types: 
+              {getStoredUser().supervisorSportTypes.map((sport, idx) => (
+                <Chip 
+                  key={sport} 
+                  label={sport} 
+                  size="small" 
+                  color="primary" 
+                  sx={{ ml: 1, mr: 0.5 }}
+                />
+              ))}
+            </Typography>
+          </Box>
+        </Paper>
+      )}
       
       {/* Tabs */}
       <Box sx={{ width: '100%', bgcolor: 'background.paper', mb: 3 }}>

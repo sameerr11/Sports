@@ -67,7 +67,43 @@ exports.createTrainingPlan = async (req, res) => {
 // @access  Private (Supervisor only)
 exports.getAllTrainingPlans = async (req, res) => {
   try {
-    const trainingPlans = await TrainingPlan.find({ isActive: true })
+    // Build query based on supervisor type and assigned sports
+    let query = { isActive: true };
+    
+    // Filter by sport type if user is a sports supervisor
+    if (req.user.role === 'supervisor') {
+      const supervisor = await User.findById(req.user.id);
+      
+      if (supervisor.supervisorType === 'sports') {
+        if (Array.isArray(supervisor.supervisorSportTypes) && supervisor.supervisorSportTypes.length > 0) {
+          // Find teams with the supervisor's sport types
+          const teams = await Team.find({ 
+            sportType: { $in: supervisor.supervisorSportTypes },
+            isActive: true
+          });
+          
+          if (teams.length > 0) {
+            // Get team IDs
+            const teamIds = teams.map(team => team._id);
+            // Add team filter to query
+            query.team = { $in: teamIds };
+          } else {
+            // If no teams are found for their sport types, return empty array
+            return res.json([]);
+          }
+        } else {
+          // If they don't have any assigned sport types, they shouldn't see any training plans
+          return res.status(403).json({ 
+            msg: 'Access denied: No sport types assigned to your profile' 
+          });
+        }
+      }
+      // General supervisors can see all training plans (no additional filtering needed)
+      // Cafeteria supervisors shouldn't be calling this endpoint, but would see all plans if they did
+    }
+    
+    // Get training plans with the constructed query
+    const trainingPlans = await TrainingPlan.find(query)
       .populate('team', 'name sportType')
       .populate('createdBy', 'firstName lastName')
       .populate('assignedTo', 'firstName lastName')
@@ -75,7 +111,7 @@ exports.getAllTrainingPlans = async (req, res) => {
     
     res.json(trainingPlans);
   } catch (err) {
-    console.error(err.message);
+    console.error('Error fetching training plans:', err.message);
     res.status(500).send('Server Error');
   }
 };
@@ -107,8 +143,36 @@ exports.getTeamTrainingPlans = async (req, res) => {
   try {
     const { teamId } = req.params;
     
+    // For sports supervisors, verify they have access to the team's sport type
+    if (req.user.role === 'supervisor') {
+      const supervisor = await User.findById(req.user.id);
+      
+      if (supervisor.supervisorType === 'sports') {
+        if (Array.isArray(supervisor.supervisorSportTypes) && supervisor.supervisorSportTypes.length > 0) {
+          // Get the team to check its sport type
+          const team = await Team.findById(teamId);
+          
+          if (!team) {
+            return res.status(404).json({ msg: 'Team not found' });
+          }
+          
+          // Check if the team's sport type is in the supervisor's assigned types
+          if (!supervisor.supervisorSportTypes.includes(team.sportType)) {
+            return res.status(403).json({ 
+              msg: 'Not authorized to view training plans for this sport type' 
+            });
+          }
+        } else {
+          // If they don't have any assigned sport types, they shouldn't access any team
+          return res.status(403).json({ 
+            msg: 'Access denied: No sport types assigned to your profile' 
+          });
+        }
+      }
+      // General supervisors can access all teams
+    } 
     // Verify user is coach or player of this team if not supervisor/admin
-    if (!['admin', 'supervisor'].includes(req.user.role)) {
+    else if (!['admin'].includes(req.user.role)) {
       // Check if user is a coach for this team
       let team = await Team.findOne({
         _id: teamId,
