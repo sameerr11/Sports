@@ -13,6 +13,7 @@
     transition: all 0.3s ease-in-out;
     position: relative;
     width: 100%;
+    margin-top: 64px; /* Add space for the fixed navbar */
 }
 
 .layout-content.sidebar-closed .main-content {
@@ -27,7 +28,7 @@
 
 .main-content {
     flex: 1;
-    padding: 0;
+    padding: 32px 32px 24px; /* Increase top and horizontal padding for better spacing */
     transition: all 0.3s ease-in-out;
     background-color: #f8f9fa;
     min-height: calc(100vh - 64px);
@@ -48,11 +49,14 @@
     z-index: 0;
 }
 
-/* Add responsive adjustments */
+/* Media query adjustments for responsive padding */
 @media (max-width: 960px) {
     .layout-content.sidebar-open .main-content {
         margin-left: 280px;
         width: calc(100% - 280px);
+    }
+    .main-content {
+        padding: 24px 24px 16px; /* Slightly reduce padding on medium screens */
     }
 }
 
@@ -75,5 +79,8 @@
         height: 100%;
         background-color: rgba(0, 0, 0, 0.5);
         z-index: 1;
+    }
+    .main-content {
+        padding: 16px 16px 12px; /* Further reduce padding on small screens */
     }
 }

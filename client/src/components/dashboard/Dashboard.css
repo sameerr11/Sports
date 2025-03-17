@@ -24,6 +24,7 @@
 .dashboard-welcome h1 {
   position: relative;
   display: inline-block;
+  margin-top: 0;
 }
 
 .dashboard-welcome h1::after {

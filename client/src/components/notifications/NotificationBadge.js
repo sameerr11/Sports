@@ -137,9 +137,29 @@ const NotificationBadge = () => {
         aria-controls={open ? 'notification-menu' : undefined}
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
+        sx={{
+          borderRadius: '8px',
+          padding: '8px',
+          transition: 'all 0.2s',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)'
+          }
+        }}
       >
-        <Badge badgeContent={unreadCount} color="error">
-          <NotificationsIcon />
+        <Badge 
+          badgeContent={unreadCount} 
+          color="error"
+          sx={{
+            '& .MuiBadge-badge': {
+              fontSize: '10px',
+              height: '18px',
+              minWidth: '18px',
+              padding: '0 4px',
+              fontWeight: 'bold'
+            }
+          }}
+        >
+          <NotificationsIcon sx={{ fontSize: 24 }} />
         </Badge>
       </IconButton>
       <Menu
@@ -151,24 +171,46 @@ const NotificationBadge = () => {
           'aria-labelledby': 'notification-button',
         }}
         PaperProps={{
-          style: {
+          elevation: 3,
+          sx: {
             maxHeight: 400,
             width: 360,
-          },
+            overflow: 'visible',
+            filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.15))',
+            mt: 1.5,
+            '&:before': {
+              content: '""',
+              display: 'block',
+              position: 'absolute',
+              top: 0,
+              right: 14,
+              width: 10,
+              height: 10,
+              bgcolor: 'background.paper',
+              transform: 'translateY(-50%) rotate(45deg)',
+              zIndex: 0,
+            },
+          }
         }}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
         <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">Notifications</Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600 }}>Notifications</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ 
+            fontSize: '0.75rem',
+            fontWeight: 500,
+            padding: '4px 8px',
+            borderRadius: '12px',
+            backgroundColor: unreadCount > 0 ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
+          }}>
             {unreadCount} unread
           </Typography>
         </Box>
         <Divider />
         {notifications.length === 0 ? (
           <MenuItem disabled>
-            <Typography variant="body2">No notifications</Typography>
+            <Typography variant="body2" sx={{ py: 2, textAlign: 'center', width: '100%' }}>No notifications</Typography>
           </MenuItem>
         ) : (
           <List sx={{ width: '100%', p: 0 }}>
@@ -179,10 +221,16 @@ const NotificationBadge = () => {
                 sx={{
                   bgcolor: notification.isRead ? 'inherit' : 'rgba(25, 118, 210, 0.08)',
                   whiteSpace: 'normal',
+                  py: 1.5,
+                  px: 2,
+                  borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
                 }}
               >
                 <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: notification.isRead ? 'grey.400' : 'primary.main' }}>
+                  <Avatar sx={{ 
+                    bgcolor: notification.isRead ? 'grey.200' : 'primary.main',
+                    color: notification.isRead ? 'grey.700' : 'white'
+                  }}>
                     {getNotificationIcon(
                       notification.type, 
                       notification.relatedTo?.model
@@ -194,7 +242,8 @@ const NotificationBadge = () => {
                     <Typography
                       variant="subtitle2"
                       color="text.primary"
-                      fontWeight={notification.isRead ? 'normal' : 'bold'}
+                      fontWeight={notification.isRead ? 500 : 600}
+                      sx={{ fontSize: '0.875rem', mb: 0.5 }}
                     >
                       {notification.title}
                     </Typography>
@@ -212,6 +261,8 @@ const NotificationBadge = () => {
                           display: '-webkit-box',
                           WebkitLineClamp: 2,
                           WebkitBoxOrient: 'vertical',
+                          fontSize: '0.8125rem',
+                          opacity: notification.isRead ? 0.7 : 0.9
                         }}
                       >
                         {notification.message}
@@ -220,7 +271,7 @@ const NotificationBadge = () => {
                         variant="caption"
                         color="text.secondary"
                         component="div"
-                        sx={{ mt: 0.5 }}
+                        sx={{ mt: 0.5, fontSize: '0.75rem' }}
                       >
                         {formatDate(notification.createdAt)}
                       </Typography>
@@ -232,12 +283,18 @@ const NotificationBadge = () => {
           </List>
         )}
         <Divider />
-        <Box sx={{ p: 1 }}>
+        <Box sx={{ p: 1.5 }}>
           <Button
             component={Link}
             to="/notifications"
             fullWidth
             onClick={handleClose}
+            variant="text"
+            sx={{ 
+              textTransform: 'none', 
+              fontWeight: 500,
+              borderRadius: '8px' 
+            }}
           >
             View All Notifications
           </Button>

@@ -53,7 +53,7 @@ const Navbar = ({ toggleSidebar }) => {
 
     return (
         <AppBar 
-            position="static" 
+            position="fixed" 
             className="navbar"
             elevation={0}
             sx={{
@@ -62,24 +62,40 @@ const Navbar = ({ toggleSidebar }) => {
             }}
         >
             <Toolbar>
-                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    width: '100%', 
+                    justifyContent: 'space-between' 
+                }}>
+                    <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        gap: 1 
+                    }}>
                         <IconButton
                             size="large"
                             edge="start"
                             color="inherit"
                             aria-label="menu"
-                            sx={{ mr: 1 }}
+                            sx={{ 
+                                borderRadius: '8px',
+                                transition: 'all 0.2s ease'
+                            }}
                             onClick={toggleSidebar}
                             className="menu-button"
                         >
                             <MenuIcon />
                         </IconButton>
                         
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center',
+                            pl: 0.5 
+                        }}>
                             {cashier ? (
                                 <>
-                                    <RestaurantIcon sx={{ mr: 1, fontSize: 28 }} />
+                                    <RestaurantIcon sx={{ mr: 1.5, fontSize: 30 }} />
                                     <Typography 
                                         variant="h6" 
                                         component="div" 
@@ -93,14 +109,19 @@ const Navbar = ({ toggleSidebar }) => {
                                 </>
                             ) : (
                                 <>
-                                    <SportsSoccerIcon sx={{ mr: 1, fontSize: 28 }} />
+                                    <SportsSoccerIcon sx={{ 
+                                        mr: 1.5, 
+                                        fontSize: 30,
+                                        color: alpha(theme.palette.common.white, 0.95)
+                                    }} />
                                     <Typography 
                                         variant="h6" 
                                         component="div" 
                                         sx={{ 
                                             fontWeight: 700,
                                             letterSpacing: '0.5px',
-                                            display: { xs: 'none', sm: 'block' }
+                                            display: { xs: 'none', sm: 'block' },
+                                            color: alpha(theme.palette.common.white, 0.95)
                                         }}
                                     >
                                         Sports Management
@@ -110,18 +131,20 @@ const Navbar = ({ toggleSidebar }) => {
                         </Box>
                     </Box>
                     
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        gap: 2
+                    }}>
                         {!cashier && <NotificationBadge />}
                         
                         <Box 
                             sx={{ 
                                 display: 'flex', 
                                 alignItems: 'center',
-                                ml: 1,
-                                mr: { xs: 0, sm: 1 },
                                 cursor: 'pointer',
-                                borderRadius: 1,
-                                padding: '4px 8px',
+                                borderRadius: 2,
+                                padding: '6px 12px',
                                 transition: 'all 0.2s',
                                 '&:hover': {
                                     backgroundColor: alpha(theme.palette.common.white, 0.1)
@@ -131,10 +154,11 @@ const Navbar = ({ toggleSidebar }) => {
                         >
                             <Avatar 
                                 sx={{ 
-                                    width: 32, 
-                                    height: 32,
+                                    width: 36, 
+                                    height: 36,
                                     bgcolor: theme.palette.secondary.main,
-                                    border: `2px solid ${alpha(theme.palette.common.white, 0.8)}`
+                                    fontSize: '1rem',
+                                    fontWeight: 600
                                 }}
                             >
                                 {user?.firstName?.charAt(0) || 'U'}
@@ -142,9 +166,9 @@ const Navbar = ({ toggleSidebar }) => {
                             
                             <Box 
                                 sx={{ 
-                                    ml: 1,
+                                    ml: 1.5,
                                     display: { xs: 'none', md: 'block' },
-                                    maxWidth: { md: 120, lg: 200 },
+                                    maxWidth: { md: 130, lg: 220 },
                                     overflow: 'hidden'
                                 }}
                             >
@@ -156,7 +180,7 @@ const Navbar = ({ toggleSidebar }) => {
                                         whiteSpace: 'nowrap',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
-                                        color: 'white'
+                                        color: alpha(theme.palette.common.white, 0.95)
                                     }}
                                 >
                                     {user?.firstName} {user?.lastName}
@@ -168,7 +192,7 @@ const Navbar = ({ toggleSidebar }) => {
                                         lineHeight: 1,
                                         display: 'block',
                                         whiteSpace: 'nowrap',
-                                        color: 'white'
+                                        color: alpha(theme.palette.common.white, 0.8)
                                     }}
                                 >
                                     {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}

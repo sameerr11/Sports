@@ -1,6 +1,7 @@
 .sidebar {
     transition: all 0.3s ease-in-out;
     overflow: hidden;
+    margin-top: 64px; /* Account for fixed navbar height */
 }
 
 .sidebar.closed {
@@ -20,6 +21,7 @@
     width: 280px !important;
     transform: translateX(0);
     visibility: visible;
+    margin-top: 64px; /* Account for fixed navbar height */
 }
 
 .sidebar-header {
