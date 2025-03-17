@@ -64,7 +64,11 @@ exports.registerUser = async (req, res) => {
     try {
       // Create notification for supervisors if new player registration
       if (role === 'player') {
-        const supervisors = await User.find({ role: 'supervisor' });
+        // Get all supervisors except cafeteria supervisors
+        const supervisors = await User.find({ 
+          role: 'supervisor',
+          supervisorType: { $ne: 'cafeteria' } // Exclude cafeteria supervisors
+        });
         
         for (const supervisor of supervisors) {
           const notification = new Notification({

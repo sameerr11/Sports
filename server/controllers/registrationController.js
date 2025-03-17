@@ -83,7 +83,29 @@ exports.createRegistration = async (req, res) => {
       return notification.save();
     });
     
-    await Promise.all(notificationPromises);
+    // Also notify supervisors (except cafeteria supervisors)
+    const supervisors = await User.find({ 
+      role: 'supervisor',
+      supervisorType: { $ne: 'cafeteria' } // Exclude cafeteria supervisors
+    });
+    
+    const supervisorNotificationPromises = supervisors.map(supervisor => {
+      const notification = new Notification({
+        recipient: supervisor._id,
+        sender: req.user.id,
+        type: 'new_registration',
+        title: 'New Player Registration',
+        message: `${player.firstName} ${player.lastName} has been registered for ${sports.join(', ')} by the accounting department.`,
+        relatedTo: {
+          model: 'PlayerRegistration',
+          id: registration._id
+        }
+      });
+      
+      return notification.save();
+    });
+    
+    await Promise.all([...notificationPromises, ...supervisorNotificationPromises]);
 
     res.status(201).json(registration);
   } catch (err) {

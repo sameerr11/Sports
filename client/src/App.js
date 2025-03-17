@@ -243,7 +243,7 @@ function App() {
         } />
         
         <Route path="/courts/new" element={
-          <ProtectedRoute requiredRole="supervisor">
+          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
             <MainLayout>
               <CourtForm />
             </MainLayout>
@@ -251,7 +251,7 @@ function App() {
         } />
         
         <Route path="/courts/edit/:id" element={
-          <ProtectedRoute requiredRole="supervisor">
+          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
             <MainLayout>
               <CourtForm />
             </MainLayout>
@@ -276,7 +276,7 @@ function App() {
         } />
         
         <Route path="/teams/new" element={
-          <ProtectedRoute requiredRole="supervisor">
+          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
             <MainLayout>
               <TeamForm />
             </MainLayout>
@@ -284,7 +284,7 @@ function App() {
         } />
         
         <Route path="/teams/edit/:id" element={
-          <ProtectedRoute requiredRole="supervisor">
+          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
             <MainLayout>
               <TeamForm />
             </MainLayout>
