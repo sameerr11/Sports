@@ -92,7 +92,8 @@ const Sidebar = ({ open, toggleSidebar }) => {
 
     // Cafeteria supervisor only sees cafeteria management
     const cafeteriaSupervisorItems = [
-        { text: 'Manage Cafeteria', icon: <FastfoodIcon />, path: '/cafeteria/manage' }
+        { text: 'Manage Cafeteria', icon: <FastfoodIcon />, path: '/cafeteria/manage' },
+        { text: 'Cafe Dashboard', icon: <DashboardIcon />, path: '/cafeteria/dashboard' }
     ];
 
     // Sports supervisor items - they handle courts, teams, schedules, and training plans

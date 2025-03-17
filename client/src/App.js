@@ -22,6 +22,7 @@ import {
 } from './services/authService';
 import Cafeteria from './components/cafeteria/Cafeteria';
 import CafeteriaManagement from './components/cafeteria/CafeteriaManagement';
+import CafeDashboard from './components/cafeteria/CafeDashboard';
 import CoachDashboard from './components/coach/CoachDashboard';
 import TrainingPlanManager from './components/training/TrainingPlanManager';
 import TrainingPlanDetail from './components/training/TrainingPlanDetail';
@@ -493,6 +494,14 @@ function App() {
           <ProtectedRoute requiredRole={["admin", "supervisor"]}>
             <MainLayout>
               <CafeteriaManagement />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/cafeteria/dashboard" element={
+          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
+            <MainLayout>
+              <CafeDashboard />
             </MainLayout>
           </ProtectedRoute>
         } />

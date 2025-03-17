@@ -15,22 +15,31 @@ import {
   MenuItem,
   CircularProgress,
   Alert,
-  Snackbar
+  Snackbar,
+  Paper
 } from '@mui/material';
 import {
   Add as AddIcon,
   Remove as RemoveIcon,
   ShoppingCart as CartIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  PlayArrow as StartIcon,
+  Stop as StopIcon,
+  Refresh as RefreshIcon,
+  Dashboard as DashboardIcon
 } from '@mui/icons-material';
 import { getItems, createOrder } from '../../services/cafeteriaService';
 import { isSupervisor } from '../../services/authService';
 import { formatCurrency } from '../../utils/format';
+import { Link } from 'react-router-dom';
 import './Cafeteria.css';
 
 const Cafeteria = () => {
   const [items, setItems] = useState([]);
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(() => {
+    const savedSession = localStorage.getItem('cafeSession');
+    return savedSession ? JSON.parse(savedSession).cart || [] : [];
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [orderDialog, setOrderDialog] = useState(false);
@@ -38,10 +47,67 @@ const Cafeteria = () => {
   const [customerName, setCustomerName] = useState('');
   const [processing, setProcessing] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [sessionStarted, setSessionStarted] = useState(() => {
+    const savedSession = localStorage.getItem('cafeSession');
+    return savedSession ? JSON.parse(savedSession).active : false;
+  });
+  const [startingBalance, setStartingBalance] = useState(() => {
+    const savedSession = localStorage.getItem('cafeSession');
+    return savedSession ? JSON.parse(savedSession).startingBalance : '';
+  });
+  const [balanceError, setBalanceError] = useState('');
+  const [totalSales, setTotalSales] = useState(() => {
+    const savedSession = localStorage.getItem('cafeSession');
+    return savedSession ? JSON.parse(savedSession).totalSales : 0;
+  });
+  const [endSessionDialog, setEndSessionDialog] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState(() => {
+    const savedSession = localStorage.getItem('cafeSession');
+    return savedSession ? JSON.parse(savedSession).startTime : null;
+  });
 
+  // Save session data to localStorage whenever it changes
   useEffect(() => {
-    fetchItems();
-  }, []);
+    if (sessionStarted) {
+      localStorage.setItem('cafeSession', JSON.stringify({
+        active: sessionStarted,
+        startingBalance,
+        totalSales,
+        cart,
+        startTime: sessionStartTime
+      }));
+    } else {
+      localStorage.removeItem('cafeSession');
+    }
+  }, [sessionStarted, startingBalance, totalSales, cart, sessionStartTime]);
+
+  // Fetch items when session is started or component mounts (for page refreshes)
+  useEffect(() => {
+    if (sessionStarted) {
+      fetchItems();
+    }
+  }, [sessionStarted]);
+
+  // Add a new effect to fetch items whenever the component mounts if session is active
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && sessionStarted) {
+        fetchItems();
+      }
+    };
+
+    // Fetch items on initial load if session is active
+    if (sessionStarted) {
+      fetchItems();
+    }
+
+    // Add event listener for visibility change (tab focus)
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [sessionStarted]);
 
   const fetchItems = async () => {
     try {
@@ -54,6 +120,25 @@ const Cafeteria = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleStartSession = () => {
+    // Validate starting balance
+    if (!startingBalance.trim()) {
+      setBalanceError('Please enter a starting balance');
+      return;
+    }
+    
+    const balance = parseFloat(startingBalance);
+    if (isNaN(balance) || balance < 0) {
+      setBalanceError('Please enter a valid positive number');
+      return;
+    }
+    
+    setBalanceError('');
+    // Set session start time
+    setSessionStartTime(new Date().toISOString());
+    setSessionStarted(true);
   };
 
   const handleAddToCart = (item) => {
@@ -122,6 +207,9 @@ const Cafeteria = () => {
       // Create the order
       const response = await createOrder(orderData);
       
+      // Update total sales
+      setTotalSales(prevTotal => prevTotal + getCartTotal());
+      
       // Show success message with items
       const itemsList = response.items.map(item => `${item.quantity}x ${item.name}`).join(', ');
       setSnackbar({
@@ -135,6 +223,9 @@ const Cafeteria = () => {
       setCustomerName('');
       setOrderDialog(false);
 
+      // Refresh items to update stock values
+      fetchItems();
+
     } catch (error) {
       console.error('Checkout error:', error);
       setSnackbar({
@@ -147,7 +238,43 @@ const Cafeteria = () => {
     }
   };
 
-  if (loading) {
+  const handleEndSession = () => {
+    setEndSessionDialog(true);
+  };
+
+  const confirmEndSession = () => {
+    // Save session summary before ending
+    const endTime = new Date().toISOString();
+    const sessionSummary = {
+      date: new Date().toLocaleDateString(),
+      startTime: sessionStartTime,
+      endTime: endTime,
+      startingBalance: parseFloat(startingBalance),
+      totalSales: totalSales,
+      finalBalance: parseFloat(startingBalance) + totalSales
+    };
+
+    // Get existing summaries or initialize empty array
+    const existingSummaries = JSON.parse(localStorage.getItem('cafeSessionSummaries') || '[]');
+    // Add new summary to the beginning of the array
+    existingSummaries.unshift(sessionSummary);
+    // Save updated summaries
+    localStorage.setItem('cafeSessionSummaries', JSON.stringify(existingSummaries));
+    
+    // Clear current session
+    localStorage.removeItem('cafeSession');
+    
+    // Then update state
+    setEndSessionDialog(false);
+    setSessionStarted(false);
+    setCart([]);
+    setItems([]);
+    setStartingBalance('');
+    setTotalSales(0);
+    setSessionStartTime(null);
+  };
+
+  if (loading && sessionStarted) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
         <CircularProgress />
@@ -163,23 +290,85 @@ const Cafeteria = () => {
     );
   }
 
+  if (!sessionStarted) {
+    return (
+      <Box className="cafeteria-container" display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+        <Paper elevation={3} sx={{ p: 4, maxWidth: 400, width: '100%' }}>
+          <Typography variant="h4" component="h1" align="center" gutterBottom>
+            Cafe Cashier
+          </Typography>
+          <Typography variant="subtitle1" align="center" gutterBottom>
+            Please enter the starting balance to begin
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            margin="normal"
+            label="Starting Balance"
+            variant="outlined"
+            type="number"
+            value={startingBalance}
+            onChange={(e) => setStartingBalance(e.target.value)}
+            error={!!balanceError}
+            helperText={balanceError}
+            inputProps={{ min: "0" }}
+            InputProps={{
+              startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>,
+            }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            size="large"
+            startIcon={<StartIcon />}
+            onClick={handleStartSession}
+            sx={{ mt: 3 }}
+          >
+            Start Session
+          </Button>
+        </Paper>
+      </Box>
+    );
+  }
+
   return (
     <Box className="cafeteria-container">
       <Box className="cafeteria-header">
         <Typography variant="h4" component="h1" gutterBottom>
           Cafeteria
         </Typography>
-        {isSupervisor() && (
+        <Box>
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<RefreshIcon />}
+            onClick={fetchItems}
+            sx={{ mr: 2 }}
+          >
+            Refresh Stock
+          </Button>
+          {isSupervisor() && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<EditIcon />}
+              component="a"
+              href="/cafeteria/manage"
+              sx={{ mr: 2 }}
+            >
+              Manage Items
+            </Button>
+          )}
           <Button
             variant="contained"
-            color="primary"
-            startIcon={<EditIcon />}
-            component="a"
-            href="/cafeteria/manage"
+            color="secondary"
+            startIcon={<StopIcon />}
+            onClick={handleEndSession}
           >
-            Manage Items
+            End Session
           </Button>
-        )}
+        </Box>
       </Box>
 
       <Grid container spacing={3}>
@@ -228,6 +417,15 @@ const Cafeteria = () => {
               <Typography variant="h6" gutterBottom>
                 Cart
               </Typography>
+              
+              <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                Starting Balance: {formatCurrency(parseFloat(startingBalance))}
+              </Typography>
+              
+              <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                Total Sales: {formatCurrency(totalSales)}
+              </Typography>
+
               {cart.length === 0 ? (
                 <Typography color="textSecondary">
                   Your cart is empty
@@ -289,20 +487,13 @@ const Cafeteria = () => {
         <DialogTitle>Complete Order</DialogTitle>
         <DialogContent>
           <TextField
-            autoFocus
-            margin="dense"
-            label="Customer Name"
-            fullWidth
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-          />
-          <TextField
             select
             margin="dense"
             label="Payment Method"
             fullWidth
             value={paymentMethod}
             onChange={(e) => setPaymentMethod(e.target.value)}
+            autoFocus
           >
             <MenuItem value="Cash">Cash</MenuItem>
 
@@ -334,6 +525,33 @@ const Cafeteria = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* End Session Dialog */}
+      <Dialog open={endSessionDialog} onClose={() => setEndSessionDialog(false)}>
+        <DialogTitle>Session Summary</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body1" gutterBottom>
+              <strong>Starting Balance:</strong> {formatCurrency(parseFloat(startingBalance))}
+            </Typography>
+            <Typography variant="body1" gutterBottom>
+              <strong>Total Sales:</strong> {formatCurrency(totalSales)}
+            </Typography>
+            <Typography variant="body1" gutterBottom>
+              <strong>Remaining Balance:</strong> {formatCurrency(parseFloat(startingBalance) + totalSales)}
+            </Typography>
+          </Box>
+          <Typography variant="body2" color="textSecondary">
+            Are you sure you want to end this session?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEndSessionDialog(false)}>Cancel</Button>
+          <Button onClick={confirmEndSession} variant="contained" color="primary">
+            End Session
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
