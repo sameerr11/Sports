@@ -1,5 +1,7 @@
 const CafeteriaItem = require('../models/CafeteriaItem');
 const CafeteriaOrder = require('../models/CafeteriaOrder');
+const CafeteriaSettings = require('../models/CafeteriaSettings');
+const CafeSessionSummary = require('../models/CafeSessionSummary');
 const ApiResponse = require('../utils/ApiResponse');
 
 // @desc    Create a new cafeteria item
@@ -241,5 +243,166 @@ exports.updateOrderStatus = async (req, res) => {
   } catch (error) {
     console.error('Error updating order status:', error);
     return ApiResponse.error(res, 'Error updating order status', 500);
+  }
+};
+
+// @desc    Get a cafeteria setting by name
+// @route   GET /api/cafeteria/settings/:settingName
+// @access  Private
+exports.getSettingByName = async (req, res) => {
+  try {
+    const { settingName } = req.params;
+    
+    const setting = await CafeteriaSettings.findOne({ settingName });
+    
+    if (!setting) {
+      return ApiResponse.success(res, { settingName, exists: false });
+    }
+    
+    return ApiResponse.success(res, { 
+      settingName, 
+      exists: true,
+      value: setting.stringValue || setting.numberValue || setting.booleanValue 
+    });
+  } catch (error) {
+    console.error('Error fetching cafeteria setting:', error);
+    return ApiResponse.error(res, 'Error fetching cafeteria setting', 500);
+  }
+};
+
+// @desc    Update a cafeteria setting
+// @route   PUT /api/cafeteria/settings/:settingName
+// @access  Private (Supervisor)
+exports.updateSetting = async (req, res) => {
+  try {
+    const { settingName } = req.params;
+    const { value, type = 'string' } = req.body;
+    
+    if (!value && value !== false && value !== 0) {
+      return ApiResponse.error(res, 'Setting value is required', 400);
+    }
+    
+    // Determine which field to update based on the type
+    const updateData = {};
+    if (type === 'string') {
+      updateData.stringValue = value;
+      updateData.numberValue = null;
+      updateData.booleanValue = null;
+    } else if (type === 'number') {
+      updateData.stringValue = null;
+      updateData.numberValue = value;
+      updateData.booleanValue = null;
+    } else if (type === 'boolean') {
+      updateData.stringValue = null;
+      updateData.numberValue = null;
+      updateData.booleanValue = value;
+    } else {
+      return ApiResponse.error(res, 'Invalid setting type', 400);
+    }
+    
+    // Add the user who updated it
+    updateData.updatedBy = req.user.id;
+    
+    // Find and update or create if it doesn't exist
+    const setting = await CafeteriaSettings.findOneAndUpdate(
+      { settingName },
+      updateData,
+      { 
+        new: true, 
+        upsert: true,
+        setDefaultsOnInsert: true
+      }
+    );
+    
+    // If this is a new setting, set the creator
+    if (setting.createdBy === undefined) {
+      setting.createdBy = req.user.id;
+      await setting.save();
+    }
+    
+    return ApiResponse.success(res, { 
+      settingName, 
+      value: setting.stringValue || setting.numberValue || setting.booleanValue 
+    }, 'Setting updated successfully');
+  } catch (error) {
+    console.error('Error updating cafeteria setting:', error);
+    return ApiResponse.error(res, 'Error updating cafeteria setting', 500);
+  }
+};
+
+// @desc    Create a session summary
+// @route   POST /api/cafeteria/sessions
+// @access  Private
+exports.createSessionSummary = async (req, res) => {
+  try {
+    const { startTime, endTime, startingBalance, totalSales, finalBalance } = req.body;
+
+    if (!startTime || !endTime || startingBalance === undefined || totalSales === undefined || finalBalance === undefined) {
+      return ApiResponse.error(res, 'Missing required session data', 400);
+    }
+
+    const sessionSummary = new CafeSessionSummary({
+      startTime,
+      endTime,
+      startingBalance,
+      totalSales,
+      finalBalance,
+      cashier: req.user.id
+    });
+
+    const savedSummary = await sessionSummary.save();
+    
+    return ApiResponse.success(res, savedSummary, 'Session summary saved successfully', 201);
+  } catch (error) {
+    console.error('Error saving session summary:', error);
+    return ApiResponse.error(res, 'Error saving session summary', 500);
+  }
+};
+
+// @desc    Get all session summaries
+// @route   GET /api/cafeteria/sessions
+// @access  Private (Supervisor)
+exports.getSessionSummaries = async (req, res) => {
+  try {
+    const { startDate, endDate, limit = 50, page = 1 } = req.query;
+    
+    // Build query
+    const query = {};
+    
+    // Date filtering
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) {
+        query.date.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.date.$lte = new Date(endDate);
+      }
+    }
+    
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Execute query with pagination and populate cashier info
+    const sessions = await CafeSessionSummary.find(query)
+      .sort({ date: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .populate('cashier', 'firstName lastName email');
+    
+    // Get total count for pagination
+    const total = await CafeSessionSummary.countDocuments(query);
+    
+    return ApiResponse.success(res, {
+      sessions,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching session summaries:', error);
+    return ApiResponse.error(res, 'Error fetching session summaries', 500);
   }
 }; 

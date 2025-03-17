@@ -165,4 +165,46 @@ export const getSalesReport = async (startDate, endDate, type = 'daily') => {
     console.error('Error fetching sales report:', error);
     throw error.response?.data?.message || 'Failed to fetch sales report';
   }
+};
+
+// Settings
+export const getSetting = async (settingName) => {
+  try {
+    const response = await api.get(`/cafeteria/settings/${settingName}`);
+    return response.data.data;
+  } catch (error) {
+    console.error(`Error fetching setting ${settingName}:`, error);
+    throw error.response?.data?.message || 'Failed to fetch setting';
+  }
+};
+
+export const updateSetting = async (settingName, value, type = 'string') => {
+  try {
+    const response = await api.put(`/cafeteria/settings/${settingName}`, { value, type });
+    return response.data.data;
+  } catch (error) {
+    console.error(`Error updating setting ${settingName}:`, error);
+    throw error.response?.data?.message || 'Failed to update setting';
+  }
+};
+
+// Session summaries
+export const createSessionSummary = async (sessionData) => {
+  try {
+    const response = await api.post('/cafeteria/sessions', sessionData);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error creating session summary:', error);
+    throw error.response?.data?.message || 'Failed to save session summary';
+  }
+};
+
+export const getSessionSummaries = async (params = {}) => {
+  try {
+    const response = await api.get('/cafeteria/sessions', { params });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error fetching session summaries:', error);
+    throw error.response?.data?.message || 'Failed to fetch session summaries';
+  }
 }; 

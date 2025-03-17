@@ -71,4 +71,45 @@ router.get(
   cafeteriaController.getSalesReport
 );
 
+// Settings routes
+router.get(
+  '/settings/:settingName',
+  auth,
+  cafeteriaController.getSettingByName
+);
+
+router.put(
+  '/settings/:settingName',
+  [
+    auth,
+    supervisor,
+    check('value', 'Setting value is required').exists(),
+    check('type', 'Invalid setting type').optional().isIn(['string', 'number', 'boolean'])
+  ],
+  cafeteriaController.updateSetting
+);
+
+// Session routes
+router.post(
+  '/sessions',
+  [
+    auth,
+    check('startTime', 'Start time is required').not().isEmpty(),
+    check('endTime', 'End time is required').not().isEmpty(),
+    check('startingBalance', 'Starting balance is required').isNumeric(),
+    check('totalSales', 'Total sales is required').isNumeric(),
+    check('finalBalance', 'Final balance is required').isNumeric()
+  ],
+  cafeteriaController.createSessionSummary
+);
+
+router.get(
+  '/sessions',
+  [
+    auth,
+    supervisor
+  ],
+  cafeteriaController.getSessionSummaries
+);
+
 module.exports = router; 

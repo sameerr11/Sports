@@ -28,7 +28,7 @@ import {
   Refresh as RefreshIcon,
   Dashboard as DashboardIcon
 } from '@mui/icons-material';
-import { getItems, createOrder } from '../../services/cafeteriaService';
+import { getItems, createOrder, getSetting, createSessionSummary } from '../../services/cafeteriaService';
 import { isSupervisor } from '../../services/authService';
 import { formatCurrency } from '../../utils/format';
 import { Link } from 'react-router-dom';
@@ -67,6 +67,8 @@ const Cafeteria = () => {
     const savedSession = localStorage.getItem('cafeSession');
     return savedSession ? JSON.parse(savedSession).startTime : null;
   });
+  const [endingSession, setEndingSession] = useState(false);
+  const [endSessionError, setEndSessionError] = useState('');
 
   // Save session data to localStorage whenever it changes
   useEffect(() => {
@@ -124,7 +126,7 @@ const Cafeteria = () => {
     }
   };
 
-  const handleStartSession = () => {
+  const handleStartSession = async () => {
     // Validate starting balance
     if (!startingBalance.trim()) {
       setBalanceError('Please enter a starting balance');
@@ -137,23 +139,29 @@ const Cafeteria = () => {
       return;
     }
     
-    // Validate PIN
-    const correctPin = localStorage.getItem('cafePIN');
-    if (!correctPin) {
-      setPinError('No PIN has been set by supervisor. Please contact your supervisor.');
-      return;
+    try {
+      // Validate PIN against database
+      const result = await getSetting('cashierPIN');
+      
+      if (!result.exists || !result.value) {
+        setPinError('No PIN has been set by supervisor. Please contact your supervisor.');
+        return;
+      }
+      
+      if (pinInput !== result.value) {
+        setPinError('Invalid PIN. Please try again.');
+        return;
+      }
+      
+      setBalanceError('');
+      setPinError('');
+      // Set session start time
+      setSessionStartTime(new Date().toISOString());
+      setSessionStarted(true);
+    } catch (error) {
+      setPinError('Error validating PIN. Please try again later.');
+      console.error('PIN validation error:', error);
     }
-    
-    if (pinInput !== correctPin) {
-      setPinError('Invalid PIN. Please try again.');
-      return;
-    }
-    
-    setBalanceError('');
-    setPinError('');
-    // Set session start time
-    setSessionStartTime(new Date().toISOString());
-    setSessionStarted(true);
   };
 
   const handleAddToCart = (item) => {
@@ -257,36 +265,42 @@ const Cafeteria = () => {
     setEndSessionDialog(true);
   };
 
-  const confirmEndSession = () => {
-    // Save session summary before ending
-    const endTime = new Date().toISOString();
-    const sessionSummary = {
-      date: new Date().toLocaleDateString(),
-      startTime: sessionStartTime,
-      endTime: endTime,
-      startingBalance: parseFloat(startingBalance),
-      totalSales: totalSales,
-      finalBalance: parseFloat(startingBalance) + totalSales
-    };
+  const confirmEndSession = async () => {
+    try {
+      setEndingSession(true);
+      setEndSessionError('');
+      
+      // Create session data
+      const endTime = new Date().toISOString();
+      const sessionSummary = {
+        startTime: sessionStartTime,
+        endTime: endTime,
+        startingBalance: parseFloat(startingBalance),
+        totalSales: totalSales,
+        finalBalance: parseFloat(startingBalance) + totalSales
+      };
 
-    // Get existing summaries or initialize empty array
-    const existingSummaries = JSON.parse(localStorage.getItem('cafeSessionSummaries') || '[]');
-    // Add new summary to the beginning of the array
-    existingSummaries.unshift(sessionSummary);
-    // Save updated summaries
-    localStorage.setItem('cafeSessionSummaries', JSON.stringify(existingSummaries));
-    
-    // Clear current session
-    localStorage.removeItem('cafeSession');
-    
-    // Then update state
-    setEndSessionDialog(false);
-    setSessionStarted(false);
-    setCart([]);
-    setItems([]);
-    setStartingBalance('');
-    setTotalSales(0);
-    setSessionStartTime(null);
+      // Save to database
+      await createSessionSummary(sessionSummary);
+      
+      // Clear current session
+      localStorage.removeItem('cafeSession');
+      
+      // Then update state
+      setEndSessionDialog(false);
+      setSessionStarted(false);
+      setCart([]);
+      setItems([]);
+      setStartingBalance('');
+      setTotalSales(0);
+      setSessionStartTime(null);
+      setPinInput(''); // Clear PIN input for security
+    } catch (error) {
+      console.error('Error saving session summary:', error);
+      setEndSessionError('Failed to save session summary. Please try again.');
+    } finally {
+      setEndingSession(false);
+    }
   };
 
   if (loading && sessionStarted) {
@@ -554,7 +568,7 @@ const Cafeteria = () => {
       </Snackbar>
 
       {/* End Session Dialog */}
-      <Dialog open={endSessionDialog} onClose={() => setEndSessionDialog(false)}>
+      <Dialog open={endSessionDialog} onClose={() => !endingSession && setEndSessionDialog(false)}>
         <DialogTitle>Session Summary</DialogTitle>
         <DialogContent>
           <Box sx={{ mb: 2 }}>
@@ -568,14 +582,19 @@ const Cafeteria = () => {
               <strong>Remaining Balance:</strong> {formatCurrency(parseFloat(startingBalance) + totalSales)}
             </Typography>
           </Box>
+          {endSessionError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {endSessionError}
+            </Alert>
+          )}
           <Typography variant="body2" color="textSecondary">
             Are you sure you want to end this session?
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEndSessionDialog(false)}>Cancel</Button>
-          <Button onClick={confirmEndSession} variant="contained" color="primary">
-            End Session
+          <Button onClick={() => setEndSessionDialog(false)} disabled={endingSession}>Cancel</Button>
+          <Button onClick={confirmEndSession} variant="contained" color="primary" disabled={endingSession}>
+            {endingSession ? <CircularProgress size={24} /> : 'End Session'}
           </Button>
         </DialogActions>
       </Dialog>

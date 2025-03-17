@@ -21,11 +21,14 @@ import {
   DialogActions,
   IconButton,
   InputAdornment,
-  Alert
+  Alert,
+  CircularProgress,
+  Pagination
 } from '@mui/material';
 import { formatCurrency } from '../../utils/format';
 import { format } from 'date-fns';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { getSetting, updateSetting, getSessionSummaries } from '../../services/cafeteriaService';
 
 const CafeDashboard = () => {
   const [sessionSummaries, setSessionSummaries] = useState([]);
@@ -38,25 +41,71 @@ const CafeDashboard = () => {
   const [pinSuccess, setPinSuccess] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [changePinOpen, setChangePinOpen] = useState(false);
+  const [loadingPin, setLoadingPin] = useState(false);
+  const [savingPin, setSavingPin] = useState(false);
+  const [loadingSummaries, setLoadingSummaries] = useState(false);
+  const [summaryError, setSummaryError] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    // Load session summaries from localStorage
-    const summaries = JSON.parse(localStorage.getItem('cafeSessionSummaries') || '[]');
-    setSessionSummaries(summaries);
-
-    // Calculate totals and averages
-    if (summaries.length > 0) {
-      const total = summaries.reduce((sum, session) => sum + session.totalSales, 0);
-      setTotalRevenue(total);
-      setAvgSessionRevenue(total / summaries.length);
-    }
-    
-    // Load current PIN
-    const storedPin = localStorage.getItem('cafePIN');
-    if (storedPin) {
-      setCurrentPin(storedPin);
-    }
+    // Load PIN from database
+    fetchPin();
+    // Load session summaries from database
+    fetchSessionSummaries();
   }, []);
+
+  const fetchSessionSummaries = async (pageNumber = 1) => {
+    try {
+      setLoadingSummaries(true);
+      setSummaryError('');
+      
+      const result = await getSessionSummaries({ page: pageNumber, limit: 10 });
+      
+      if (result && result.sessions) {
+        setSessionSummaries(result.sessions);
+        
+        if (result.pagination) {
+          setPage(result.pagination.page);
+          setTotalPages(result.pagination.pages);
+        }
+        
+        // Calculate totals
+        if (result.sessions.length > 0) {
+          const total = result.sessions.reduce((sum, session) => sum + session.totalSales, 0);
+          setTotalRevenue(total);
+          setAvgSessionRevenue(total / result.sessions.length);
+        } else {
+          setTotalRevenue(0);
+          setAvgSessionRevenue(0);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching session summaries:', error);
+      setSummaryError('Failed to load session summaries. Please try again.');
+    } finally {
+      setLoadingSummaries(false);
+    }
+  };
+
+  const handlePageChange = (event, value) => {
+    setPage(value);
+    fetchSessionSummaries(value);
+  };
+
+  const fetchPin = async () => {
+    try {
+      setLoadingPin(true);
+      const result = await getSetting('cashierPIN');
+      if (result.exists) {
+        setCurrentPin(result.value);
+      }
+    } catch (error) {
+      console.error('Error loading PIN:', error);
+    } finally {
+      setLoadingPin(false);
+    }
+  };
 
   // Format date and time for display
   const formatDateTime = (isoString) => {
@@ -65,6 +114,26 @@ const CafeDashboard = () => {
       return format(new Date(isoString), 'MMM d, yyyy h:mm a');
     } catch (error) {
       return 'Invalid date';
+    }
+  };
+  
+  // Format date only
+  const formatDate = (isoString) => {
+    if (!isoString) return 'N/A';
+    try {
+      return format(new Date(isoString), 'MMM d, yyyy');
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+  
+  // Format time only
+  const formatTime = (isoString) => {
+    if (!isoString) return 'N/A';
+    try {
+      return format(new Date(isoString), 'h:mm a');
+    } catch (error) {
+      return 'Invalid time';
     }
   };
 
@@ -85,7 +154,7 @@ const CafeDashboard = () => {
     }
   };
 
-  const handleSavePin = () => {
+  const handleSavePin = async () => {
     // Validate PIN
     if (!newPin || newPin.length < 4) {
       setPinError('PIN must be at least 4 digits');
@@ -97,21 +166,28 @@ const CafeDashboard = () => {
       return;
     }
     
-    // Save PIN to localStorage
-    localStorage.setItem('cafePIN', newPin);
-    setCurrentPin(newPin);
-    setPinError('');
-    setPinSuccess('PIN updated successfully');
-    
-    // Reset fields
-    setNewPin('');
-    setConfirmPin('');
-    setChangePinOpen(false);
-    
-    // Clear success message after a few seconds
-    setTimeout(() => {
-      setPinSuccess('');
-    }, 3000);
+    try {
+      setSavingPin(true);
+      // Save PIN to database
+      await updateSetting('cashierPIN', newPin);
+      setCurrentPin(newPin);
+      setPinError('');
+      setPinSuccess('PIN updated successfully');
+      
+      // Reset fields
+      setNewPin('');
+      setConfirmPin('');
+      setChangePinOpen(false);
+      
+      // Clear success message after a few seconds
+      setTimeout(() => {
+        setPinSuccess('');
+      }, 3000);
+    } catch (error) {
+      setPinError('Failed to update PIN: ' + error.message);
+    } finally {
+      setSavingPin(false);
+    }
   };
 
   const handleToggleShowPin = () => {
@@ -167,19 +243,25 @@ const CafeDashboard = () => {
               <Typography color="textSecondary" gutterBottom>
                 Cashier PIN
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="h6">
-                  {currentPin ? '••••' : 'Not Set'}
-                </Typography>
-                <Button 
-                  variant="outlined" 
-                  color="primary"
-                  size="small"
-                  onClick={() => setChangePinOpen(true)}
-                >
-                  {currentPin ? 'Change' : 'Set PIN'}
-                </Button>
-              </Box>
+              {loadingPin ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Typography variant="h6">
+                    {currentPin ? '••••' : 'Not Set'}
+                  </Typography>
+                  <Button 
+                    variant="outlined" 
+                    color="primary"
+                    size="small"
+                    onClick={() => setChangePinOpen(true)}
+                  >
+                    {currentPin ? 'Change' : 'Set PIN'}
+                  </Button>
+                </Box>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -195,62 +277,84 @@ const CafeDashboard = () => {
         Session History
       </Typography>
       
-      {sessionSummaries.length === 0 ? (
+      {loadingSummaries ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : summaryError ? (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {summaryError}
+        </Alert>
+      ) : sessionSummaries.length === 0 ? (
         <Paper sx={{ p: 3, textAlign: 'center' }}>
           <Typography variant="body1">
             No session summaries available yet.
           </Typography>
         </Paper>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Date</TableCell>
-                <TableCell>Start Time</TableCell>
-                <TableCell>End Time</TableCell>
-                <TableCell>Duration</TableCell>
-                <TableCell>Starting Balance</TableCell>
-                <TableCell>Sales</TableCell>
-                <TableCell>Final Balance</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sessionSummaries.map((session, index) => (
-                <TableRow key={index}>
-                  <TableCell>{session.date}</TableCell>
-                  <TableCell>{formatDateTime(session.startTime)}</TableCell>
-                  <TableCell>{formatDateTime(session.endTime)}</TableCell>
-                  <TableCell>{calculateDuration(session.startTime, session.endTime)}</TableCell>
-                  <TableCell>{formatCurrency(session.startingBalance)}</TableCell>
-                  <TableCell>{formatCurrency(session.totalSales)}</TableCell>
-                  <TableCell>{formatCurrency(session.finalBalance)}</TableCell>
+        <>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Cashier</TableCell>
+                  <TableCell>Start Time</TableCell>
+                  <TableCell>End Time</TableCell>
+                  <TableCell>Starting Balance</TableCell>
+                  <TableCell>Sales</TableCell>
+                  <TableCell>Final Balance</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {sessionSummaries.map((session) => (
+                  <TableRow key={session._id}>
+                    <TableCell>{formatDate(session.date)}</TableCell>
+                    <TableCell>
+                      {session.cashier ? 
+                        (session.cashier.firstName && session.cashier.lastName ? 
+                          `${session.cashier.firstName} ${session.cashier.lastName}` : 
+                          (session.cashier.name || 'Unknown')
+                        ) : 'Unknown'
+                      }
+                    </TableCell>
+                    <TableCell>{formatTime(session.startTime)}</TableCell>
+                    <TableCell>{formatTime(session.endTime)}</TableCell>
+                    <TableCell>{formatCurrency(session.startingBalance)}</TableCell>
+                    <TableCell>{formatCurrency(session.totalSales)}</TableCell>
+                    <TableCell>{formatCurrency(session.finalBalance)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          
+          {totalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Pagination 
+                count={totalPages} 
+                page={page} 
+                onChange={handlePageChange} 
+                color="primary" 
+              />
+            </Box>
+          )}
+        </>
       )}
 
       <Box sx={{ mt: 3, textAlign: 'right' }}>
         <Button 
           variant="outlined" 
-          color="secondary"
-          onClick={() => {
-            if (window.confirm('Are you sure you want to clear all session history?')) {
-              localStorage.removeItem('cafeSessionSummaries');
-              setSessionSummaries([]);
-              setTotalRevenue(0);
-              setAvgSessionRevenue(0);
-            }
-          }}
+          color="primary"
+          onClick={() => fetchSessionSummaries(1)}
+          sx={{ mr: 2 }}
         >
-          Clear History
+          Refresh Data
         </Button>
       </Box>
 
       {/* Change PIN Dialog */}
-      <Dialog open={changePinOpen} onClose={() => setChangePinOpen(false)}>
+      <Dialog open={changePinOpen} onClose={() => !savingPin && setChangePinOpen(false)}>
         <DialogTitle>
           {currentPin ? 'Change Cashier PIN' : 'Set Cashier PIN'}
         </DialogTitle>
@@ -269,12 +373,14 @@ const CafeDashboard = () => {
               onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
               inputProps={{ maxLength: 6, inputMode: 'numeric', pattern: '[0-9]*' }}
               error={!!pinError}
+              disabled={savingPin}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
                       onClick={handleToggleShowPin}
                       edge="end"
+                      disabled={savingPin}
                     >
                       {showPin ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -293,13 +399,19 @@ const CafeDashboard = () => {
               inputProps={{ maxLength: 6, inputMode: 'numeric', pattern: '[0-9]*' }}
               error={!!pinError}
               helperText={pinError}
+              disabled={savingPin}
             />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setChangePinOpen(false)}>Cancel</Button>
-          <Button onClick={handleSavePin} variant="contained" color="primary">
-            Save PIN
+          <Button onClick={() => setChangePinOpen(false)} disabled={savingPin}>Cancel</Button>
+          <Button 
+            onClick={handleSavePin}
+            variant="contained"
+            color="primary"
+            disabled={savingPin}
+          >
+            {savingPin ? <CircularProgress size={24} /> : 'Save PIN'}
           </Button>
         </DialogActions>
       </Dialog>

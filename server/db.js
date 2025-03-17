@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const Test = require('./models/Test');
 
 const MONGODB_URI = "mongodb+srv://sameersaif2002:KrgxJfAZ0t2PlcXz@sportsmanagement.mwplt.mongodb.net/sports?retryWrites=true&w=majority";
 
