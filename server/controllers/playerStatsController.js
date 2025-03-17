@@ -163,7 +163,7 @@ exports.deletePlayerStats = async (req, res) => {
       return res.status(404).json({ msg: 'Player stats not found' });
     }
 
-    await playerStats.remove();
+    await PlayerStats.findByIdAndDelete(req.params.id);
     
     res.json({ msg: 'Player stats removed' });
   } catch (err) {
