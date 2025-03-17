@@ -38,6 +38,8 @@ import RegistrationList from './components/registration/RegistrationList';
 import RegistrationForm from './components/registration/RegistrationForm';
 import RegistrationDetail from './components/registration/RegistrationDetail';
 import RegistrationFeeManager from './components/registration/RegistrationFeeManager';
+import SalaryInvoice from './components/registration/SalaryInvoice';
+import SalaryInvoiceList from './components/registration/SalaryInvoiceList';
 import './App.css';
 import { useAuth } from './contexts/AuthContext';
 import { Box, CircularProgress } from '@mui/material';
@@ -208,6 +210,22 @@ function App() {
           <EnhancedProtectedRoute>
             <MainLayout>
               <RegistrationFeeManager />
+            </MainLayout>
+          </EnhancedProtectedRoute>
+        } />
+        
+        <Route path="/registrations/salary/list" element={
+          <EnhancedProtectedRoute requiredRole="accounting">
+            <MainLayout>
+              <SalaryInvoiceList />
+            </MainLayout>
+          </EnhancedProtectedRoute>
+        } />
+        
+        <Route path="/registrations/salary" element={
+          <EnhancedProtectedRoute requiredRole="accounting">
+            <MainLayout>
+              <SalaryInvoice />
             </MainLayout>
           </EnhancedProtectedRoute>
         } />

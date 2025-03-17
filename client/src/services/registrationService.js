@@ -80,4 +80,34 @@ export const updateRegistrationFee = async (id, feeData) => {
   } catch (error) {
     throw error;
   }
+};
+
+// Create salary invoice
+export const createSalaryInvoice = async (invoiceData) => {
+    try {
+        const response = await api.post('/registrations/salary', invoiceData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data?.msg || 'Failed to create salary invoice';
+    }
+};
+
+// Get salary invoices
+export const getSalaryInvoices = async () => {
+    try {
+        const response = await api.get('/registrations/salary');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data?.msg || 'Failed to fetch salary invoices';
+    }
+};
+
+// Update salary invoice payment status
+export const updateSalaryInvoiceStatus = async (id, paymentStatus) => {
+    try {
+        const response = await api.put(`/registrations/salary/${id}`, { paymentStatus });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data?.msg || 'Failed to update salary invoice';
+    }
 }; 

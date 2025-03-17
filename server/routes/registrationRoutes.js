@@ -42,6 +42,43 @@ router.put(
   registrationController.updateRegistrationFee
 );
 
+// @route   POST /api/registrations/salary
+// @desc    Create a salary invoice
+// @access  Admin, Accounting
+router.post(
+  '/salary',
+  [
+    auth,
+    roles(['admin', 'accounting']),
+    check('userId', 'User ID is required').notEmpty(),
+    check('amount', 'Amount is required').isNumeric(),
+    check('invoiceNumber', 'Invoice number is required').notEmpty()
+  ],
+  registrationController.createSalaryInvoice
+);
+
+// @route   GET /api/registrations/salary
+// @desc    Get all salary invoices
+// @access  Admin, Accounting
+router.get(
+  '/salary',
+  [auth, roles(['admin', 'accounting'])],
+  registrationController.getSalaryInvoices
+);
+
+// @route   PUT /api/registrations/salary/:id
+// @desc    Update salary invoice payment status
+// @access  Admin, Accounting
+router.put(
+  '/salary/:id',
+  [
+    auth,
+    roles(['admin', 'accounting']),
+    check('paymentStatus', 'Payment status is required').notEmpty()
+  ],
+  registrationController.updateSalaryInvoice
+);
+
 // Registration routes
 // @route   POST /api/registrations
 // @desc    Create a new registration

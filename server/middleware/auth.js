@@ -93,4 +93,12 @@ exports.accounting = (req, res, next) => {
     return res.status(403).json({ msg: 'Access denied. Accounting privileges required.' });
   }
   next();
+};
+
+// Middleware to check if user has admin, support, or accounting role
+exports.adminSupportOrAccounting = (req, res, next) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'support' && req.user.role !== 'accounting') {
+    return res.status(403).json({ msg: 'Access denied. Admin, Support, or Accounting privileges required.' });
+  }
+  next();
 }; 

@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { validationResult } = require('express-validator');
 const mongoose = require('mongoose');
+const SalaryInvoice = require('../models/SalaryInvoice');
 
 // @desc    Create a new player registration
 // @route   POST /api/registrations
@@ -372,5 +373,105 @@ exports.updateRegistrationFee = async (req, res) => {
     }
     
     res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+// @desc    Create a salary invoice
+// @route   POST /api/registrations/salary
+// @access  Admin, Accounting
+exports.createSalaryInvoice = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const { userId, amount, description, paymentMethod, paymentStatus, invoiceNumber } = req.body;
+
+    // Check if the user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    // Check if the invoice number is already used
+    const existingInvoice = await SalaryInvoice.findOne({ invoiceNumber });
+    if (existingInvoice) {
+      return res.status(400).json({ msg: 'Invoice number already exists' });
+    }
+
+    // Create the salary invoice
+    const salaryInvoice = new SalaryInvoice({
+      userId,
+      amount,
+      description,
+      invoiceNumber,
+      paymentMethod,
+      paymentStatus,
+      issuedBy: req.user.id,
+      issuedDate: new Date(),
+      paidDate: paymentStatus === 'Paid' ? new Date() : null
+    });
+
+    await salaryInvoice.save();
+
+    // Return the created invoice
+    return res.status(201).json(salaryInvoice);
+  } catch (err) {
+    console.error('Error creating salary invoice:', err.message);
+    return res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+// @desc    Get all salary invoices
+// @route   GET /api/registrations/salary
+// @access  Admin, Accounting
+exports.getSalaryInvoices = async (req, res) => {
+  try {
+    const salaryInvoices = await SalaryInvoice.find()
+      .populate('userId', 'firstName lastName email role')
+      .populate('issuedBy', 'firstName lastName')
+      .sort({ issuedDate: -1 });
+    
+    return res.json(salaryInvoices);
+  } catch (err) {
+    console.error('Error fetching salary invoices:', err.message);
+    return res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+// @desc    Update salary invoice payment status
+// @route   PUT /api/registrations/salary/:id
+// @access  Admin, Accounting
+exports.updateSalaryInvoice = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const { paymentStatus } = req.body;
+    
+    // Find the salary invoice
+    const salaryInvoice = await SalaryInvoice.findById(req.params.id);
+    if (!salaryInvoice) {
+      return res.status(404).json({ msg: 'Salary invoice not found' });
+    }
+    
+    // Update the payment status
+    salaryInvoice.paymentStatus = paymentStatus;
+    
+    // If status is changed to Paid, update paidDate
+    if (paymentStatus === 'Paid' && salaryInvoice.paymentStatus !== 'Paid') {
+      salaryInvoice.paidDate = new Date();
+    }
+    
+    await salaryInvoice.save();
+    
+    // Return the updated invoice
+    return res.json(salaryInvoice);
+  } catch (err) {
+    console.error('Error updating salary invoice:', err.message);
+    return res.status(500).json({ msg: 'Server error' });
   }
 }; 

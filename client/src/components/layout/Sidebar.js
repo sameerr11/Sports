@@ -14,26 +14,35 @@ import {
     useTheme,
     alpha
 } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import Sports from '@mui/icons-material/Sports';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import EventIcon from '@mui/icons-material/Event';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import RestaurantIcon from '@mui/icons-material/Restaurant';
-import FastfoodIcon from '@mui/icons-material/Fastfood';
-import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import PersonIcon from '@mui/icons-material/Person';
-import FamilyRestroomIcon from '@mui/icons-material/FamilyRestroom';
-import FeedbackIcon from '@mui/icons-material/Feedback';
-import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
-import PeopleIcon from '@mui/icons-material/People';
-import SupportIcon from '@mui/icons-material/Support';
-import ReceiptIcon from '@mui/icons-material/Receipt';
-import HowToRegIcon from '@mui/icons-material/HowToReg';
-import PaymentIcon from '@mui/icons-material/Payment';
+import {
+    Dashboard as DashboardIcon,
+    Event as EventIcon,
+    People as PeopleIcon,
+    PersonAdd as PersonAddIcon,
+    Assignment as AssignmentIcon,
+    Feedback as FeedbackIcon,
+    HowToReg as HowToRegIcon,
+    Settings as SettingsIcon,
+    Sports,
+    Person as PersonIcon,
+    FamilyRestroom as FamilyRestroomIcon,
+    Menu as MenuIcon,
+    Close as CloseIcon,
+    ChevronLeft as ChevronLeftIcon,
+    Home as HomeIcon,
+    LibraryBooks as LibraryBooksIcon,
+    SportsSoccer as SportsSoccerIcon,
+    SportsBasketball,
+    FitnessCenter as FitnessCenterIcon,
+    Fastfood as FastfoodIcon,
+    HealthAndSafety as HealthAndSafetyIcon,
+    Payment as PaymentIcon,
+    LocationOn as LocationOnIcon,
+    AdminPanelSettings as AdminPanelSettingsIcon,
+    Restaurant as RestaurantIcon,
+    Support as SupportIcon,
+    Receipt as ReceiptIcon
+} from '@mui/icons-material';
 import { 
     isAdmin, 
     isSupervisor, 
@@ -143,6 +152,8 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const accountingItems = [
         { text: 'Dashboard', icon: <DashboardIcon />, path: '/registrations' },
         { text: 'New Registration', icon: <HowToRegIcon />, path: '/registrations/new' },
+        { text: 'Salary Invoices', icon: <PaymentIcon />, path: '/registrations/salary/list' },
+        { text: 'New Salary Invoice', icon: <PaymentIcon />, path: '/registrations/salary' }
     ];
 
     // Function to determine which supervisor items to show

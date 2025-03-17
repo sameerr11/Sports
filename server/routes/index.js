@@ -16,7 +16,7 @@ const playerStatsRoutes = require('./playerStatsRoutes');
 const registrationRoutes = require('./registrationRoutes');
 
 // Middleware
-const { auth, admin, supervisor, coach, player, parent, adminOrSupport, support } = require('../middleware/auth');
+const { auth, admin, supervisor, coach, player, parent, adminOrSupport, adminSupportOrAccounting, support } = require('../middleware/auth');
 
 // Auth routes
 router.post(
@@ -43,7 +43,7 @@ router.post(
   ],
   userController.registerUser
 );
-router.get('/users', [auth, adminOrSupport], userController.getUsers);
+router.get('/users', [auth, adminSupportOrAccounting], userController.getUsers);
 router.get('/users/role/:role', [auth], userController.getUsersByRole);
 router.get('/users/parent/children', [auth, parent], userController.getParentChildren);
 router.get('/users/:id', [auth, adminOrSupport], userController.getUserById);
