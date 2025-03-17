@@ -14,6 +14,7 @@ const trainingPlanController = require('../controllers/trainingPlanController');
 const feedbackController = require('../controllers/feedbackController');
 const playerStatsRoutes = require('./playerStatsRoutes');
 const registrationRoutes = require('./registrationRoutes');
+const utilityRoutes = require('./utilityRoutes');
 
 // Middleware
 const { auth, admin, supervisor, coach, player, parent, adminOrSupport, adminSupportOrAccounting, support } = require('../middleware/auth');
@@ -223,5 +224,8 @@ router.use('/registrations', registrationRoutes);
 
 // Player Stats Routes
 router.use('/player-stats', playerStatsRoutes);
+
+// Utility routes
+router.use('/utilities', utilityRoutes);
 
 module.exports = router; 

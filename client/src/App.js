@@ -43,6 +43,9 @@ import SalaryInvoiceList from './components/registration/SalaryInvoiceList';
 import './App.css';
 import { useAuth } from './contexts/AuthContext';
 import { Box, CircularProgress } from '@mui/material';
+// Import utility components
+import UtilityBillList from './components/utilities/UtilityBillList';
+import UtilityBillForm from './components/utilities/UtilityBillForm';
 
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
@@ -492,6 +495,23 @@ function App() {
               <CafeteriaManagement />
             </MainLayout>
           </ProtectedRoute>
+        } />
+        
+        {/* Utility Routes */}
+        <Route path="/utilities" element={
+          <EnhancedProtectedRoute requiredRole="accounting">
+            <MainLayout>
+              <UtilityBillList />
+            </MainLayout>
+          </EnhancedProtectedRoute>
+        } />
+        
+        <Route path="/utilities/new" element={
+          <EnhancedProtectedRoute requiredRole="accounting">
+            <MainLayout>
+              <UtilityBillForm />
+            </MainLayout>
+          </EnhancedProtectedRoute>
         } />
         
         {/* Catch all route */}

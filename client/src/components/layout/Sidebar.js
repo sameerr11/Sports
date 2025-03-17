@@ -153,7 +153,9 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'Dashboard', icon: <DashboardIcon />, path: '/registrations' },
         { text: 'New Registration', icon: <HowToRegIcon />, path: '/registrations/new' },
         { text: 'Salary Invoices', icon: <PaymentIcon />, path: '/registrations/salary/list' },
-        { text: 'New Salary Invoice', icon: <PaymentIcon />, path: '/registrations/salary' }
+        { text: 'New Salary Invoice', icon: <PaymentIcon />, path: '/registrations/salary' },
+        { text: 'Utility Bills', icon: <ReceiptIcon />, path: '/utilities' },
+        { text: 'New Utility Bill', icon: <ReceiptIcon />, path: '/utilities/new' }
     ];
 
     // Function to determine which supervisor items to show
