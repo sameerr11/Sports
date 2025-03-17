@@ -279,7 +279,7 @@ function App() {
         } />
         
         <Route path="/teams/schedule" element={
-          <ProtectedRoute requiredRole="supervisor">
+          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
             <MainLayout>
               <TeamScheduler />
             </MainLayout>
@@ -287,7 +287,7 @@ function App() {
         } />
         
         <Route path="/training-plans" element={
-          <ProtectedRoute requiredRole="supervisor">
+          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
             <MainLayout>
               <TrainingPlanManager />
             </MainLayout>
@@ -347,7 +347,7 @@ function App() {
         
         {/* Booking Routes */}
         <Route path="/bookings" element={
-          <ProtectedRoute requiredRole="supervisor">
+          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
             <MainLayout>
               <BookingList />
             </MainLayout>
@@ -420,7 +420,7 @@ function App() {
         } />
         
         <Route path="/admin/feedback" element={
-          <ProtectedRoute requiredRole="adminOrSupport">
+          <ProtectedRoute requiredRole="admin">
             <MainLayout>
               <AdminFeedbackList />
             </MainLayout>
@@ -428,7 +428,7 @@ function App() {
         } />
         
         <Route path="/support/dashboard" element={
-          <ProtectedRoute requiredRoles={['adminOrSupport']}>
+          <ProtectedRoute requiredRole={["admin", "support"]}>
             <MainLayout>
               <SupportDashboard />
             </MainLayout>
@@ -436,7 +436,7 @@ function App() {
         } />
         
         <Route path="/support/feedback" element={
-          <ProtectedRoute requiredRoles={['adminOrSupport']}>
+          <ProtectedRoute requiredRole={["admin", "support"]}>
             <MainLayout>
               <AdminFeedbackList />
             </MainLayout>
@@ -444,7 +444,7 @@ function App() {
         } />
         
         <Route path="/support/documents" element={
-          <ProtectedRoute requiredRoles={['adminOrSupport']}>
+          <ProtectedRoute requiredRole={["admin", "support"]}>
             <MainLayout>
               <DocumentManagement />
             </MainLayout>
@@ -452,7 +452,7 @@ function App() {
         } />
         
         <Route path="/player-stats" element={
-          <ProtectedRoute requiredRoles={['adminOrSupport']}>
+          <ProtectedRoute requiredRole={["admin", "support"]}>
             <MainLayout>
               <PlayerStats />
             </MainLayout>
@@ -469,7 +469,7 @@ function App() {
         } />
         
         <Route path="/cafeteria/manage" element={
-          <ProtectedRoute requiredRole="supervisor">
+          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
             <MainLayout>
               <CafeteriaManagement />
             </MainLayout>

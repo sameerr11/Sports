@@ -605,11 +605,6 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 key={item.text} 
                                 component={Link} 
                                 to={item.path}
-                                onClick={() => {
-                                    if (item.text === 'Dashboard') {
-                                        console.log('Admin Dashboard clicked, redirecting to:', item.path);
-                                    }
-                                }}
                                 selected={location.pathname === item.path}
                                 className={location.pathname === item.path ? 'active' : ''}
                                 sx={{
