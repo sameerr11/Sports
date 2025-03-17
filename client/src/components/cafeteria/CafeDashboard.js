@@ -13,15 +13,31 @@ import {
   CardContent,
   Grid,
   Divider,
-  Button
+  Button,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  InputAdornment,
+  Alert
 } from '@mui/material';
 import { formatCurrency } from '../../utils/format';
 import { format } from 'date-fns';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 const CafeDashboard = () => {
   const [sessionSummaries, setSessionSummaries] = useState([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [avgSessionRevenue, setAvgSessionRevenue] = useState(0);
+  const [currentPin, setCurrentPin] = useState('');
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [pinSuccess, setPinSuccess] = useState('');
+  const [showPin, setShowPin] = useState(false);
+  const [changePinOpen, setChangePinOpen] = useState(false);
 
   useEffect(() => {
     // Load session summaries from localStorage
@@ -33,6 +49,12 @@ const CafeDashboard = () => {
       const total = summaries.reduce((sum, session) => sum + session.totalSales, 0);
       setTotalRevenue(total);
       setAvgSessionRevenue(total / summaries.length);
+    }
+    
+    // Load current PIN
+    const storedPin = localStorage.getItem('cafePIN');
+    if (storedPin) {
+      setCurrentPin(storedPin);
     }
   }, []);
 
@@ -63,6 +85,39 @@ const CafeDashboard = () => {
     }
   };
 
+  const handleSavePin = () => {
+    // Validate PIN
+    if (!newPin || newPin.length < 4) {
+      setPinError('PIN must be at least 4 digits');
+      return;
+    }
+    
+    if (newPin !== confirmPin) {
+      setPinError('PINs do not match');
+      return;
+    }
+    
+    // Save PIN to localStorage
+    localStorage.setItem('cafePIN', newPin);
+    setCurrentPin(newPin);
+    setPinError('');
+    setPinSuccess('PIN updated successfully');
+    
+    // Reset fields
+    setNewPin('');
+    setConfirmPin('');
+    setChangePinOpen(false);
+    
+    // Clear success message after a few seconds
+    setTimeout(() => {
+      setPinSuccess('');
+    }, 3000);
+  };
+
+  const handleToggleShowPin = () => {
+    setShowPin(!showPin);
+  };
+
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
       <Typography variant="h4" gutterBottom>
@@ -70,7 +125,7 @@ const CafeDashboard = () => {
       </Typography>
       
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
@@ -82,7 +137,7 @@ const CafeDashboard = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
@@ -94,7 +149,7 @@ const CafeDashboard = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
@@ -106,7 +161,35 @@ const CafeDashboard = () => {
             </CardContent>
           </Card>
         </Grid>
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                Cashier PIN
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="h6">
+                  {currentPin ? '••••' : 'Not Set'}
+                </Typography>
+                <Button 
+                  variant="outlined" 
+                  color="primary"
+                  size="small"
+                  onClick={() => setChangePinOpen(true)}
+                >
+                  {currentPin ? 'Change' : 'Set PIN'}
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
+
+      {pinSuccess && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          {pinSuccess}
+        </Alert>
+      )}
 
       <Typography variant="h5" gutterBottom>
         Session History
@@ -165,6 +248,61 @@ const CafeDashboard = () => {
           Clear History
         </Button>
       </Box>
+
+      {/* Change PIN Dialog */}
+      <Dialog open={changePinOpen} onClose={() => setChangePinOpen(false)}>
+        <DialogTitle>
+          {currentPin ? 'Change Cashier PIN' : 'Set Cashier PIN'}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ width: '300px', pt: 1 }}>
+            <Typography variant="body2" color="textSecondary" gutterBottom>
+              This PIN will be required for cashiers to start a session
+            </Typography>
+            
+            <TextField
+              fullWidth
+              margin="normal"
+              label="New PIN"
+              type={showPin ? 'text' : 'password'}
+              value={newPin}
+              onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+              inputProps={{ maxLength: 6, inputMode: 'numeric', pattern: '[0-9]*' }}
+              error={!!pinError}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={handleToggleShowPin}
+                      edge="end"
+                    >
+                      {showPin ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Confirm PIN"
+              type={showPin ? 'text' : 'password'}
+              value={confirmPin}
+              onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
+              inputProps={{ maxLength: 6, inputMode: 'numeric', pattern: '[0-9]*' }}
+              error={!!pinError}
+              helperText={pinError}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setChangePinOpen(false)}>Cancel</Button>
+          <Button onClick={handleSavePin} variant="contained" color="primary">
+            Save PIN
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

@@ -56,6 +56,8 @@ const Cafeteria = () => {
     return savedSession ? JSON.parse(savedSession).startingBalance : '';
   });
   const [balanceError, setBalanceError] = useState('');
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
   const [totalSales, setTotalSales] = useState(() => {
     const savedSession = localStorage.getItem('cafeSession');
     return savedSession ? JSON.parse(savedSession).totalSales : 0;
@@ -135,7 +137,20 @@ const Cafeteria = () => {
       return;
     }
     
+    // Validate PIN
+    const correctPin = localStorage.getItem('cafePIN');
+    if (!correctPin) {
+      setPinError('No PIN has been set by supervisor. Please contact your supervisor.');
+      return;
+    }
+    
+    if (pinInput !== correctPin) {
+      setPinError('Invalid PIN. Please try again.');
+      return;
+    }
+    
     setBalanceError('');
+    setPinError('');
     // Set session start time
     setSessionStartTime(new Date().toISOString());
     setSessionStarted(true);
@@ -298,7 +313,7 @@ const Cafeteria = () => {
             Cafe Cashier
           </Typography>
           <Typography variant="subtitle1" align="center" gutterBottom>
-            Please enter the starting balance to begin
+            Please enter the starting balance and PIN to begin
           </Typography>
           <TextField
             autoFocus
@@ -315,6 +330,18 @@ const Cafeteria = () => {
             InputProps={{
               startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>,
             }}
+          />
+          <TextField
+            fullWidth
+            margin="normal"
+            label="PIN"
+            variant="outlined"
+            type="password"
+            value={pinInput}
+            onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
+            error={!!pinError}
+            helperText={pinError}
+            inputProps={{ maxLength: 6, inputMode: 'numeric', pattern: '[0-9]*' }}
           />
           <Button
             variant="contained"
