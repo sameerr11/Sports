@@ -1,0 +1,258 @@
+.teams-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.teams-header {
+  margin-bottom: 32px;
+  position: relative;
+  animation: slideDown 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.teams-header h1 {
+  position: relative;
+  display: inline-block;
+}
+
+.teams-header h1::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, #1976d2, #42a5f5);
+  border-radius: 4px;
+  animation: expandWidth 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+  transform-origin: left;
+}
+
+@keyframes expandWidth {
+  from { width: 0; }
+  to { width: 80px; }
+}
+
+.teams-grid {
+  position: relative;
+}
+
+.team-item {
+  opacity: 1;
+  animation: fadeInUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.team-card {
+  transform-origin: center;
+  opacity: 1;
+  animation: fadeInUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards !important;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Team stats animation */
+.team-stats {
+  transition: all 0.3s ease;
+}
+
+.team-stats:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+  transition: background-color 0.3s ease;
+}
+
+/* Avatar group hover effect */
+.MuiAvatarGroup-root {
+  transition: all 0.3s ease;
+}
+
+.team-card:hover .MuiAvatarGroup-root {
+  transform: scale(1.05);
+}
+
+/* Sport icon pulsing */
+.sport-icon {
+  animation: rotateIcon 1s ease-in-out;
+}
+
+/* Button and interactive elements hover animations */
+.MuiButton-root {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.MuiButton-root:hover {
+  transform: translateY(-2px);
+}
+
+.MuiButton-contained::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    rgba(255,255,255,0) 0%, 
+    rgba(255,255,255,0.2) 25%, 
+    rgba(255,255,255,0.2) 50%, 
+    rgba(255,255,255,0) 100%);
+  transform: translateX(-100%);
+  transition: transform 0.8s ease;
+}
+
+.MuiButton-contained:hover::after {
+  transform: translateX(100%);
+}
+
+/* Card image zoom effect */
+.MuiCardMedia-root {
+  transition: all 0.5s ease;
+  transform-origin: center;
+}
+
+.team-card:hover .MuiCardMedia-root {
+  filter: brightness(1.05);
+}
+
+/* IconButton hover effects */
+.MuiIconButton-root {
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.MuiIconButton-root:hover {
+  transform: translateY(-2px);
+}
+
+/* Empty state animations */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+/* Trophy icon animation */
+.trophy-icon {
+  animation: shine 2s infinite alternate;
+  transition: transform 0.3s ease;
+}
+
+@keyframes shine {
+  from { opacity: 0.8; text-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
+  to { opacity: 1; text-shadow: 0 0 15px rgba(255, 215, 0, 0.8); }
+}
+
+.trophy-icon:hover {
+  transform: rotate(15deg);
+}
+
+/* Team achievements section */
+.achievements {
+  position: relative;
+  overflow: hidden;
+}
+
+.achievements::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    rgba(25, 118, 210, 0) 0%, 
+    rgba(25, 118, 210, 0.05) 50%, 
+    rgba(25, 118, 210, 0) 100%);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Animation keyframes */
+@keyframes rotateIcon {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-10deg);
+  }
+  75% {
+    transform: rotate(10deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .teams-container {
+    padding: 16px;
+  }
+  
+  .teams-header {
+    margin-bottom: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .teams-container {
+    padding: 12px;
+  }
+  
+  .teams-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .teams-grid {
+    margin-top: 1rem;
+  }
+  
+  .team-item {
+    margin-bottom: 1.5rem;
+  }
+}
+
+/* Hover effects for cards and buttons */
+.team-card .MuiButton-contained:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.team-card .MuiCardMedia-root {
+  transition: all 0.5s ease;
+}
+
+.team-card:hover .MuiCardMedia-root {
+  filter: brightness(1.05);
+}
+
+.empty-state {
+  transform-origin: center;
+} 

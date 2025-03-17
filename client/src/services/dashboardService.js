@@ -6,44 +6,20 @@ import { getTeams } from './teamService';
 export const getDashboardData = async () => {
   try {
     // Fetch all required data in parallel
-    const [upcomingBookings, userBookings, teams] = await Promise.all([
+    const [upcomingBookings, userBookings] = await Promise.all([
       getUpcomingUserBookings(3),
-      getUserBookings(),
-      getTeams()
+      getUserBookings()
     ]);
-
-    // Fetch recent activity
-    const recentActivity = await getRecentActivity();
-
-    // Get user's team data with corrected filtering logic
-    const userId = localStorage.getItem('userId');
-    const userTeams = teams.filter(team => 
-      (team.players && team.players.some(playerItem => 
-        (playerItem.player && playerItem.player._id === userId) || 
-        (typeof playerItem === 'string' && playerItem === userId)
-      )) ||
-      (team.coaches && team.coaches.some(coachItem => 
-        (coachItem.coach && coachItem.coach._id === userId) || 
-        (typeof coachItem === 'string' && coachItem === userId)
-      ))
-    );
-
-    // Get active tournaments
-    const activeTournaments = await getActiveTournaments();
 
     // Calculate stats
     const stats = {
       totalBookings: userBookings.length,
-      upcomingBookings: upcomingBookings.length,
-      totalTeams: userTeams.length,
-      activeTournaments: activeTournaments.length
+      upcomingBookings: upcomingBookings.length
     };
 
     return {
       stats,
-      upcomingBookings,
-      recentActivity,
-      userTeams
+      upcomingBookings
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);

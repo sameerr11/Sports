@@ -2,10 +2,46 @@
   padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
+  animation: fadeIn 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .dashboard-welcome {
   margin-bottom: 32px;
+  position: relative;
+  animation: slideIn 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.dashboard-welcome h1 {
+  position: relative;
+  display: inline-block;
+}
+
+.dashboard-welcome h1::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, #1976d2, #42a5f5);
+  border-radius: 4px;
+  animation: expandWidth 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+  transform-origin: left;
+}
+
+@keyframes expandWidth {
+  from { width: 0; }
+  to { width: 80px; }
 }
 
 .dashboard-stats {
@@ -14,36 +50,59 @@
 
 .stats-card {
   height: 100%;
-  padding: 16px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 16px;
   overflow: hidden;
   position: relative;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  animation: fadeInUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+  animation-fill-mode: both;
+}
+
+.stats-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.stats-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .stats-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
 }
 
 .stats-card-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
 }
 
 .stats-icon {
-  width: 56px;
-  height: 56px;
+  width: 70px;
+  height: 70px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.stats-card:hover .stats-icon {
+  transform: scale(1.15) rotate(5deg);
 }
 
 .booking-icon {
-  background-color: rgba(25, 118, 210, 0.1);
+  background-color: rgba(25, 118, 210, 0.15);
   color: #1976d2;
 }
 
 .upcoming-icon {
-  background-color: rgba(156, 39, 176, 0.1);
+  background-color: rgba(156, 39, 176, 0.15);
   color: #9c27b0;
 }
 
@@ -58,56 +117,184 @@
 }
 
 .stats-footer {
-  padding-top: 8px;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
 }
 
 .dashboard-card {
   height: 100%;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+  animation-delay: 0.3s;
+  animation-fill-mode: both;
 }
 
 .dashboard-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
 
-.booking-avatar, .activity-avatar {
-  background-color: rgba(25, 118, 210, 0.1);
-  color: #1976d2;
+.booking-avatar {
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.team-card {
-  padding: 16px;
+.dashboard-card:hover .booking-avatar {
+  transform: scale(1.15) rotate(5deg);
+}
+
+/* Enhanced list items for bookings */
+.MuiListItem-root {
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  border-radius: 8px;
+  margin: 4px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.MuiListItem-root::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  width: 3px;
+  background: linear-gradient(to bottom, #1976d2, #42a5f5);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.team-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+.MuiListItem-root:hover {
+  background-color: rgba(25, 118, 210, 0.05);
 }
 
-.team-card-header {
-  margin-bottom: 16px;
+.MuiListItem-root:hover::after {
+  opacity: 1;
 }
 
-.team-card-content {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  flex-grow: 1;
+/* Paper cards in scheduling section */
+.scheduler-card {
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform-origin: center;
+  animation: fadeInUp 0.7s cubic-bezier(0.165, 0.84, 0.44, 1);
+  animation-fill-mode: both;
 }
 
-.team-stat {
+.scheduler-card:nth-child(1) {
+  animation-delay: 0.4s;
+}
+
+.scheduler-card:nth-child(2) {
+  animation-delay: 0.6s;
+}
+
+.scheduler-card:hover {
+  transform: translateY(-8px) scale(1.02);
+}
+
+.scheduler-card:hover .MuiAvatar-root {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.scheduler-card .MuiAvatar-root {
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Button styling */
+.MuiButton-containedPrimary, .MuiButton-containedSecondary {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.MuiButton-containedPrimary:hover, .MuiButton-containedSecondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.MuiButton-containedPrimary::after, .MuiButton-containedSecondary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    rgba(255,255,255,0) 0%, 
+    rgba(255,255,255,0.2) 25%, 
+    rgba(255,255,255,0.2) 50%, 
+    rgba(255,255,255,0) 100%);
+  transform: translateX(-100%);
+  transition: transform 0.8s ease;
+}
+
+.MuiButton-containedPrimary:hover::after, .MuiButton-containedSecondary:hover::after {
+  transform: translateX(100%);
+}
+
+/* Empty state styling */
+.empty-state {
+  animation: fadeInUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
   text-align: center;
-  flex: 1;
+  padding: 32px 16px;
 }
 
-.team-card-footer {
-  margin-top: auto;
+.empty-state .MuiAvatar-root {
+  animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(25, 118, 210, 0.2);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(25, 118, 210, 0.4);
+}
+
+/* Divider Animation */
+.MuiDivider-root {
+  position: relative;
+  overflow: hidden;
+}
+
+.MuiDivider-root::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    rgba(25, 118, 210, 0) 0%, 
+    rgba(25, 118, 210, 0.1) 50%, 
+    rgba(25, 118, 210, 0) 100%);
+  transform: translateX(-100%);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 /* Responsive adjustments */
@@ -123,6 +310,10 @@
   .dashboard-stats {
     margin-bottom: 24px;
   }
+  
+  .stats-card {
+    margin-bottom: 16px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -130,14 +321,21 @@
     padding: 12px;
   }
   
-  .team-card-content {
-    flex-direction: column;
-    gap: 8px;
+  .dashboard-welcome h1 {
+    font-size: 1.8rem;
   }
   
-  .team-stat {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  .stats-card-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+  
+  .stats-icon {
+    margin: 0 auto;
+  }
+  
+  .stats-footer {
+    justify-content: center;
   }
 } 

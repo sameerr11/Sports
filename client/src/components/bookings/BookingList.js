@@ -4,11 +4,11 @@ import {
   Container, Typography, Box, Button, Paper, Chip, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
-  FormControl, InputLabel, Select, MenuItem, Alert
+  FormControl, InputLabel, Select, MenuItem, Alert, useTheme, alpha
 } from '@mui/material';
 import { 
   Event, Cancel, CheckCircle, Visibility, 
-  SportsTennis, AccessTime
+  SportsTennis, AccessTime, CalendarMonth
 } from '@mui/icons-material';
 import { getBookings, getUserBookings, cancelBooking, updateBookingStatus } from '../../services/bookingService';
 import { isAdmin } from '../../services/authService';
@@ -24,6 +24,7 @@ const BookingList = ({ userOnly = false }) => {
   const [cancelDialog, setCancelDialog] = useState({ open: false, bookingId: null });
   
   const canManageBookings = isAdmin();
+  const theme = useTheme();
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -133,14 +134,51 @@ const BookingList = ({ userOnly = false }) => {
   };
 
   if (loading) {
-    return <Typography>Loading bookings...</Typography>;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <Typography variant="h6" sx={{ ml: 2 }}>Loading bookings...</Typography>
+      </Box>
+    );
   }
 
   return (
-    <Container>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
+    <Box sx={{ px: { xs: 2, sm: 4 }, py: 4, bgcolor: '#f8f9fa' }}>
+      <Box className="bookings-header" sx={{ mb: 5 }}>
+        <Typography 
+          variant="h3" 
+          component="h1" 
+          sx={{ 
+            fontWeight: 800, 
+            color: theme.palette.primary.dark,
+            mb: 1,
+            position: 'relative',
+            display: 'inline-block',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -8,
+              left: 0,
+              width: 80,
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: theme.palette.primary.main
+            }
+          }}
+        >
           {userOnly ? 'My Bookings' : 'All Bookings'}
+        </Typography>
+        <Typography 
+          variant="subtitle1" 
+          color="text.secondary" 
+          sx={{ 
+            fontSize: '1.1rem', 
+            maxWidth: '800px',
+            mt: 2 
+          }}
+        >
+          {userOnly 
+            ? 'Manage your court reservations and view your booking history' 
+            : 'Overview of all court bookings and reservations in the system'}
         </Typography>
       </Box>
 
@@ -148,9 +186,40 @@ const BookingList = ({ userOnly = false }) => {
       {successMessage && <AlertMessage severity="success" message={successMessage} />}
 
       {bookings.length === 0 ? (
-        <Alert severity="info">No bookings found.</Alert>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          py: 8,
+          animation: 'fadeInUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1)' 
+        }}>
+          <Box sx={{ 
+            width: 100, 
+            height: 100, 
+            mb: 3, 
+            bgcolor: alpha(theme.palette.primary.main, 0.1),
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <CalendarMonth sx={{ fontSize: 50, color: theme.palette.grey[500] }} />
+          </Box>
+          <Typography variant="h5" sx={{ color: theme.palette.grey[800], fontWeight: 600, mb: 1 }}>
+            No bookings found
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 3, textAlign: 'center', maxWidth: 500 }}>
+            {userOnly 
+              ? 'You have no court bookings. Make a reservation to get started.' 
+              : 'No bookings found in the system.'}
+          </Typography>
+        </Box>
       ) : (
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={{ 
+          borderRadius: 2,
+          overflow: 'hidden',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+        }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -280,7 +349,7 @@ const BookingList = ({ userOnly = false }) => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </Box>
   );
 };
 

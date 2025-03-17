@@ -49,13 +49,9 @@ const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState({
     stats: {
       totalBookings: 0,
-      upcomingBookings: 0,
-      totalTeams: 0,
-      activeTournaments: 0
+      upcomingBookings: 0
     },
-    upcomingBookings: [],
-    recentActivity: [],
-    userTeams: []
+    upcomingBookings: []
   });
   
   // Fetch real data from the API
@@ -76,21 +72,6 @@ const Dashboard = () => {
     
     fetchDashboardData();
   }, []);
-
-  const getActivityIcon = (type) => {
-    switch(type) {
-      case 'booking':
-        return <Event sx={{ color: theme.palette.primary.main }} />;
-      case 'team':
-        return <People sx={{ color: theme.palette.success.main }} />;
-      case 'tournament':
-        return <EmojiEvents sx={{ color: theme.palette.warning.main }} />;
-      case 'court':
-        return <LocationOn sx={{ color: theme.palette.error.main }} />;
-      default:
-        return <Event />;
-    }
-  };
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -133,92 +114,144 @@ const Dashboard = () => {
     );
   }
 
-  const { stats, upcomingBookings, recentActivity, userTeams } = dashboardData;
+  const { stats, upcomingBookings } = dashboardData;
 
   return (
-    <Box className="dashboard-container">
-      <Box className="dashboard-welcome">
-        <Typography variant="h4" component="h1" gutterBottom>
+    <Box className="dashboard-container" sx={{ px: { xs: 2, sm: 4 }, py: 4, bgcolor: '#f8f9fa' }}>
+      <Box className="dashboard-welcome" sx={{ mb: 5 }}>
+        <Typography 
+          variant="h3" 
+          component="h1" 
+          sx={{ 
+            fontWeight: 800, 
+            color: theme.palette.primary.dark,
+            mb: 1,
+            position: 'relative',
+            display: 'inline-block',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -8,
+              left: 0,
+              width: 80,
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: theme.palette.primary.main
+            }
+          }}
+        >
           Welcome back, {user?.firstName || 'User'}!
         </Typography>
-        <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+        <Typography 
+          variant="subtitle1" 
+          color="text.secondary" 
+          sx={{ 
+            fontSize: '1.1rem', 
+            maxWidth: '800px',
+            mt: 2 
+          }}
+        >
           Here's what's happening with your sports activities
         </Typography>
       </Box>
 
       {/* Stats Cards */}
-      <Grid container spacing={3} className="dashboard-stats">
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper elevation={3} className="stats-card">
-            <Box className="stats-card-content">
+      <Grid container spacing={4} className="dashboard-stats" sx={{ mb: 5 }}>
+        <Grid item xs={12} sm={6}>
+          <Paper 
+            elevation={0} 
+            className="stats-card" 
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.3)} 0%, ${alpha(theme.palette.primary.main, 0.1)} 100%)`,
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: -10,
+                right: -10,
+                width: 100,
+                height: 100,
+                borderRadius: '50%',
+                background: alpha(theme.palette.primary.light, 0.2),
+                zIndex: 0
+              }
+            }}
+          >
+            <Box className="stats-card-content" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
               <Box>
-                <Typography variant="h6" color="text.secondary">Total Bookings</Typography>
-                <Typography variant="h4">{stats.totalBookings}</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.primary.dark, mb: 1.5, letterSpacing: 0.5 }}>Total Bookings</Typography>
+                <Typography variant="h2" sx={{ fontWeight: 700, color: theme.palette.primary.dark, letterSpacing: -1 }}>{stats.totalBookings}</Typography>
               </Box>
-              <Avatar className="stats-icon booking-icon">
-                <Event />
+              <Avatar 
+                className="stats-icon booking-icon" 
+                sx={{ 
+                  width: 70, 
+                  height: 70, 
+                  bgcolor: alpha(theme.palette.primary.main, 0.2), 
+                  color: theme.palette.primary.dark,
+                  boxShadow: `0 8px 16px ${alpha(theme.palette.primary.main, 0.2)}`
+                }}
+              >
+                <Event sx={{ fontSize: 34 }} />
               </Avatar>
             </Box>
-            <Box className="stats-footer">
-              <Typography variant="body2" color="success.main" display="flex" alignItems="center">
-                <ArrowUpward fontSize="small" /> 12% increase
+            <Box className="stats-footer" sx={{ mt: 2.5, pt: 2, borderTop: `1px dashed ${alpha(theme.palette.primary.dark, 0.15)}`, position: 'relative', zIndex: 1 }}>
+              <Typography variant="body2" color="primary.dark" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+                <ArrowUpward fontSize="small" sx={{ mr: 0.5 }} /> 12% increase from last month
               </Typography>
             </Box>
           </Paper>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper elevation={3} className="stats-card">
-            <Box className="stats-card-content">
+        <Grid item xs={12} sm={6}>
+          <Paper 
+            elevation={0} 
+            className="stats-card" 
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              background: `linear-gradient(135deg, ${alpha(theme.palette.secondary.light, 0.3)} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
+              border: `1px solid ${alpha(theme.palette.secondary.main, 0.15)}`,
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: -10,
+                right: -10,
+                width: 100,
+                height: 100,
+                borderRadius: '50%',
+                background: alpha(theme.palette.secondary.light, 0.2),
+                zIndex: 0
+              }
+            }}
+          >
+            <Box className="stats-card-content" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
               <Box>
-                <Typography variant="h6" color="text.secondary">Upcoming Bookings</Typography>
-                <Typography variant="h4">{stats.upcomingBookings}</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.secondary.dark, mb: 1.5, letterSpacing: 0.5 }}>Upcoming Bookings</Typography>
+                <Typography variant="h2" sx={{ fontWeight: 700, color: theme.palette.secondary.dark, letterSpacing: -1 }}>{stats.upcomingBookings}</Typography>
               </Box>
-              <Avatar className="stats-icon upcoming-icon">
-                <AccessTime />
+              <Avatar 
+                className="stats-icon upcoming-icon" 
+                sx={{ 
+                  width: 70, 
+                  height: 70, 
+                  bgcolor: alpha(theme.palette.secondary.main, 0.2), 
+                  color: theme.palette.secondary.dark,
+                  boxShadow: `0 8px 16px ${alpha(theme.palette.secondary.main, 0.2)}`
+                }}
+              >
+                <AccessTime sx={{ fontSize: 34 }} />
               </Avatar>
             </Box>
-            <Box className="stats-footer">
-              <Typography variant="body2" color="success.main" display="flex" alignItems="center">
-                <ArrowUpward fontSize="small" /> 5% increase
-              </Typography>
-            </Box>
-          </Paper>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper elevation={3} className="stats-card">
-            <Box className="stats-card-content">
-              <Box>
-                <Typography variant="h6" color="text.secondary">My Teams</Typography>
-                <Typography variant="h4">{stats.totalTeams}</Typography>
-              </Box>
-              <Avatar className="stats-icon team-icon">
-                <SportsSoccer />
-              </Avatar>
-            </Box>
-            <Box className="stats-footer">
-              <Typography variant="body2" color="success.main" display="flex" alignItems="center">
-                <ArrowUpward fontSize="small" /> 8% growth
-              </Typography>
-            </Box>
-          </Paper>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper elevation={3} className="stats-card">
-            <Box className="stats-card-content">
-              <Box>
-                <Typography variant="h6" color="text.secondary">Active Tournaments</Typography>
-                <Typography variant="h4">{stats.activeTournaments}</Typography>
-              </Box>
-              <Avatar className="stats-icon tournament-icon">
-                <EmojiEvents />
-              </Avatar>
-            </Box>
-            <Box className="stats-footer">
-              <Typography variant="body2" color="error.main" display="flex" alignItems="center">
-                <ArrowDownward fontSize="small" /> 3% decrease
+            <Box className="stats-footer" sx={{ mt: 2.5, pt: 2, borderTop: `1px dashed ${alpha(theme.palette.secondary.dark, 0.15)}`, position: 'relative', zIndex: 1 }}>
+              <Typography variant="body2" color="secondary.dark" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+                <ArrowUpward fontSize="small" sx={{ mr: 0.5 }} /> 5% increase from last month
               </Typography>
             </Box>
           </Paper>
@@ -226,272 +259,305 @@ const Dashboard = () => {
       </Grid>
 
       {/* Main Dashboard Content */}
-      <Grid container spacing={3} className="dashboard-content">
+      <Grid container spacing={4} className="dashboard-content">
         {/* Upcoming Bookings */}
-        <Grid item xs={12} md={6}>
-          <Card elevation={3} className="dashboard-card">
+        <Grid item xs={12}>
+          <Card 
+            elevation={0} 
+            className="dashboard-card" 
+            sx={{ 
+              borderRadius: 3, 
+              overflow: 'hidden',
+              border: `1px solid ${alpha(theme.palette.grey[300], 0.7)}`,
+              boxShadow: `0 10px 30px ${alpha(theme.palette.common.black, 0.06)}`,
+              background: 'white'
+            }}
+          >
             <CardHeader
-              title="Upcoming Bookings"
-              action={
-                <IconButton aria-label="settings">
-                  <MoreVert />
-                </IconButton>
-              }
-            />
-            <Divider />
-            <CardContent>
-              {upcomingBookings.length === 0 ? (
-                <Typography variant="body1" align="center" sx={{ py: 2 }}>
-                  No upcoming bookings found
+              title={
+                <Typography 
+                  variant="h5" 
+                  sx={{ 
+                    fontWeight: 700, 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    color: theme.palette.grey[800]
+                  }}
+                >
+                  <Event sx={{ mr: 1.5, color: theme.palette.primary.main }} /> 
+                  Upcoming Bookings
                 </Typography>
-              ) : (
-                <List>
-                  {upcomingBookings.map((booking) => (
-                    <React.Fragment key={booking._id}>
-                      <ListItem alignItems="flex-start">
-                        <ListItemAvatar>
-                          <Avatar className="booking-avatar">
-                            <Event />
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={booking.court?.name || 'Court'}
-                          secondary={
-                            <>
-                              <Typography component="span" variant="body2" color="text.primary">
-                                {formatDate(booking.startTime)} at {formatTime(booking.startTime)}
-                              </Typography>
-                              {` — ${booking.purpose || 'Practice'}`}
-                            </>
-                          }
-                        />
-                      </ListItem>
-                      <Divider variant="inset" component="li" />
-                    </React.Fragment>
-                  ))}
-                </List>
-              )}
-              <Box sx={{ textAlign: 'center', mt: 2 }}>
+              }
+              action={
                 <Button 
                   component={Link} 
                   to="/bookings/me" 
-                  variant="outlined" 
+                  variant="contained" 
                   color="primary"
+                  size="small"
+                  endIcon={<ArrowUpward />}
+                  sx={{ 
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    px: 2
+                  }}
                 >
-                  View All Bookings
+                  View All
                 </Button>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Recent Activity */}
-        <Grid item xs={12} md={6}>
-          <Card elevation={3} className="dashboard-card">
-            <CardHeader
-              title="Recent Activity"
-              action={
-                <IconButton aria-label="settings">
-                  <MoreVert />
-                </IconButton>
               }
+              sx={{ px: 3, pt: 3, pb: 2 }}
             />
-            <Divider />
-            <CardContent>
-              {recentActivity.length === 0 ? (
-                <Typography variant="body1" align="center" sx={{ py: 2 }}>
-                  No recent activity found
-                </Typography>
+            <Divider sx={{ mx: 3 }} />
+            <CardContent sx={{ p: 0 }}>
+              {upcomingBookings.length === 0 ? (
+                <Box className="empty-state" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 6, px: 2 }}>
+                  <Avatar sx={{ width: 90, height: 90, mb: 3, bgcolor: alpha(theme.palette.primary.main, 0.1) }}>
+                    <Event sx={{ fontSize: 50, color: theme.palette.grey[500] }} />
+                  </Avatar>
+                  <Typography variant="h5" sx={{ color: theme.palette.grey[800], fontWeight: 600, mb: 1 }}>
+                    No upcoming bookings found
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary" sx={{ mb: 3, textAlign: 'center', maxWidth: 500 }}>
+                    Book a court or facility to see your upcoming reservations here
+                  </Typography>
+                  <Button 
+                    component={Link}
+                    to="/bookings/new"
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    startIcon={<Event />}
+                    sx={{ 
+                      borderRadius: 2,
+                      px: 4,
+                      py: 1,
+                      fontWeight: 600
+                    }}
+                  >
+                    Book Now
+                  </Button>
+                </Box>
               ) : (
-                <List>
-                  {recentActivity.map((activity) => (
-                    <React.Fragment key={activity.id}>
-                      <ListItem alignItems="flex-start">
+                <List sx={{ py: 1 }}>
+                  {upcomingBookings.map((booking, index) => (
+                    <React.Fragment key={booking._id}>
+                      <ListItem 
+                        alignItems="flex-start" 
+                        sx={{ 
+                          py: 2.5,
+                          px: 3,
+                          transition: 'all 0.2s ease',
+                          '&:hover': { 
+                            bgcolor: alpha(theme.palette.primary.main, 0.04),
+                            transform: 'translateX(4px)'
+                          }
+                        }}
+                        button
+                        component={Link}
+                        to={`/bookings/${booking._id}`}
+                      >
                         <ListItemAvatar>
-                          <Avatar className="activity-avatar">
-                            {getActivityIcon(activity.type)}
+                          <Avatar 
+                            className="booking-avatar" 
+                            sx={{ 
+                              width: 50,
+                              height: 50,
+                              bgcolor: alpha(theme.palette.primary.main, 0.15),
+                              color: theme.palette.primary.main
+                            }}
+                          >
+                            <Event sx={{ fontSize: 24 }} />
                           </Avatar>
                         </ListItemAvatar>
                         <ListItemText
-                          primary={activity.title}
+                          primary={
+                            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.grey[800], mb: 0.5 }}>
+                              {booking.court?.name || 'Court'}
+                            </Typography>
+                          }
                           secondary={
-                            <>
-                              <Typography component="span" variant="body2" color="text.primary">
-                                {activity.description}
+                            <Box sx={{ mt: 0.5 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                                <AccessTime sx={{ fontSize: 16, mr: 0.5, color: theme.palette.grey[600] }} />
+                                <Typography component="span" variant="body2" sx={{ color: theme.palette.grey[700], fontWeight: 500 }}>
+                                  {formatDate(booking.startTime)} at {formatTime(booking.startTime)}
+                                </Typography>
+                              </Box>
+                              <Typography variant="body2" sx={{ color: theme.palette.grey[600] }}>
+                                {booking.purpose || 'Practice'}
                               </Typography>
-                              {` — ${activity.time}`}
-                            </>
+                            </Box>
                           }
                         />
                       </ListItem>
-                      <Divider variant="inset" component="li" />
+                      {index < upcomingBookings.length - 1 && (
+                        <Divider variant="inset" component="li" sx={{ ml: 9 }} />
+                      )}
                     </React.Fragment>
                   ))}
                 </List>
               )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* My Teams */}
-        <Grid item xs={12}>
-          <Card elevation={3} className="dashboard-card">
-            <CardHeader
-              title="My Teams"
-              action={
-                <IconButton aria-label="settings">
-                  <MoreVert />
-                </IconButton>
-              }
-            />
-            <Divider />
-            <CardContent>
-              {userTeams.length === 0 ? (
-                <Typography variant="body1" align="center" sx={{ py: 2 }}>
-                  You are not a member of any teams
-                </Typography>
-              ) : (
-                <Grid container spacing={3}>
-                  {userTeams.map((team) => (
-                    <Grid item xs={12} sm={6} md={4} key={team._id}>
-                      <Paper elevation={2} className="team-card">
-                        <Box className="team-card-header">
-                          <Typography variant="h6">{team.name}</Typography>
-                          <Typography variant="body2" color="text.secondary">{team.sportType}</Typography>
-                        </Box>
-                        <Box className="team-card-content">
-                          <Box className="team-stat">
-                            <Typography variant="body2" color="text.secondary">Members</Typography>
-                            <Typography variant="h6">{team.players?.length || 0}</Typography>
-                          </Box>
-                          <Box className="team-stat">
-                            <Typography variant="body2" color="text.secondary">Wins</Typography>
-                            <Typography variant="h6" color="success.main">{team.wins || 0}</Typography>
-                          </Box>
-                          <Box className="team-stat">
-                            <Typography variant="body2" color="text.secondary">Losses</Typography>
-                            <Typography variant="h6" color="error.main">{team.losses || 0}</Typography>
-                          </Box>
-                        </Box>
-                        <Box className="team-card-footer">
-                          <Button 
-                            component={Link} 
-                            to={`/teams/${team._id}`} 
-                            variant="outlined" 
-                            size="small" 
-                            fullWidth
-                          >
-                            View Team
-                          </Button>
-                        </Box>
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              )}
-              <Box sx={{ textAlign: 'center', mt: 3 }}>
-                <Button 
-                  component={Link} 
-                  to="/teams" 
-                  variant="contained" 
-                  color="primary"
-                >
-                  View All Teams
-                </Button>
-              </Box>
             </CardContent>
           </Card>
         </Grid>
 
         {/* Team Scheduling Section for Supervisors */}
         {supervisor && (
-          <Grid container spacing={3} className="dashboard-content">
-            <Grid item xs={12}>
-              <Card elevation={3} className="dashboard-card">
-                <CardHeader
-                  title="Team Training & Match Scheduling"
-                  action={
+          <Grid item xs={12}>
+            <Card 
+              elevation={0} 
+              className="dashboard-card" 
+              sx={{ 
+                borderRadius: 3, 
+                overflow: 'hidden',
+                border: `1px solid ${alpha(theme.palette.grey[300], 0.7)}`,
+                boxShadow: `0 10px 30px ${alpha(theme.palette.common.black, 0.06)}`,
+                background: 'white'
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography 
+                    variant="h5" 
+                    sx={{ 
+                      fontWeight: 700, 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      color: theme.palette.grey[800]
+                    }}
+                  >
+                    <SportsScore sx={{ mr: 1.5, color: theme.palette.secondary.main }} /> 
+                    Team Training & Match Scheduling
+                  </Typography>
+                }
+                action={
+                  <Button 
+                    component={Link} 
+                    to="/teams/schedule" 
+                    variant="contained" 
+                    color="secondary"
+                    size="small"
+                    startIcon={<Event />}
+                    sx={{ 
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      borderRadius: 2,
+                      px: 2
+                    }}
+                  >
+                    Manage Schedules
+                  </Button>
+                }
+                sx={{ px: 3, pt: 3, pb: 2 }}
+              />
+              <Divider sx={{ mx: 3 }} />
+              <CardContent>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center', py: 3 }}>
+                  <Paper 
+                    elevation={0} 
+                    className="scheduler-card" 
+                    sx={{ 
+                      p: 4, 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center',
+                      width: 280,
+                      borderRadius: 3,
+                      background: `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.2)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+                      border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        boxShadow: `0 15px 30px ${alpha(theme.palette.primary.main, 0.15)}`,
+                        transform: 'translateY(-8px)'
+                      }
+                    }}
+                  >
+                    <Avatar sx={{ 
+                      width: 100, 
+                      height: 100, 
+                      mb: 3, 
+                      bgcolor: alpha(theme.palette.primary.main, 0.15),
+                      color: theme.palette.primary.main,
+                      boxShadow: `0 10px 20px ${alpha(theme.palette.primary.main, 0.2)}`
+                    }}>
+                      <FitnessCenter sx={{ fontSize: 50 }} />
+                    </Avatar>
+                    <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: theme.palette.primary.dark }}>Schedule Training</Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ mb: 4, textAlign: 'center', lineHeight: 1.6 }}>
+                      Plan and organize team training sessions across facilities
+                    </Typography>
                     <Button 
                       component={Link} 
                       to="/teams/schedule" 
                       variant="contained" 
-                      color="primary"
-                      startIcon={<Event />}
+                      color="primary" 
+                      fullWidth
+                      size="large"
+                      sx={{ 
+                        borderRadius: 2,
+                        py: 1.2,
+                        fontWeight: 600,
+                        boxShadow: `0 8px 16px ${alpha(theme.palette.primary.main, 0.2)}`
+                      }}
                     >
-                      Manage Schedules
+                      Schedule Training
                     </Button>
-                  }
-                />
-                <Divider />
-                <CardContent>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
-                    <Paper 
-                      elevation={2} 
+                  </Paper>
+                  
+                  <Paper 
+                    elevation={0} 
+                    className="scheduler-card" 
+                    sx={{ 
+                      p: 4, 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center',
+                      width: 280,
+                      borderRadius: 3,
+                      background: `linear-gradient(135deg, ${alpha(theme.palette.secondary.light, 0.2)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+                      border: `1px solid ${alpha(theme.palette.secondary.main, 0.12)}`,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        boxShadow: `0 15px 30px ${alpha(theme.palette.secondary.main, 0.15)}`,
+                        transform: 'translateY(-8px)'
+                      }
+                    }}
+                  >
+                    <Avatar sx={{ 
+                      width: 100, 
+                      height: 100, 
+                      mb: 3, 
+                      bgcolor: alpha(theme.palette.secondary.main, 0.15),
+                      color: theme.palette.secondary.main,
+                      boxShadow: `0 10px 20px ${alpha(theme.palette.secondary.main, 0.2)}`
+                    }}>
+                      <SportsScore sx={{ fontSize: 50 }} />
+                    </Avatar>
+                    <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: theme.palette.secondary.dark }}>Schedule Matches</Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ mb: 4, textAlign: 'center', lineHeight: 1.6 }}>
+                      Create and manage team matches, tournaments, and events
+                    </Typography>
+                    <Button 
+                      component={Link} 
+                      to="/teams/schedule" 
+                      variant="contained" 
+                      color="secondary" 
+                      fullWidth
+                      size="large"
                       sx={{ 
-                        p: 2, 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        alignItems: 'center',
-                        width: 200,
-                        bgcolor: alpha(theme.palette.primary.main, 0.1)
+                        borderRadius: 2,
+                        py: 1.2,
+                        fontWeight: 600,
+                        boxShadow: `0 8px 16px ${alpha(theme.palette.secondary.main, 0.2)}`
                       }}
                     >
-                      {userTeams.length > 0 && userTeams[0].sportType ? 
-                        React.cloneElement(getSportIcon(userTeams[0].sportType), { 
-                          sx: { fontSize: 40, color: theme.palette.primary.main, mb: 1 } 
-                        }) : 
-                        <FitnessCenter sx={{ fontSize: 40, color: theme.palette.primary.main, mb: 1 }} />
-                      }
-                      <Typography variant="h6" gutterBottom>Schedule Training</Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center' }}>
-                        Plan team training sessions
-                      </Typography>
-                      <Button 
-                        component={Link} 
-                        to="/teams/schedule" 
-                        variant="outlined" 
-                        color="primary" 
-                        size="small"
-                      >
-                        Schedule
-                      </Button>
-                    </Paper>
-                    
-                    <Paper 
-                      elevation={2} 
-                      sx={{ 
-                        p: 2, 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        alignItems: 'center',
-                        width: 200,
-                        bgcolor: alpha(theme.palette.secondary.main, 0.1)
-                      }}
-                    >
-                      {userTeams.length > 0 && userTeams[0].sportType ? 
-                        React.cloneElement(getSportIcon(userTeams[0].sportType), { 
-                          sx: { fontSize: 40, color: theme.palette.secondary.main, mb: 1 } 
-                        }) : 
-                        <SportsScore sx={{ fontSize: 40, color: theme.palette.secondary.main, mb: 1 }} />
-                      }
-                      <Typography variant="h6" gutterBottom>Schedule Matches</Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center' }}>
-                        Plan team matches and events
-                      </Typography>
-                      <Button 
-                        component={Link} 
-                        to="/teams/schedule" 
-                        variant="outlined" 
-                        color="secondary" 
-                        size="small"
-                      >
-                        Schedule
-                      </Button>
-                    </Paper>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+                      Schedule Matches
+                    </Button>
+                  </Paper>
+                </Box>
+              </CardContent>
+            </Card>
           </Grid>
         )}
       </Grid>

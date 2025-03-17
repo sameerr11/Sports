@@ -1,0 +1,141 @@
+.courts-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  animation: fadeIn 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.courts-header {
+  margin-bottom: 32px;
+  position: relative;
+  animation: slideIn 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.courts-header h1 {
+  position: relative;
+  display: inline-block;
+}
+
+.courts-header h1::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, #1976d2, #42a5f5);
+  border-radius: 4px;
+  animation: expandWidth 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+  transform-origin: left;
+}
+
+@keyframes expandWidth {
+  from { width: 0; }
+  to { width: 80px; }
+}
+
+.courts-grid {
+  position: relative;
+}
+
+.court-item {
+  opacity: 1;
+}
+
+.court-card {
+  animation: fadeInUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards !important;
+  opacity: 1 !important;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Button and interactive elements hover animations */
+.MuiButton-root {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.MuiButton-root:hover {
+  transform: translateY(-2px);
+}
+
+.MuiButton-contained::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    rgba(255,255,255,0) 0%, 
+    rgba(255,255,255,0.2) 25%, 
+    rgba(255,255,255,0.2) 50%, 
+    rgba(255,255,255,0) 100%);
+  transform: translateX(-100%);
+  transition: transform 0.8s ease;
+}
+
+.MuiButton-contained:hover::after {
+  transform: translateX(100%);
+}
+
+/* Card image zoom effect */
+.MuiCardMedia-root {
+  transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+  transform-origin: center;
+}
+
+.MuiCard-root:hover .MuiCardMedia-root {
+  transform: scale(1.05);
+}
+
+/* IconButton hover effects */
+.MuiIconButton-root {
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.MuiIconButton-root:hover {
+  transform: translateY(-2px);
+}
+
+/* Empty state animations */
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .courts-container {
+    padding: 16px;
+  }
+  
+  .courts-header {
+    margin-bottom: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .courts-container {
+    padding: 12px;
+  }
+  
+  .courts-header h1 {
+    font-size: 1.8rem;
+  }
+} 
