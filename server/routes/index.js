@@ -38,14 +38,26 @@ router.post(
     check('lastName', 'Last name is required').not().isEmpty(),
     check('email', 'Please include a valid email').isEmail(),
     check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 }),
-    check('role', 'Role is required').not().isEmpty()
+    check('role', 'Role is required').isIn(['admin', 'supervisor', 'cashier', 'coach', 'player', 'parent', 'accounting', 'guest'])
   ],
   userController.registerUser
 );
 router.get('/users', [auth, admin], userController.getUsers);
-router.get('/users/role/:role', [auth, supervisor], userController.getUsersByRole);
-router.get('/users/:id', [auth, admin], userController.getUserById);
-router.put('/users/:id', [auth, admin], userController.updateUser);
+router.get('/users/coaches', auth, userController.getCoaches);
+router.get('/users/players', auth, userController.getPlayers);
+router.get('/users/:id', auth, userController.getUserById);
+router.put(
+  '/users/:id',
+  [
+    auth,
+    check('firstName', 'First name is required').optional().not().isEmpty(),
+    check('lastName', 'Last name is required').optional().not().isEmpty(),
+    check('email', 'Please include a valid email').optional().isEmail(),
+    check('password', 'Please enter a password with 6 or more characters').optional().isLength({ min: 6 }),
+    check('role', 'Role is required').optional().isIn(['admin', 'supervisor', 'cashier', 'coach', 'player', 'parent', 'accounting', 'guest'])
+  ],
+  userController.updateUser
+);
 router.delete('/users/:id', [auth, admin], userController.deleteUser);
 router.put('/users/:id/password', [auth, admin], userController.changePassword);
 

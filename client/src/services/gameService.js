@@ -60,6 +60,16 @@ export const updateGame = async (id, gameData) => {
   }
 };
 
+// Delete game
+export const deleteGame = async (id) => {
+  try {
+    const response = await api.delete(`/games/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'Failed to delete game';
+  }
+};
+
 // Update game lineups
 export const updateLineups = async (id, lineups) => {
   try {

@@ -19,6 +19,12 @@ import CoachDashboard from './components/trainings/CoachDashboard';
 import PlayerDashboard from './components/trainings/PlayerDashboard';
 import SupervisorDashboard from './components/trainings/SupervisorDashboard';
 import ParentDashboard from './components/trainings/ParentDashboard';
+import TrainingForm from './components/trainings/TrainingForm';
+import TrainingDetail from './components/trainings/TrainingDetail';
+import TrainingAttendance from './components/trainings/TrainingAttendance';
+import GameList from './components/trainings/GameList';
+import GameForm from './components/trainings/GameForm';
+import GameDetail from './components/trainings/GameDetail';
 import { 
   isAuthenticated, isAdmin, isSupervisor, 
   isCoach, isPlayer, isParent, isCashier 
@@ -30,12 +36,6 @@ import './App.css';
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
 const Payments = () => <div>Payments Page</div>;
-const GameList = () => <div>Game List Page</div>;
-const GameDetail = () => <div>Game Detail Page</div>;
-const GameForm = () => <div>Game Form Page</div>;
-const TrainingDetail = () => <div>Training Detail Page</div>;
-const TrainingForm = () => <div>Training Form Page</div>;
-const TrainingAttendance = () => <div>Training Attendance Page</div>;
 const PlayerProgress = () => <div>Player Progress Page</div>;
 const TeamProgress = () => <div>Team Progress Page</div>;
 

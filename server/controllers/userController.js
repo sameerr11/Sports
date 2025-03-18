@@ -241,4 +241,36 @@ exports.getUsersByRole = async (req, res) => {
     console.error(err.message);
     res.status(500).json({ msg: 'Server error' });
   }
+};
+
+// @desc    Get all coaches
+// @route   GET /api/users/coaches
+// @access  Private (Coach, Supervisor, Admin)
+exports.getCoaches = async (req, res) => {
+  try {
+    const coaches = await User.find({ role: 'coach', isActive: true })
+      .select('-password')
+      .sort({ firstName: 1, lastName: 1 });
+    
+    res.json(coaches);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// @desc    Get all players
+// @route   GET /api/users/players
+// @access  Private (Coach, Supervisor, Admin)
+exports.getPlayers = async (req, res) => {
+  try {
+    const players = await User.find({ role: 'player', isActive: true })
+      .select('-password')
+      .sort({ firstName: 1, lastName: 1 });
+    
+    res.json(players);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
 }; 

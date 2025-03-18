@@ -1,7 +1,7 @@
 import api from './api';
 
-// Get all users
-export const getAllUsers = async () => {
+// Get all users (admin only)
+export const getUsers = async () => {
     try {
         const response = await api.get('/users');
         return response.data;
@@ -16,11 +16,11 @@ export const getUserById = async (id) => {
         const response = await api.get(`/users/${id}`);
         return response.data;
     } catch (error) {
-        throw error.response?.data?.msg || 'Failed to fetch user';
+        throw error.response?.data?.msg || 'Failed to fetch user details';
     }
 };
 
-// Create new user
+// Create new user (admin only)
 export const createUser = async (userData) => {
     try {
         const response = await api.post('/users', userData);
@@ -40,7 +40,7 @@ export const updateUser = async (id, userData) => {
     }
 };
 
-// Delete user
+// Delete user (admin only)
 export const deleteUser = async (id) => {
     try {
         const response = await api.delete(`/users/${id}`);
@@ -175,5 +175,25 @@ export const getUsersByRole = async (role) => {
     } catch (error) {
         console.error(`Error fetching ${role}s:`, error);
         throw error.response?.data?.msg || `Failed to fetch ${role}s`;
+    }
+};
+
+// Get coaches only
+export const getCoaches = async () => {
+    try {
+        const response = await api.get('/users/coaches');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data?.msg || 'Failed to fetch coaches';
+    }
+};
+
+// Get players only
+export const getPlayers = async () => {
+    try {
+        const response = await api.get('/users/players');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data?.msg || 'Failed to fetch players';
     }
 };

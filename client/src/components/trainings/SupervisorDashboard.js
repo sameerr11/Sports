@@ -1,31 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Container, Typography, Grid, Box, Button, Paper, Card, CardContent, 
   CardActions, Tabs, Tab, Divider, CircularProgress, Alert, Tooltip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Chip
+  Chip, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar,
+  IconButton
 } from '@mui/material';
 import { 
   SportsSoccer, Event, EmojiEvents, Assessment, Group, Add,
-  SupervisorAccount, CalendarToday, Person, School, Edit as EditIcon
+  SupervisorAccount, CalendarToday, Person, School, Edit as EditIcon,
+  Close as CloseIcon, Refresh
 } from '@mui/icons-material';
-import { getTrainings } from '../../services/trainingService';
-import { getGames } from '../../services/gameService';
+import { getTrainings, createTraining, deleteTraining } from '../../services/trainingService';
+import { getGames, createGame, deleteGame } from '../../services/gameService';
 import { getTeamAssessments } from '../../services/progressService';
 import { format } from 'date-fns';
 
 const SupervisorDashboard = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [trainings, setTrainings] = useState([]);
   const [games, setGames] = useState([]);
   const [teams, setTeams] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, type: null });
+
+  // Refresh function to fetch fresh data
+  const refreshData = () => {
+    setRefreshTrigger(prev => prev + 1);
+    setSuccessMessage('Data refreshed successfully');
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
+        setError(null);
+        
         // Fetch all training sessions
         const trainingData = await getTrainings();
         setTrainings(trainingData);
@@ -75,26 +90,80 @@ const SupervisorDashboard = () => {
     };
 
     fetchData();
-  }, []);
+  }, [refreshTrigger]); // Added refreshTrigger dependency
 
+  // Helper function to handle tab changes
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
+  // Helper function to format date and time
   const formatDateTime = (dateString) => {
-    return format(new Date(dateString), 'PPP p');
+    if (!dateString) return 'Not scheduled';
+    return format(new Date(dateString), 'MMM d, yyyy h:mm a');
   };
 
+  // Helper function to get status color
   const getStatusColor = (status) => {
-    switch(status) {
-      case 'Completed': return 'success';
-      case 'Confirmed': 
-      case 'Live': return 'primary';
-      case 'Pending':
-      case 'Scheduled': return 'warning';
-      case 'Cancelled':
-      case 'Postponed': return 'error';
-      default: return 'default';
+    switch (status?.toLowerCase()) {
+      case 'scheduled':
+        return 'primary';
+      case 'completed':
+        return 'success';
+      case 'cancelled':
+        return 'error';
+      case 'in progress':
+        return 'warning';
+      default:
+        return 'default';
+    }
+  };
+
+  // Handle navigating to create new items
+  const handleCreateTraining = () => {
+    navigate('/trainings/new');
+  };
+
+  const handleCreateGame = () => {
+    navigate('/games/new');
+  };
+
+  // Handle editing existing items
+  const handleEditTraining = (id) => {
+    navigate(`/trainings/${id}/edit`);
+  };
+
+  const handleEditGame = (id) => {
+    navigate(`/games/${id}/edit`);
+  };
+
+  // Handle deleting items
+  const handleDeleteDialogOpen = (id, type) => {
+    setDeleteDialog({ open: true, id, type });
+  };
+
+  const handleDeleteDialogClose = () => {
+    setDeleteDialog({ open: false, id: null, type: null });
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      const { id, type } = deleteDialog;
+      
+      if (type === 'training') {
+        await deleteTraining(id);
+        setTrainings(trainings.filter(training => training._id !== id));
+        setSuccessMessage('Training session deleted successfully');
+      } else if (type === 'game') {
+        await deleteGame(id);
+        setGames(games.filter(game => game._id !== id));
+        setSuccessMessage('Game deleted successfully');
+      }
+      
+      handleDeleteDialogClose();
+    } catch (err) {
+      setError(`Failed to delete item: ${err.toString()}`);
+      handleDeleteDialogClose();
     }
   };
 
@@ -110,14 +179,14 @@ const SupervisorDashboard = () => {
     return <Alert severity="error">{error}</Alert>;
   }
 
-  // Sort upcoming trainings and games by date
-  const upcomingTrainings = trainings
-    .filter(training => new Date(training.startTime) > new Date())
-    .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+  // Filter upcoming trainings and games
+  const upcomingTrainings = trainings.filter(t => 
+    new Date(t.startTime) > new Date() || t.status === 'Scheduled'
+  );
 
-  const upcomingGames = games
-    .filter(game => new Date(game.startTime) > new Date())
-    .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+  const upcomingGames = games.filter(g => 
+    new Date(g.startTime) > new Date() || g.status === 'Scheduled'
+  );
 
   // Count trainings and games by team
   const teamStats = teams.map(team => {
@@ -148,12 +217,28 @@ const SupervisorDashboard = () => {
         </Typography>
       </Box>
 
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
       <Paper sx={{ mb: 4, p: 2, bgcolor: 'info.light', color: 'info.contrastText' }}>
         <Typography variant="body1">
           As a supervisor, you have exclusive permissions to create and schedule training sessions 
           and matches. Coaches and players can only view the schedules you create.
         </Typography>
       </Paper>
+
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Button 
+          startIcon={<Refresh />}
+          onClick={refreshData}
+          sx={{ mr: 1 }}
+        >
+          Refresh Data
+        </Button>
+      </Box>
 
       <Paper sx={{ mb: 4 }}>
         <Tabs 
@@ -181,8 +266,7 @@ const SupervisorDashboard = () => {
                 variant="contained" 
                 color="primary" 
                 startIcon={<Add />} 
-                component={Link} 
-                to="/trainings/new"
+                onClick={handleCreateTraining}
               >
                 Schedule New Training
               </Button>
@@ -237,12 +321,18 @@ const SupervisorDashboard = () => {
                         </Button>
                         <Button 
                           size="small" 
-                          component={Link} 
-                          to={`/trainings/${training._id}/edit`}
-                          startIcon={<EditIcon />}
                           color="primary"
+                          onClick={() => handleEditTraining(training._id)}
+                          startIcon={<EditIcon />}
                         >
                           Edit
+                        </Button>
+                        <Button 
+                          size="small" 
+                          color="error"
+                          onClick={() => handleDeleteDialogOpen(training._id, 'training')}
+                        >
+                          Delete
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -276,8 +366,7 @@ const SupervisorDashboard = () => {
                 variant="contained" 
                 color="primary" 
                 startIcon={<Add />} 
-                component={Link} 
-                to="/games/new"
+                onClick={handleCreateGame}
               >
                 Schedule New Match
               </Button>
@@ -329,10 +418,17 @@ const SupervisorDashboard = () => {
                         </Button>
                         <Button 
                           size="small" 
-                          component={Link} 
-                          to={`/games/${game._id}/edit`}
+                          color="primary"
+                          onClick={() => handleEditGame(game._id)}
                         >
                           Edit
+                        </Button>
+                        <Button 
+                          size="small" 
+                          color="error"
+                          onClick={() => handleDeleteDialogOpen(game._id, 'game')}
+                        >
+                          Delete
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -361,15 +457,17 @@ const SupervisorDashboard = () => {
             <Typography variant="h5" component="h2">
               Team Overview
             </Typography>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              startIcon={<Add />} 
-              component={Link} 
-              to="/teams/new"
-            >
-              Add Team
-            </Button>
+            <Tooltip title="Only supervisors can add new teams">
+              <Button 
+                variant="contained" 
+                color="primary" 
+                startIcon={<Add />} 
+                component={Link} 
+                to="/teams/new"
+              >
+                Add Team
+              </Button>
+            </Tooltip>
           </Box>
 
           <Grid container spacing={3}>
@@ -408,21 +506,15 @@ const SupervisorDashboard = () => {
                         component={Link} 
                         to={`/teams/${team.id}`}
                       >
-                        Team Details
+                        View Details
                       </Button>
                       <Button 
                         size="small" 
-                        component={Link} 
-                        to={`/progress/team/${team.id}`}
+                        color="primary"
+                        component={Link}
+                        to={`/teams/${team.id}/edit`}
                       >
-                        Player Progress
-                      </Button>
-                      <Button 
-                        size="small" 
-                        component={Link} 
-                        to={`/teams/${team.id}/schedule`}
-                      >
-                        Schedule
+                        Edit
                       </Button>
                     </CardActions>
                   </Card>
@@ -432,6 +524,46 @@ const SupervisorDashboard = () => {
           </Grid>
         </Box>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialog.open}
+        onClose={handleDeleteDialogClose}
+        aria-labelledby="delete-dialog-title"
+      >
+        <DialogTitle id="delete-dialog-title">
+          Confirm Delete
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this {deleteDialog.type}? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteDialogClose}>Cancel</Button>
+          <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Success Message Snackbar */}
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={3000}
+        onClose={() => setSuccessMessage('')}
+        message={successMessage}
+        action={
+          <IconButton
+            size="small"
+            aria-label="close"
+            color="inherit"
+            onClick={() => setSuccessMessage('')}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        }
+      />
     </Container>
   );
 };
