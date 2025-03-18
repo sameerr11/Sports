@@ -80,7 +80,11 @@ const PlayerRegistrationSchema = new mongoose.Schema({
       default: 'Paid'
     },
     receiptNumber: String,
-    transactionId: String
+    transactionId: String,
+    invoiceNumber: {
+      type: String,
+      required: true
+    }
   },
   registeredBy: {
     type: mongoose.Schema.Types.ObjectId,

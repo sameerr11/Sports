@@ -24,6 +24,14 @@ import { useNavigate } from 'react-router-dom';
 import { createPlayerRegistration, getRegistrationFees } from '../../services/registrationService';
 import { useAuth } from '../../contexts/AuthContext';
 
+// Add a function to generate invoice number
+const generateInvoiceNumber = () => {
+  const prefix = 'REG';
+  const timestamp = new Date().getTime().toString().slice(-6);
+  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  return `${prefix}-${timestamp}-${random}`;
+};
+
 const RegistrationForm = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, initialized } = useAuth();
@@ -79,7 +87,8 @@ const RegistrationForm = () => {
       paymentMethod: 'Cash',
       paymentStatus: 'Paid',
       receiptNumber: '',
-      transactionId: ''
+      transactionId: '',
+      invoiceNumber: generateInvoiceNumber()  // Add auto-generated invoice number
     },
     notes: ''
   });
@@ -167,9 +176,16 @@ const RegistrationForm = () => {
           endDate.setMonth(endDate.getMonth() + 1);
       }
       
+      // Ensure the invoice number is set
+      const updatedFee = {
+        ...formData.fee,
+        invoiceNumber: formData.fee.invoiceNumber || generateInvoiceNumber()
+      };
+      
       // Create a complete registration data object with explicit user ID
       const completeFormData = {
         ...formData,
+        fee: updatedFee,
         endDate: endDate.toISOString().split('T')[0],
         registeredBy: user._id
       };
@@ -469,14 +485,27 @@ const RegistrationForm = () => {
           </Typography>
           
           <Grid container spacing={2}>
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Invoice/Receipt Number"
+                label="Invoice Number"
+                name="fee.invoiceNumber"
+                value={formData.fee.invoiceNumber}
+                InputProps={{
+                  readOnly: true,
+                }}
+                onChange={handleChange}
+                helperText="Auto-generated invoice number"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Receipt Number"
                 name="fee.receiptNumber"
                 value={formData.fee.receiptNumber}
                 onChange={handleChange}
-                helperText="Payment method: Cash"
+                helperText="Optional receipt number"
               />
             </Grid>
           </Grid>

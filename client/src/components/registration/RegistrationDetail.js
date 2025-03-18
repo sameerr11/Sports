@@ -296,6 +296,12 @@ const RegistrationDetail = () => {
                   <strong>Fee Amount:</strong> ${fee.amount}
                 </Typography>
                 
+                {fee.invoiceNumber && (
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Invoice Number:</strong> {fee.invoiceNumber}
+                  </Typography>
+                )}
+                
                 <Typography variant="body1" gutterBottom>
                   <strong>Payment Method:</strong> {fee.paymentMethod}
                 </Typography>
