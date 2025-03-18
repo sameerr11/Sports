@@ -116,6 +116,8 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'Add User', icon: <PersonAddIcon />, path: '/users/new' },
         { text: 'Feedback', icon: <FeedbackIcon />, path: '/admin/feedback' },
         { text: 'Player Registration', icon: <HowToRegIcon />, path: '/registrations' },
+        { text: 'Salary Invoices', icon: <PaymentIcon />, path: '/registrations/salary/list' },
+        { text: 'Utility Bills', icon: <ReceiptIcon />, path: '/utilities' }
     ];
 
     const coachItems = [

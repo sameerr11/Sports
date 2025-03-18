@@ -219,7 +219,7 @@ function App() {
         } />
         
         <Route path="/registrations/salary/list" element={
-          <EnhancedProtectedRoute requiredRole="accounting">
+          <EnhancedProtectedRoute requiredRole={["admin", "accounting"]}>
             <MainLayout>
               <SalaryInvoiceList />
             </MainLayout>
@@ -227,7 +227,7 @@ function App() {
         } />
         
         <Route path="/registrations/salary" element={
-          <EnhancedProtectedRoute requiredRole="accounting">
+          <EnhancedProtectedRoute requiredRole={["admin", "accounting"]}>
             <MainLayout>
               <SalaryInvoice />
             </MainLayout>
@@ -508,7 +508,7 @@ function App() {
         
         {/* Utility Routes */}
         <Route path="/utilities" element={
-          <EnhancedProtectedRoute requiredRole="accounting">
+          <EnhancedProtectedRoute requiredRole={["admin", "accounting"]}>
             <MainLayout>
               <UtilityBillList />
             </MainLayout>
@@ -516,7 +516,7 @@ function App() {
         } />
         
         <Route path="/utilities/new" element={
-          <EnhancedProtectedRoute requiredRole="accounting">
+          <EnhancedProtectedRoute requiredRole={["admin", "accounting"]}>
             <MainLayout>
               <UtilityBillForm />
             </MainLayout>
