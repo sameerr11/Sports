@@ -105,7 +105,26 @@ exports.createRegistration = async (req, res) => {
       return notification.save();
     });
     
-    await Promise.all([...notificationPromises, ...supervisorNotificationPromises]);
+    // Also notify support users
+    const supportUsers = await User.find({ role: 'support' });
+    
+    const supportNotificationPromises = supportUsers.map(supportUser => {
+      const notification = new Notification({
+        recipient: supportUser._id,
+        sender: req.user.id,
+        type: 'new_registration',
+        title: 'New Player Registration',
+        message: `${player.firstName} ${player.lastName} has been registered for ${sports.join(', ')} by the accounting department.`,
+        relatedTo: {
+          model: 'PlayerRegistration',
+          id: registration._id
+        }
+      });
+      
+      return notification.save();
+    });
+    
+    await Promise.all([...notificationPromises, ...supervisorNotificationPromises, ...supportNotificationPromises]);
 
     res.status(201).json(registration);
   } catch (err) {
@@ -209,6 +228,30 @@ exports.approveRegistration = async (req, res) => {
       });
       
       await notification.save();
+      
+      // Also notify other support users (excluding the one who approved, if it was a support user)
+      const supportUsers = await User.find({ 
+        role: 'support',
+        _id: { $ne: req.user.id } // Exclude the user who approved the registration
+      });
+      
+      const supportNotificationPromises = supportUsers.map(supportUser => {
+        const notification = new Notification({
+          recipient: supportUser._id,
+          sender: req.user.id,
+          type: 'system',
+          title: 'Registration Approved',
+          message: `The registration for ${registration.player.firstName} ${registration.player.lastName} has been approved by ${req.user.firstName} ${req.user.lastName}.`,
+          relatedTo: {
+            model: 'PlayerRegistration',
+            id: registration._id
+          }
+        });
+        
+        return notification.save();
+      });
+      
+      await Promise.all(supportNotificationPromises);
     }
     
     res.json(registration);
@@ -278,6 +321,30 @@ exports.createUserAccount = async (req, res) => {
     });
     
     await notification.save();
+    
+    // Notify support users (excluding the one who created the account, if it was a support user)
+    const supportUsers = await User.find({ 
+      role: 'support',
+      _id: { $ne: req.user.id } // Exclude the user who created the account
+    });
+    
+    const supportNotificationPromises = supportUsers.map(supportUser => {
+      const notification = new Notification({
+        recipient: supportUser._id,
+        sender: req.user.id,
+        type: 'system',
+        title: 'User Account Created',
+        message: `A user account has been created for ${user.firstName} ${user.lastName} by ${req.user.firstName} ${req.user.lastName}.`,
+        relatedTo: {
+          model: 'User',
+          id: user._id
+        }
+      });
+      
+      return notification.save();
+    });
+    
+    await Promise.all(supportNotificationPromises);
     
     // Remove password from response
     const userResponse = { ...user.toObject() };

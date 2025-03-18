@@ -103,30 +103,30 @@ router.post(
 
 // @route   GET /api/registrations
 // @desc    Get all registrations
-// @access  Admin, Accounting
+// @access  Admin, Accounting, Support
 router.get(
   '/',
-  [auth, roles(['admin', 'accounting'])],
+  [auth, roles(['admin', 'accounting', 'support'])],
   registrationController.getRegistrations
 );
 
 // @route   GET /api/registrations/:id
 // @desc    Get registration by ID
-// @access  Admin, Accounting
+// @access  Admin, Accounting, Support
 router.get(
   '/:id',
-  [auth, roles(['admin', 'accounting'])],
+  [auth, roles(['admin', 'accounting', 'support'])],
   registrationController.getRegistrationById
 );
 
 // @route   PUT /api/registrations/:id/approve
 // @desc    Approve/reject registration
-// @access  Admin
+// @access  Admin, Support
 router.put(
   '/:id/approve',
   [
     auth,
-    roles(['admin']),
+    roles(['admin', 'support']),
     check('approved', 'Approved status is required').isBoolean()
   ],
   registrationController.approveRegistration
@@ -134,12 +134,12 @@ router.put(
 
 // @route   POST /api/registrations/:id/create-account
 // @desc    Create user account from registration
-// @access  Admin
+// @access  Admin, Support
 router.post(
   '/:id/create-account',
   [
     auth,
-    roles(['admin']),
+    roles(['admin', 'support']),
     check('password', 'Password with 6 or more characters is required').optional().isLength({ min: 6 })
   ],
   registrationController.createUserAccount

@@ -44,11 +44,15 @@ const RegistrationDetail = () => {
   const [actionError, setActionError] = useState(null);
   
   const isAdmin = user && user.role === 'admin';
+  const isSupport = user && user.role === 'support';
+  const hasAccessRights = isAdmin || isSupport;
   
   useEffect(() => {
     console.log('Current user role:', user?.role);
     console.log('Is admin?', isAdmin);
-  }, [user, isAdmin]);
+    console.log('Is support?', isSupport);
+    console.log('Has access rights?', hasAccessRights);
+  }, [user, isAdmin, isSupport, hasAccessRights]);
   
   useEffect(() => {
     const fetchRegistration = async () => {
@@ -381,7 +385,7 @@ const RegistrationDetail = () => {
           )}
         </Grid>
         
-        {isAdmin && (
+        {hasAccessRights && (
           <Box mt={3} display="flex" gap={2} justifyContent="flex-end">
             {status === 'Pending' && (
               <>

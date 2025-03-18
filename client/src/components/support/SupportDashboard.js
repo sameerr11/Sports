@@ -6,12 +6,14 @@ import {
 } from '@mui/material';
 import { getStoredUser } from '../../services/authService';
 import { getAllUsers } from '../../services/userService';
+import { getRegistrations } from '../../services/registrationService';
 import { Link } from 'react-router-dom';
 import { 
   Description, 
   Assessment, 
   SportsSoccer, 
-  FitnessCenter
+  FitnessCenter,
+  HowToReg
 } from '@mui/icons-material';
 
 // Add a helper function to format address objects
@@ -39,11 +41,15 @@ const SupportDashboard = () => {
   const displayName = user ? `${user.firstName}` : 'Support';
   
   const [players, setPlayers] = useState([]);
+  const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [registrationsLoading, setRegistrationsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [registrationsError, setRegistrationsError] = useState('');
 
   useEffect(() => {
     fetchPlayers();
+    fetchRegistrations();
   }, []);
 
   const fetchPlayers = async () => {
@@ -62,6 +68,22 @@ const SupportDashboard = () => {
     }
   };
 
+  const fetchRegistrations = async () => {
+    setRegistrationsLoading(true);
+    try {
+      const data = await getRegistrations();
+      // Filter only pending registrations
+      const pendingRegistrations = data.filter(reg => reg.status === 'Pending');
+      setRegistrations(pendingRegistrations);
+      setRegistrationsError('');
+    } catch (err) {
+      console.error('Error fetching registrations:', err);
+      setRegistrationsError(err.message || 'Failed to load registrations. Please try again.');
+    } finally {
+      setRegistrationsLoading(false);
+    }
+  };
+
   return (
     <Box sx={{ padding: 2 }}>
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
@@ -69,13 +91,36 @@ const SupportDashboard = () => {
           Welcome, {displayName}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          This dashboard provides access to player information and documents.
+          This dashboard provides access to player information, registrations, and documents.
         </Typography>
       </Paper>
       
       {/* Quick Actions Section */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <HowToReg sx={{ mr: 1, color: 'primary.main' }} />
+                <Typography variant="h6">Registrations</Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Process pending player registrations and create accounts.
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button 
+                component={Link} 
+                to="/registrations" 
+                color="primary"
+              >
+                View All
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -98,7 +143,7 @@ const SupportDashboard = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -121,7 +166,7 @@ const SupportDashboard = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -144,6 +189,75 @@ const SupportDashboard = () => {
           </Card>
         </Grid>
       </Grid>
+      
+      {/* Pending Registrations Section */}
+      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h5" gutterBottom>
+          Pending Registrations
+        </Typography>
+        
+        {registrationsError && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {registrationsError}
+          </Alert>
+        )}
+        
+        {registrationsLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Player Name</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Sport(s)</TableCell>
+                  <TableCell>Registration Date</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {registrations.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      No pending registrations found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  registrations.map((registration) => (
+                    <TableRow key={registration._id}>
+                      <TableCell>{`${registration.player.firstName} ${registration.player.lastName}`}</TableCell>
+                      <TableCell>{registration.player.email}</TableCell>
+                      <TableCell>{registration.sports.join(', ')}</TableCell>
+                      <TableCell>{new Date(registration.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={registration.status}
+                          color="warning"
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          component={Link}
+                          to={`/registrations/${registration._id}`}
+                          variant="contained"
+                          size="small"
+                        >
+                          View Details
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Paper>
       
       <Paper elevation={1} sx={{ p: 3 }}>
         <Typography variant="h5" gutterBottom>
