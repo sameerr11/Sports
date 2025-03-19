@@ -239,17 +239,15 @@ const Profile = () => {
                             </Box>
                             
                             <Box className="profile-actions">
-                                {tabValue !== 1 && (
-                                    <Button
-                                        variant={editMode ? "outlined" : "contained"}
-                                        color={editMode ? "secondary" : "primary"}
-                                        startIcon={<Edit />}
-                                        onClick={handleEditToggle}
-                                        disabled={loading}
-                                    >
-                                        {editMode ? "Cancel" : "Edit Profile"}
-                                    </Button>
-                                )}
+                                <Button
+                                    variant={editMode ? "outlined" : "contained"}
+                                    color={editMode ? "secondary" : "primary"}
+                                    startIcon={<Edit />}
+                                    onClick={handleEditToggle}
+                                    disabled={loading}
+                                >
+                                    {editMode ? "Cancel" : "Edit Profile"}
+                                </Button>
                             </Box>
                         </Box>
                     </Paper>
@@ -288,6 +286,7 @@ const Profile = () => {
                                     editMode={editMode} 
                                     onSave={handleProfileUpdate}
                                     loading={loading}
+                                    userId={profile?._id}
                                 />
                             )}
                         </Box>

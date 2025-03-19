@@ -50,7 +50,7 @@ router.get('/users/parent/children', [auth, parent], userController.getParentChi
 router.get('/users/:id', [auth, adminOrSupport], userController.getUserById);
 router.put('/users/:id', [auth, admin], userController.updateUser);
 router.delete('/users/:id', [auth, admin], userController.deleteUser);
-router.put('/users/:id/password', [auth, admin], userController.changePassword);
+router.put('/users/:id/password', [auth], userController.changePassword);
 
 // Document routes
 router.post(

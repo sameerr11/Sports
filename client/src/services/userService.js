@@ -75,7 +75,10 @@ export const updateUserProfile = async (profileData) => {
 // Change password
 export const changePassword = async (passwordData) => {
     try {
-        const response = await api.put('/users/change-password', passwordData);
+        const response = await api.put(`/users/${passwordData.userId}/password`, {
+            currentPassword: passwordData.currentPassword,
+            newPassword: passwordData.newPassword
+        });
         return response.data;
     } catch (error) {
         console.error('Error changing password:', error);

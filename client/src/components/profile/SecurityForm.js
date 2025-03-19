@@ -17,11 +17,12 @@ import {
     Visibility,
     VisibilityOff,
     Save,
-    Cancel
+    Cancel,
+    Edit
 } from '@mui/icons-material';
 import { changePassword } from '../../services/userService';
 
-const SecurityForm = ({ editMode, onSave, loading }) => {
+const SecurityForm = ({ editMode, onSave, loading, userId }) => {
     const [passwordData, setPasswordData] = useState({
         currentPassword: '',
         newPassword: '',
@@ -92,9 +93,12 @@ const SecurityForm = ({ editMode, onSave, loading }) => {
         try {
             setPasswordLoading(true);
             
-            // In a real app, you would use changePassword(passwordData)
-            // For now, simulating an API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Use the actual changePassword service with userId
+            await changePassword({
+                userId,
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword
+            });
             
             setPasswordSuccess(true);
             setPasswordData({
@@ -110,7 +114,7 @@ const SecurityForm = ({ editMode, onSave, loading }) => {
             
             setPasswordLoading(false);
         } catch (err) {
-            setError('Failed to change password. Please try again.');
+            setError(err.message || 'Failed to change password. Please try again.');
             setPasswordLoading(false);
         }
     };

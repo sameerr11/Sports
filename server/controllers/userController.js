@@ -313,9 +313,9 @@ exports.deleteUser = async (req, res) => {
 
 // @desc    Change user password
 // @route   PUT /api/users/:id/password
-// @access  Admin
+// @access  Private
 exports.changePassword = async (req, res) => {
-  const { password } = req.body;
+  const { currentPassword, newPassword } = req.body;
 
   try {
     let user = await User.findById(req.params.id);
@@ -323,10 +323,21 @@ exports.changePassword = async (req, res) => {
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
     }
+
+    // Ensure user can only change their own password unless they are an admin
+    if (req.user.role !== 'admin' && req.user.id !== req.params.id) {
+      return res.status(403).json({ msg: 'Not authorized to change this password' });
+    }
+
+    // Verify current password
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Current password is incorrect' });
+    }
     
-    // Hash password
+    // Hash new password
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
     
     // Update password
     user = await User.findByIdAndUpdate(
@@ -340,7 +351,7 @@ exports.changePassword = async (req, res) => {
       { new: true }
     ).select('-password');
     
-    res.json(user);
+    res.json({ msg: 'Password updated successfully' });
   } catch (err) {
     console.error(err.message);
     if (err.kind === 'ObjectId') {
