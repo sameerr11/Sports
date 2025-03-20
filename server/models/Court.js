@@ -10,7 +10,7 @@ const CourtSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-    enum: ['Football', 'Cricket', 'Basketball', 'Tennis', 'Others']
+    enum: ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong']
   },
   location: {
     type: String,

@@ -4,7 +4,7 @@ const RegistrationFeeSchema = new mongoose.Schema({
   sportType: {
     type: String,
     required: true,
-    enum: ['Football', 'Cricket', 'Basketball', 'Tennis', 'Others'],
+    enum: ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong'],
   },
   period: {
     type: String,

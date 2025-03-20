@@ -15,6 +15,15 @@ const commonStatsSchema = {
 };
 
 // Sport specific skill schema definitions
+const basketballSkillsSchema = {
+  shooting: { type: Number, min: 1, max: 10, default: 5 },
+  passing: { type: Number, min: 1, max: 10, default: 5 },
+  dribbling: { type: Number, min: 1, max: 10, default: 5 },
+  defense: { type: Number, min: 1, max: 10, default: 5 },
+  rebounding: { type: Number, min: 1, max: 10, default: 5 },
+  athleticism: { type: Number, min: 1, max: 10, default: 5 }
+};
+
 const footballSkillsSchema = {
   passing: { type: Number, min: 1, max: 10, default: 5 },
   shooting: { type: Number, min: 1, max: 10, default: 5 },
@@ -25,28 +34,66 @@ const footballSkillsSchema = {
   positioning: { type: Number, min: 1, max: 10, default: 5 }
 };
 
-const cricketSkillsSchema = {
-  batting: { type: Number, min: 1, max: 10, default: 5 },
-  bowling: { type: Number, min: 1, max: 10, default: 5 },
-  fielding: { type: Number, min: 1, max: 10, default: 5 },
-  wicketKeeping: { type: Number, min: 1, max: 10, default: 5 }
-};
-
-const basketballSkillsSchema = {
-  shooting: { type: Number, min: 1, max: 10, default: 5 },
+const volleyballSkillsSchema = {
+  serving: { type: Number, min: 1, max: 10, default: 5 },
   passing: { type: Number, min: 1, max: 10, default: 5 },
-  dribbling: { type: Number, min: 1, max: 10, default: 5 },
-  defense: { type: Number, min: 1, max: 10, default: 5 },
-  rebounding: { type: Number, min: 1, max: 10, default: 5 },
-  athleticism: { type: Number, min: 1, max: 10, default: 5 }
+  setting: { type: Number, min: 1, max: 10, default: 5 },
+  attacking: { type: Number, min: 1, max: 10, default: 5 },
+  blocking: { type: Number, min: 1, max: 10, default: 5 },
+  digging: { type: Number, min: 1, max: 10, default: 5 }
 };
 
-const tennisSkillsSchema = {
+const selfDefenseSkillsSchema = {
+  technique: { type: Number, min: 1, max: 10, default: 5 },
+  awareness: { type: Number, min: 1, max: 10, default: 5 },
+  reaction: { type: Number, min: 1, max: 10, default: 5 },
+  discipline: { type: Number, min: 1, max: 10, default: 5 }
+};
+
+const karateSkillsSchema = {
+  kata: { type: Number, min: 1, max: 10, default: 5 },
+  kumite: { type: Number, min: 1, max: 10, default: 5 },
+  technique: { type: Number, min: 1, max: 10, default: 5 },
+  discipline: { type: Number, min: 1, max: 10, default: 5 },
+  speed: { type: Number, min: 1, max: 10, default: 5 }
+};
+
+const gymnasticsSkillsSchema = {
+  flexibility: { type: Number, min: 1, max: 10, default: 5 },
+  balance: { type: Number, min: 1, max: 10, default: 5 },
+  strength: { type: Number, min: 1, max: 10, default: 5 },
+  coordination: { type: Number, min: 1, max: 10, default: 5 },
+  execution: { type: Number, min: 1, max: 10, default: 5 }
+};
+
+const gymSkillsSchema = {
+  strength: { type: Number, min: 1, max: 10, default: 5 },
+  endurance: { type: Number, min: 1, max: 10, default: 5 },
+  technique: { type: Number, min: 1, max: 10, default: 5 },
+  consistency: { type: Number, min: 1, max: 10, default: 5 }
+};
+
+const zumbaSkillsSchema = {
+  rhythm: { type: Number, min: 1, max: 10, default: 5 },
+  coordination: { type: Number, min: 1, max: 10, default: 5 },
+  stamina: { type: Number, min: 1, max: 10, default: 5 },
+  enthusiasm: { type: Number, min: 1, max: 10, default: 5 }
+};
+
+const swimmingSkillsSchema = {
+  freestyle: { type: Number, min: 1, max: 10, default: 5 },
+  backstroke: { type: Number, min: 1, max: 10, default: 5 },
+  breaststroke: { type: Number, min: 1, max: 10, default: 5 },
+  butterfly: { type: Number, min: 1, max: 10, default: 5 },
+  endurance: { type: Number, min: 1, max: 10, default: 5 }
+};
+
+const pingPongSkillsSchema = {
   forehand: { type: Number, min: 1, max: 10, default: 5 },
   backhand: { type: Number, min: 1, max: 10, default: 5 },
   serve: { type: Number, min: 1, max: 10, default: 5 },
-  volley: { type: Number, min: 1, max: 10, default: 5 },
-  movement: { type: Number, min: 1, max: 10, default: 5 }
+  footwork: { type: Number, min: 1, max: 10, default: 5 },
+  spin: { type: Number, min: 1, max: 10, default: 5 }
 };
 
 // Define the PlayerStats schema
@@ -59,16 +106,22 @@ const PlayerStatsSchema = new mongoose.Schema({
   sportType: {
     type: String,
     required: true,
-    enum: ['Football', 'Cricket', 'Basketball', 'Tennis', 'Others']
+    enum: ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong']
   },
   // Common stats for all players
   common: commonStatsSchema,
   
   // Sport-specific skills
-  football: footballSkillsSchema,
-  cricket: cricketSkillsSchema,
   basketball: basketballSkillsSchema,
-  tennis: tennisSkillsSchema,
+  football: footballSkillsSchema,
+  volleyball: volleyballSkillsSchema,
+  selfDefense: selfDefenseSkillsSchema,
+  karate: karateSkillsSchema,
+  gymnastics: gymnasticsSkillsSchema,
+  gym: gymSkillsSchema,
+  zumba: zumbaSkillsSchema,
+  swimming: swimmingSkillsSchema,
+  pingPong: pingPongSkillsSchema,
   
   // General grades
   grades: {

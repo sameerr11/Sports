@@ -31,7 +31,7 @@ const TeamForm = () => {
   const [imageLoading, setImageLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const allowedSportTypes = ['Football', 'Cricket', 'Basketball', 'Tennis', 'Others'];
+  const allowedSportTypes = ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong'];
 
   useEffect(() => {
     const fetchTeam = async () => {
@@ -200,11 +200,16 @@ const TeamForm = () => {
                   onChange={handleChange}
                   label="Sport Type"
                 >
-                  <MenuItem value="Football">Football</MenuItem>
-                  <MenuItem value="Cricket">Cricket</MenuItem>
                   <MenuItem value="Basketball">Basketball</MenuItem>
-                  <MenuItem value="Tennis">Tennis</MenuItem>
-                  <MenuItem value="Others">Others</MenuItem>
+                  <MenuItem value="Football">Football</MenuItem>
+                  <MenuItem value="Volleyball">Volleyball</MenuItem>
+                  <MenuItem value="Self Defense">Self Defense</MenuItem>
+                  <MenuItem value="Karate">Karate</MenuItem>
+                  <MenuItem value="Gymnastics">Gymnastics</MenuItem>
+                  <MenuItem value="Gym">Gym</MenuItem>
+                  <MenuItem value="Zumba">Zumba</MenuItem>
+                  <MenuItem value="Swimming">Swimming</MenuItem>
+                  <MenuItem value="Ping Pong">Ping Pong</MenuItem>
                 </Select>
                 {validationErrors.sportType && (
                   <FormHelperText>{validationErrors.sportType}</FormHelperText>

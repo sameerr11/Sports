@@ -93,7 +93,7 @@ const RegistrationForm = () => {
     notes: ''
   });
 
-  const sportOptions = ['Football', 'Cricket', 'Basketball', 'Tennis', 'Others'];
+  const sportOptions = ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong'];
   const periodOptions = ['1 Month', '3 Months', '6 Months', '1 Year'];
 
   const handleChange = (e) => {

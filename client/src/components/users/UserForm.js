@@ -38,11 +38,16 @@ const SUPERVISOR_TYPES = [
 ];
 
 const SPORT_TYPES = [
-  { value: 'Football', label: 'Football' },
-  { value: 'Cricket', label: 'Cricket' },
   { value: 'Basketball', label: 'Basketball' },
-  { value: 'Tennis', label: 'Tennis' },
-  { value: 'Others', label: 'Others' }
+  { value: 'Football', label: 'Football' },
+  { value: 'Volleyball', label: 'Volleyball' },
+  { value: 'Self Defense', label: 'Self Defense' },
+  { value: 'Karate', label: 'Karate' },
+  { value: 'Gymnastics', label: 'Gymnastics' },
+  { value: 'Gym', label: 'Gym' },
+  { value: 'Zumba', label: 'Zumba' },
+  { value: 'Swimming', label: 'Swimming' },
+  { value: 'Ping Pong', label: 'Ping Pong' }
 ];
 
 const initialState = {

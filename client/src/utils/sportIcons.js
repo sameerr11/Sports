@@ -1,17 +1,14 @@
 import React from 'react';
 import { 
   SportsSoccer, // Football
-  SportsCricket, // Cricket
   SportsBasketball, // Basketball
-  SportsTennis, // Tennis
   SportsVolleyball, // Volleyball
-  SportsRugby, // Rugby
-  SportsHockey, // Hockey
-  SportsBaseball, // Baseball
-  SportsEsports, // Esports
-  DirectionsRun, // Athletics/Running
+  SportsMartialArts, // Martial Arts / Self Defense / Karate
+  FitnessCenter, // Gym and general fitness
+  DirectionsRun, // Zumba
   Pool, // Swimming
-  SportsMartialArts, // Martial Arts
+  TableBar, // Ping Pong / Table Tennis (replacing SportsTable)
+  SportsGymnastics, // Gymnastics
   Sports // Generic sports icon for others
 } from '@mui/icons-material';
 
@@ -27,33 +24,24 @@ export const getSportIcon = (sportType) => {
     case 'football':
     case 'soccer':
       return <SportsSoccer />;
-    case 'cricket':
-      return <SportsCricket />;
     case 'basketball':
       return <SportsBasketball />;
-    case 'tennis':
-      return <SportsTennis />;
     case 'volleyball':
       return <SportsVolleyball />;
-    case 'rugby':
-      return <SportsRugby />;
-    case 'hockey':
-      return <SportsHockey />;
-    case 'baseball':
-      return <SportsBaseball />;
-    case 'esports':
-    case 'gaming':
-      return <SportsEsports />;
-    case 'athletics':
-    case 'running':
+    case 'self defense':
+    case 'karate':
+      return <SportsMartialArts />;
+    case 'gymnastics':
+      return <SportsGymnastics />;
+    case 'gym':
+      return <FitnessCenter />;
+    case 'zumba':
       return <DirectionsRun />;
     case 'swimming':
       return <Pool />;
-    case 'martial arts':
-    case 'karate':
-    case 'judo':
-    case 'taekwondo':
-      return <SportsMartialArts />;
+    case 'ping pong':
+    case 'table tennis':
+      return <TableBar />;
     default:
       return <Sports />;
   }

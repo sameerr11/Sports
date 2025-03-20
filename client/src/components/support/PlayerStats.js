@@ -164,11 +164,16 @@ const PlayerStats = () => {
   
   // Sport Types
   const sportTypes = [
-    { value: 'Football', label: 'Football' },
-    { value: 'Cricket', label: 'Cricket' },
     { value: 'Basketball', label: 'Basketball' },
-    { value: 'Tennis', label: 'Tennis' },
-    { value: 'Others', label: 'Others' }
+    { value: 'Football', label: 'Football' },
+    { value: 'Volleyball', label: 'Volleyball' },
+    { value: 'Self Defense', label: 'Self Defense' },
+    { value: 'Karate', label: 'Karate' },
+    { value: 'Gymnastics', label: 'Gymnastics' },
+    { value: 'Gym', label: 'Gym' },
+    { value: 'Zumba', label: 'Zumba' },
+    { value: 'Swimming', label: 'Swimming' },
+    { value: 'Ping Pong', label: 'Ping Pong' }
   ];
   
   useEffect(() => {
@@ -469,10 +474,10 @@ const PlayerStats = () => {
                 <TableRow>
                   <TableCell>Player</TableCell>
                   <TableCell>Email</TableCell>
-                  <TableCell>Football Stats</TableCell>
-                  <TableCell>Cricket Stats</TableCell>
                   <TableCell>Basketball Stats</TableCell>
-                  <TableCell>Tennis Stats</TableCell>
+                  <TableCell>Football Stats</TableCell>
+                  <TableCell>Volleyball Stats</TableCell>
+                  <TableCell>Swimming Stats</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -484,10 +489,10 @@ const PlayerStats = () => {
                   </TableRow>
                 ) : (
                   filteredPlayers.map((player) => {
-                    const footballStats = getPlayerStatsBySport(player._id, 'Football');
-                    const cricketStats = getPlayerStatsBySport(player._id, 'Cricket');
                     const basketballStats = getPlayerStatsBySport(player._id, 'Basketball');
-                    const tennisStats = getPlayerStatsBySport(player._id, 'Tennis');
+                    const footballStats = getPlayerStatsBySport(player._id, 'Football');
+                    const volleyballStats = getPlayerStatsBySport(player._id, 'Volleyball');
+                    const swimmingStats = getPlayerStatsBySport(player._id, 'Swimming');
                     
                     return (
                       <TableRow key={player._id}>
@@ -498,100 +503,6 @@ const PlayerStats = () => {
                           </Box>
                         </TableCell>
                         <TableCell>{player.email}</TableCell>
-                        
-                        {/* Football Stats */}
-                        <TableCell>
-                          {footballStats ? (
-                            <Box>
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Rating 
-                                  value={footballStats.grades.overall} 
-                                  readOnly 
-                                  max={10}
-                                  size="small"
-                                />
-                                <Typography variant="body2" sx={{ ml: 1 }}>
-                                  ({footballStats.grades.overall}/10)
-                                </Typography>
-                              </Box>
-                              <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined" 
-                                  onClick={() => handleOpenEditDialog(footballStats._id)}
-                                  startIcon={<Edit />}
-                                >
-                                  Edit
-                                </Button>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined" 
-                                  color="error"
-                                  onClick={() => handleOpenDeleteDialog(footballStats._id)}
-                                  startIcon={<Delete />}
-                                >
-                                  Delete
-                                </Button>
-                              </Box>
-                            </Box>
-                          ) : (
-                            <Button 
-                              variant="contained" 
-                              size="small"
-                              onClick={() => handleOpenAddDialog(player, 'Football')}
-                              startIcon={<Add />}
-                            >
-                              Add Stats
-                            </Button>
-                          )}
-                        </TableCell>
-                        
-                        {/* Cricket Stats */}
-                        <TableCell>
-                          {cricketStats ? (
-                            <Box>
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Rating 
-                                  value={cricketStats.grades.overall} 
-                                  readOnly 
-                                  max={10}
-                                  size="small"
-                                />
-                                <Typography variant="body2" sx={{ ml: 1 }}>
-                                  ({cricketStats.grades.overall}/10)
-                                </Typography>
-                              </Box>
-                              <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined" 
-                                  onClick={() => handleOpenEditDialog(cricketStats._id)}
-                                  startIcon={<Edit />}
-                                >
-                                  Edit
-                                </Button>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined" 
-                                  color="error"
-                                  onClick={() => handleOpenDeleteDialog(cricketStats._id)}
-                                  startIcon={<Delete />}
-                                >
-                                  Delete
-                                </Button>
-                              </Box>
-                            </Box>
-                          ) : (
-                            <Button 
-                              variant="contained" 
-                              size="small"
-                              onClick={() => handleOpenAddDialog(player, 'Cricket')}
-                              startIcon={<Add />}
-                            >
-                              Add Stats
-                            </Button>
-                          )}
-                        </TableCell>
                         
                         {/* Basketball Stats */}
                         <TableCell>
@@ -640,26 +551,26 @@ const PlayerStats = () => {
                           )}
                         </TableCell>
                         
-                        {/* Tennis Stats */}
+                        {/* Football Stats */}
                         <TableCell>
-                          {tennisStats ? (
+                          {footballStats ? (
                             <Box>
                               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                                 <Rating 
-                                  value={tennisStats.grades.overall} 
+                                  value={footballStats.grades.overall} 
                                   readOnly 
                                   max={10}
                                   size="small"
                                 />
                                 <Typography variant="body2" sx={{ ml: 1 }}>
-                                  ({tennisStats.grades.overall}/10)
+                                  ({footballStats.grades.overall}/10)
                                 </Typography>
                               </Box>
                               <Box sx={{ display: 'flex', gap: 1 }}>
                                 <Button 
                                   size="small" 
                                   variant="outlined" 
-                                  onClick={() => handleOpenEditDialog(tennisStats._id)}
+                                  onClick={() => handleOpenEditDialog(footballStats._id)}
                                   startIcon={<Edit />}
                                 >
                                   Edit
@@ -668,7 +579,7 @@ const PlayerStats = () => {
                                   size="small" 
                                   variant="outlined" 
                                   color="error"
-                                  onClick={() => handleOpenDeleteDialog(tennisStats._id)}
+                                  onClick={() => handleOpenDeleteDialog(footballStats._id)}
                                   startIcon={<Delete />}
                                 >
                                   Delete
@@ -679,7 +590,101 @@ const PlayerStats = () => {
                             <Button 
                               variant="contained" 
                               size="small"
-                              onClick={() => handleOpenAddDialog(player, 'Tennis')}
+                              onClick={() => handleOpenAddDialog(player, 'Football')}
+                              startIcon={<Add />}
+                            >
+                              Add Stats
+                            </Button>
+                          )}
+                        </TableCell>
+                        
+                        {/* Volleyball Stats */}
+                        <TableCell>
+                          {volleyballStats ? (
+                            <Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <Rating 
+                                  value={volleyballStats.grades.overall} 
+                                  readOnly 
+                                  max={10}
+                                  size="small"
+                                />
+                                <Typography variant="body2" sx={{ ml: 1 }}>
+                                  ({volleyballStats.grades.overall}/10)
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: 'flex', gap: 1 }}>
+                                <Button 
+                                  size="small" 
+                                  variant="outlined" 
+                                  onClick={() => handleOpenEditDialog(volleyballStats._id)}
+                                  startIcon={<Edit />}
+                                >
+                                  Edit
+                                </Button>
+                                <Button 
+                                  size="small" 
+                                  variant="outlined" 
+                                  color="error"
+                                  onClick={() => handleOpenDeleteDialog(volleyballStats._id)}
+                                  startIcon={<Delete />}
+                                >
+                                  Delete
+                                </Button>
+                              </Box>
+                            </Box>
+                          ) : (
+                            <Button 
+                              variant="contained" 
+                              size="small"
+                              onClick={() => handleOpenAddDialog(player, 'Volleyball')}
+                              startIcon={<Add />}
+                            >
+                              Add Stats
+                            </Button>
+                          )}
+                        </TableCell>
+                        
+                        {/* Swimming Stats */}
+                        <TableCell>
+                          {swimmingStats ? (
+                            <Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <Rating 
+                                  value={swimmingStats.grades.overall} 
+                                  readOnly 
+                                  max={10}
+                                  size="small"
+                                />
+                                <Typography variant="body2" sx={{ ml: 1 }}>
+                                  ({swimmingStats.grades.overall}/10)
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: 'flex', gap: 1 }}>
+                                <Button 
+                                  size="small" 
+                                  variant="outlined" 
+                                  onClick={() => handleOpenEditDialog(swimmingStats._id)}
+                                  startIcon={<Edit />}
+                                >
+                                  Edit
+                                </Button>
+                                <Button 
+                                  size="small" 
+                                  variant="outlined" 
+                                  color="error"
+                                  onClick={() => handleOpenDeleteDialog(swimmingStats._id)}
+                                  startIcon={<Delete />}
+                                >
+                                  Delete
+                                </Button>
+                              </Box>
+                            </Box>
+                          ) : (
+                            <Button 
+                              variant="contained" 
+                              size="small"
+                              onClick={() => handleOpenAddDialog(player, 'Swimming')}
                               startIcon={<Add />}
                             >
                               Add Stats
@@ -853,32 +858,42 @@ const PlayerStats = () => {
                 </>
               )}
               
-              {formData.sportType === 'Cricket' && (
+              {formData.sportType === 'Volleyball' && (
                 <>
-                  <Typography variant="h6" gutterBottom>Cricket Skills</Typography>
+                  <Typography variant="h6" gutterBottom>Volleyball Skills</Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
                       <StatSlider 
-                        name="Batting" 
-                        value={formData.cricket.batting} 
-                        onChange={(e, v) => handleSkillChange('cricket', 'batting', e, v)} 
+                        name="Serving" 
+                        value={formData.volleyball?.serving || 5} 
+                        onChange={(e, v) => handleSkillChange('volleyball', 'serving', e, v)} 
                       />
                       <StatSlider 
-                        name="Bowling" 
-                        value={formData.cricket.bowling} 
-                        onChange={(e, v) => handleSkillChange('cricket', 'bowling', e, v)} 
+                        name="Passing" 
+                        value={formData.volleyball?.passing || 5} 
+                        onChange={(e, v) => handleSkillChange('volleyball', 'passing', e, v)} 
+                      />
+                      <StatSlider 
+                        name="Setting" 
+                        value={formData.volleyball?.setting || 5} 
+                        onChange={(e, v) => handleSkillChange('volleyball', 'setting', e, v)} 
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <StatSlider 
-                        name="Fielding" 
-                        value={formData.cricket.fielding} 
-                        onChange={(e, v) => handleSkillChange('cricket', 'fielding', e, v)} 
+                        name="Attacking" 
+                        value={formData.volleyball?.attacking || 5} 
+                        onChange={(e, v) => handleSkillChange('volleyball', 'attacking', e, v)} 
                       />
                       <StatSlider 
-                        name="Wicket Keeping" 
-                        value={formData.cricket.wicketKeeping} 
-                        onChange={(e, v) => handleSkillChange('cricket', 'wicketKeeping', e, v)} 
+                        name="Blocking" 
+                        value={formData.volleyball?.blocking || 5} 
+                        onChange={(e, v) => handleSkillChange('volleyball', 'blocking', e, v)} 
+                      />
+                      <StatSlider 
+                        name="Digging" 
+                        value={formData.volleyball?.digging || 5} 
+                        onChange={(e, v) => handleSkillChange('volleyball', 'digging', e, v)} 
                       />
                     </Grid>
                   </Grid>
@@ -927,47 +942,41 @@ const PlayerStats = () => {
                 </>
               )}
               
-              {formData.sportType === 'Tennis' && (
+              {formData.sportType === 'Swimming' && (
                 <>
-                  <Typography variant="h6" gutterBottom>Tennis Skills</Typography>
+                  <Typography variant="h6" gutterBottom>Swimming Skills</Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
                       <StatSlider 
-                        name="Forehand" 
-                        value={formData.tennis.forehand} 
-                        onChange={(e, v) => handleSkillChange('tennis', 'forehand', e, v)} 
+                        name="Freestyle" 
+                        value={formData.swimming?.freestyle || 5} 
+                        onChange={(e, v) => handleSkillChange('swimming', 'freestyle', e, v)} 
                       />
                       <StatSlider 
-                        name="Backhand" 
-                        value={formData.tennis.backhand} 
-                        onChange={(e, v) => handleSkillChange('tennis', 'backhand', e, v)} 
+                        name="Backstroke" 
+                        value={formData.swimming?.backstroke || 5} 
+                        onChange={(e, v) => handleSkillChange('swimming', 'backstroke', e, v)} 
                       />
                       <StatSlider 
-                        name="Serve" 
-                        value={formData.tennis.serve} 
-                        onChange={(e, v) => handleSkillChange('tennis', 'serve', e, v)} 
+                        name="Breaststroke" 
+                        value={formData.swimming?.breaststroke || 5} 
+                        onChange={(e, v) => handleSkillChange('swimming', 'breaststroke', e, v)} 
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <StatSlider 
-                        name="Volley" 
-                        value={formData.tennis.volley} 
-                        onChange={(e, v) => handleSkillChange('tennis', 'volley', e, v)} 
+                        name="Butterfly" 
+                        value={formData.swimming?.butterfly || 5} 
+                        onChange={(e, v) => handleSkillChange('swimming', 'butterfly', e, v)} 
                       />
                       <StatSlider 
-                        name="Movement" 
-                        value={formData.tennis.movement} 
-                        onChange={(e, v) => handleSkillChange('tennis', 'movement', e, v)} 
+                        name="Endurance" 
+                        value={formData.swimming?.endurance || 5} 
+                        onChange={(e, v) => handleSkillChange('swimming', 'endurance', e, v)} 
                       />
                     </Grid>
                   </Grid>
                 </>
-              )}
-              
-              {formData.sportType === 'Others' && (
-                <Alert severity="info">
-                  For 'Others' sport type, please use the General Grades tab to provide overall assessments.
-                </Alert>
               )}
             </Box>
           )}

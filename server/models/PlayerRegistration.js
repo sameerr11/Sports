@@ -43,7 +43,7 @@ const PlayerRegistrationSchema = new mongoose.Schema({
   },
   sports: [{
     type: String,
-    enum: ['Football', 'Cricket', 'Basketball', 'Tennis', 'Others'],
+    enum: ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong'],
     required: true
   }],
   registrationPeriod: {

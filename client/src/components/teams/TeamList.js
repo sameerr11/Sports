@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Typography, Button, Grid, Card, CardContent, 
   CardMedia, CardActions, IconButton, Chip, Box, Dialog,
   DialogTitle, DialogContent, DialogContentText, DialogActions,
   Avatar, AvatarGroup, Tooltip, useTheme, alpha, CircularProgress,
-  Divider
+  Divider, TextField, InputAdornment, Paper
 } from '@mui/material';
 import { 
   Edit, Delete, Visibility, SportsSoccer, 
   Person, EmojiEvents, Add, People, ArrowForward,
-  SportsTennis, SportsBasketball, SportsVolleyball
+  SportsTennis, SportsBasketball, SportsVolleyball,
+  Pool, FitnessCenter, SportsMartialArts, SportsGymnastics,
+  DirectionsRun, Sports, Search
 } from '@mui/icons-material';
 import { getTeams, deleteTeam } from '../../services/teamService';
 import { isSupervisor } from '../../services/authService';
@@ -148,15 +150,26 @@ const TeamList = () => {
     
     if (sportTypeLC.includes('football') || sportTypeLC.includes('soccer')) {
       return <SportsSoccer className="sport-icon" />;
-    } else if (sportTypeLC.includes('cricket')) {
-      return <SportsTennis className="sport-icon" />;
     } else if (sportTypeLC.includes('basketball')) {
       return <SportsBasketball className="sport-icon" />;
     } else if (sportTypeLC.includes('volleyball')) {
       return <SportsVolleyball className="sport-icon" />;
+    } else if (sportTypeLC.includes('swimming')) {
+      return <Pool className="sport-icon" />;
+    } else if (sportTypeLC.includes('ping pong')) {
+      return <SportsTennis className="sport-icon" />;
+    } else if (sportTypeLC.includes('karate') || sportTypeLC.includes('self defense')) {
+      return <SportsMartialArts className="sport-icon" />;
+    } else if (sportTypeLC.includes('gymnastics')) {
+      return <SportsGymnastics className="sport-icon" />;
+    } else if (sportTypeLC.includes('gym')) {
+      return <FitnessCenter className="sport-icon" />;
+    } else if (sportTypeLC.includes('zumba')) {
+      return <DirectionsRun className="sport-icon" />;
     }
     
-    return <SportsSoccer className="sport-icon" />;
+    // Default icon if no match
+    return <Sports className="sport-icon" />;
   };
 
   if (loading) {
