@@ -44,9 +44,14 @@ const UtilityBillForm = () => {
   // Generate a random bill number
   function generateBillNumber() {
     const prefix = 'UTIL';
-    const timestamp = new Date().getTime().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `${prefix}-${timestamp}-${random}`;
+    // Use current date in YYMMDD format
+    const date = new Date();
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    // Add a small random number (1-100)
+    const random = Math.floor(Math.random() * 100) + 1;
+    return `${prefix}-${year}${month}${day}-${random}`;
   }
 
   const handleChange = (e) => {

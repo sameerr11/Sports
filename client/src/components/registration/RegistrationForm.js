@@ -27,9 +27,14 @@ import { useAuth } from '../../contexts/AuthContext';
 // Add a function to generate invoice number
 const generateInvoiceNumber = () => {
   const prefix = 'REG';
-  const timestamp = new Date().getTime().toString().slice(-6);
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  return `${prefix}-${timestamp}-${random}`;
+  // Use current date in YYMMDD format
+  const date = new Date();
+  const year = date.getFullYear().toString().slice(-2);
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  // Add a small random number (1-100)
+  const random = Math.floor(Math.random() * 100) + 1;
+  return `${prefix}-${year}${month}${day}-${random}`;
 };
 
 const RegistrationForm = () => {
@@ -86,7 +91,6 @@ const RegistrationForm = () => {
       currency: 'USD',
       paymentMethod: 'Cash',
       paymentStatus: 'Paid',
-      receiptNumber: '',
       transactionId: '',
       invoiceNumber: generateInvoiceNumber()  // Add auto-generated invoice number
     },
@@ -496,16 +500,6 @@ const RegistrationForm = () => {
                 }}
                 onChange={handleChange}
                 helperText="Auto-generated invoice number"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Receipt Number"
-                name="fee.receiptNumber"
-                value={formData.fee.receiptNumber}
-                onChange={handleChange}
-                helperText="Optional receipt number"
               />
             </Grid>
           </Grid>
