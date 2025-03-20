@@ -58,6 +58,10 @@ router.put(
   cafeteriaController.updateOrderStatus
 );
 
+// Receipt routes
+router.get('/receipts', auth, cafeteriaController.getReceipts);
+router.put('/receipts/session/:sessionId', auth, cafeteriaController.updateReceiptsSession);
+
 // Report routes
 router.get(
   '/reports/sales',

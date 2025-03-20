@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Grid,
@@ -28,11 +28,12 @@ import {
   Refresh as RefreshIcon,
   Dashboard as DashboardIcon
 } from '@mui/icons-material';
-import { getItems, createOrder, getSetting, createSessionSummary } from '../../services/cafeteriaService';
+import { getItems, createOrder, getSetting, createSessionSummary, updateReceiptsSession } from '../../services/cafeteriaService';
 import { isSupervisor } from '../../services/authService';
 import { formatCurrency } from '../../utils/format';
 import { Link } from 'react-router-dom';
 import './Cafeteria.css';
+import ReceiptPrint from './ReceiptPrint';
 
 const Cafeteria = () => {
   const [items, setItems] = useState([]);
@@ -69,6 +70,8 @@ const Cafeteria = () => {
   });
   const [endingSession, setEndingSession] = useState(false);
   const [endSessionError, setEndSessionError] = useState('');
+  const [receiptData, setReceiptData] = useState(null);
+  const [receiptDialog, setReceiptDialog] = useState(false);
 
   // Save session data to localStorage whenever it changes
   useEffect(() => {
@@ -241,6 +244,12 @@ const Cafeteria = () => {
         severity: 'success'
       });
 
+      // Store receipt data for printing
+      if (response.receipt) {
+        setReceiptData(response.receipt);
+        setReceiptDialog(true);
+      }
+
       // Clear cart and close dialog
       setCart([]);
       setCustomerName('');
@@ -281,7 +290,17 @@ const Cafeteria = () => {
       };
 
       // Save to database
-      await createSessionSummary(sessionSummary);
+      const savedSession = await createSessionSummary(sessionSummary);
+      
+      // Update receipts with session id
+      if (savedSession && savedSession._id) {
+        try {
+          await updateReceiptsSession(savedSession._id);
+        } catch (error) {
+          console.error('Error updating receipts session:', error);
+          // Non-critical error, continue with session end
+        }
+      }
       
       // Clear current session
       localStorage.removeItem('cafeSession');
@@ -566,6 +585,15 @@ const Cafeteria = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Receipt Dialog */}
+      {receiptData && (
+        <ReceiptPrint
+          receipt={receiptData}
+          open={receiptDialog}
+          onClose={() => setReceiptDialog(false)}
+        />
+      )}
 
       {/* End Session Dialog */}
       <Dialog open={endSessionDialog} onClose={() => !endingSession && setEndSessionDialog(false)}>

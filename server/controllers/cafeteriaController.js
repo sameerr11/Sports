@@ -3,6 +3,7 @@ const CafeteriaOrder = require('../models/CafeteriaOrder');
 const CafeteriaSettings = require('../models/CafeteriaSettings');
 const CafeSessionSummary = require('../models/CafeSessionSummary');
 const ApiResponse = require('../utils/ApiResponse');
+const User = require('../models/User');
 
 // @desc    Create a new cafeteria item
 // @route   POST /api/cafeteria/items
@@ -132,8 +133,50 @@ exports.createOrder = async (req, res) => {
 
     const order = await newOrder.save();
     
-    // Return the order directly since it now contains all item details
-    return ApiResponse.success(res, order, 'Order created successfully', 201);
+    // Generate receipt data
+    const cashier = await User.findById(req.user.id).select('firstName lastName');
+    const receiptData = {
+      orderNumber: order.orderNumber,
+      date: order.createdAt,
+      items: order.items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        subtotal: item.subtotal
+      })),
+      total: order.total,
+      paymentMethod: order.paymentMethod,
+      cashier: cashier ? `${cashier.firstName} ${cashier.lastName}` : 'Unknown',
+      customer: order.customer.name || 'Walk-in Customer'
+    };
+    
+    // Save the receipt to database
+    const CafeReceipt = require('../models/CafeReceipt');
+    const receipt = new CafeReceipt({
+      orderNumber: order.orderNumber,
+      date: order.createdAt,
+      items: order.items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        subtotal: item.subtotal
+      })),
+      total: order.total,
+      paymentMethod: order.paymentMethod,
+      cashier: cashier ? `${cashier.firstName} ${cashier.lastName}` : 'Unknown',
+      customer: order.customer.name || 'Walk-in Customer',
+      cashierId: req.user.id
+    });
+    
+    await receipt.save();
+    
+    // Include receipt data in the response
+    return ApiResponse.success(
+      res, 
+      { ...order.toObject(), receipt: receiptData }, 
+      'Order created successfully', 
+      201
+    );
   } catch (error) {
     console.error('Error creating cafeteria order:', error);
     return ApiResponse.error(res, 'Error creating cafeteria order', 500);
@@ -404,5 +447,100 @@ exports.getSessionSummaries = async (req, res) => {
   } catch (error) {
     console.error('Error fetching session summaries:', error);
     return ApiResponse.error(res, 'Error fetching session summaries', 500);
+  }
+};
+
+// @desc    Get receipts for a session
+// @route   GET /api/cafeteria/receipts
+// @access  Private
+exports.getReceipts = async (req, res) => {
+  try {
+    const { sessionId, page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+    
+    console.log('Getting receipts with query params:', req.query);
+    console.log('User requesting receipts:', req.user.id, req.user.role);
+    
+    let query = {};
+    
+    // Filter by session if provided
+    if (sessionId) {
+      query.sessionId = sessionId;
+    }
+    
+    // Filter by cashier (current user) if not admin
+    if (req.user.role !== 'admin' && req.user.role !== 'supervisor') {
+      query.cashierId = req.user.id;
+    }
+    
+    const CafeReceipt = require('../models/CafeReceipt');
+    
+    console.log('Final query:', query);
+    
+    // Get total count for pagination
+    const total = await CafeReceipt.countDocuments(query);
+    console.log('Total receipts found:', total);
+    
+    // Get receipts with pagination
+    const receipts = await CafeReceipt.find(query)
+      .sort({ date: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    console.log('Receipts found:', receipts.length);
+    
+    // Calculate pagination info
+    const totalPages = Math.ceil(total / limit);
+    
+    // Create response data
+    const responseData = {
+      receipts,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: totalPages,
+        limit: parseInt(limit)
+      }
+    };
+    
+    console.log('Sending response with receipt count:', receipts.length);
+    
+    return ApiResponse.success(res, responseData);
+  } catch (error) {
+    console.error('Error fetching receipts:', error);
+    return ApiResponse.error(res, 'Error fetching receipts: ' + error.message, 500);
+  }
+};
+
+// @desc    Update receipts with session ID when session ends
+// @route   PUT /api/cafeteria/receipts/session/:sessionId
+// @access  Private
+exports.updateReceiptsSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    
+    if (!sessionId) {
+      return ApiResponse.error(res, 'Session ID is required', 400);
+    }
+    
+    const CafeReceipt = require('../models/CafeReceipt');
+    
+    // Find all receipts by this cashier without a session ID
+    const result = await CafeReceipt.updateMany(
+      { 
+        cashierId: req.user.id,
+        sessionId: { $exists: false }
+      },
+      { 
+        $set: { sessionId } 
+      }
+    );
+    
+    return ApiResponse.success(res, {
+      updated: result.nModified || result.modifiedCount
+    }, 'Receipts updated successfully');
+  } catch (error) {
+    console.error('Error updating receipts session:', error);
+    return ApiResponse.error(res, 'Error updating receipts session', 500);
   }
 }; 

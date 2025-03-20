@@ -151,6 +151,29 @@ export const updateOrderStatus = async (id, status) => {
   }
 };
 
+// Receipt Management
+export const getReceipts = async (params = {}) => {
+  try {
+    console.log('Fetching receipts with params:', params);
+    const response = await api.get('/cafeteria/receipts', { params });
+    console.log('Receipt response data:', response.data);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error fetching receipts:', error);
+    throw error.response?.data?.message || 'Failed to fetch receipts';
+  }
+};
+
+export const updateReceiptsSession = async (sessionId) => {
+  try {
+    const response = await api.put(`/cafeteria/receipts/session/${sessionId}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error updating receipts session:', error);
+    throw error.response?.data?.message || 'Failed to update receipts session';
+  }
+};
+
 // Reports
 export const getSalesReport = async (startDate, endDate, type = 'daily') => {
   try {

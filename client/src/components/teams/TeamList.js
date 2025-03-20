@@ -5,14 +5,14 @@ import {
   CardMedia, CardActions, IconButton, Chip, Box, Dialog,
   DialogTitle, DialogContent, DialogContentText, DialogActions,
   Avatar, AvatarGroup, Tooltip, useTheme, alpha, CircularProgress,
-  Divider, TextField, InputAdornment, Paper
+  Divider
 } from '@mui/material';
 import { 
-  Edit, Delete, Visibility, SportsSoccer, 
+  Edit, Delete, SportsSoccer, 
   Person, EmojiEvents, Add, People, ArrowForward,
   SportsTennis, SportsBasketball, SportsVolleyball,
   Pool, FitnessCenter, SportsMartialArts, SportsGymnastics,
-  DirectionsRun, Sports, Search
+  DirectionsRun, Sports
 } from '@mui/icons-material';
 import { getTeams, deleteTeam } from '../../services/teamService';
 import { isSupervisor } from '../../services/authService';

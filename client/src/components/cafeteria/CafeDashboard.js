@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -12,7 +12,6 @@ import {
   Card,
   CardContent,
   Grid,
-  Divider,
   Button,
   TextField,
   Dialog,
@@ -23,15 +22,19 @@ import {
   InputAdornment,
   Alert,
   CircularProgress,
-  Pagination
+  Pagination,
+  Tabs,
+  Tab
 } from '@mui/material';
 import { formatCurrency } from '../../utils/format';
 import { format } from 'date-fns';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { getSetting, updateSetting, getSessionSummaries } from '../../services/cafeteriaService';
+import { Visibility, VisibilityOff, Receipt as ReceiptIcon } from '@mui/icons-material';
+import { getSetting, updateSetting, getSessionSummaries, getReceipts } from '../../services/cafeteriaService';
+import ReceiptPrint from './ReceiptPrint';
 
 const CafeDashboard = () => {
   const [sessionSummaries, setSessionSummaries] = useState([]);
+  const [receipts, setReceipts] = useState([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [avgSessionRevenue, setAvgSessionRevenue] = useState(0);
   const [currentPin, setCurrentPin] = useState('');
@@ -44,15 +47,24 @@ const CafeDashboard = () => {
   const [loadingPin, setLoadingPin] = useState(false);
   const [savingPin, setSavingPin] = useState(false);
   const [loadingSummaries, setLoadingSummaries] = useState(false);
+  const [loadingReceipts, setLoadingReceipts] = useState(false);
   const [summaryError, setSummaryError] = useState('');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [receiptError, setReceiptError] = useState('');
+  const [summaryPage, setSummaryPage] = useState(1);
+  const [receiptPage, setReceiptPage] = useState(1);
+  const [summaryTotalPages, setSummaryTotalPages] = useState(1);
+  const [receiptTotalPages, setReceiptTotalPages] = useState(1);
+  const [tabValue, setTabValue] = useState(0);
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [receiptDialog, setReceiptDialog] = useState(false);
 
   useEffect(() => {
     // Load PIN from database
     fetchPin();
     // Load session summaries from database
     fetchSessionSummaries();
+    // Load receipts
+    fetchReceipts();
   }, []);
 
   const fetchSessionSummaries = async (pageNumber = 1) => {
@@ -66,8 +78,8 @@ const CafeDashboard = () => {
         setSessionSummaries(result.sessions);
         
         if (result.pagination) {
-          setPage(result.pagination.page);
-          setTotalPages(result.pagination.pages);
+          setSummaryPage(result.pagination.page);
+          setSummaryTotalPages(result.pagination.pages);
         }
         
         // Calculate totals
@@ -88,9 +100,53 @@ const CafeDashboard = () => {
     }
   };
 
-  const handlePageChange = (event, value) => {
-    setPage(value);
+  const fetchReceipts = async (pageNumber = 1) => {
+    try {
+      setLoadingReceipts(true);
+      setReceiptError('');
+      
+      console.log('Calling getReceipts API...');
+      const result = await getReceipts({ page: pageNumber, limit: 10 });
+      console.log('Receipt result received:', result);
+      
+      if (result && result.receipts) {
+        setReceipts(result.receipts);
+        console.log('Receipts set to state:', result.receipts);
+        
+        if (result.pagination) {
+          setReceiptPage(result.pagination.page);
+          setReceiptTotalPages(result.pagination.pages);
+        }
+      } else {
+        // If result exists but not in expected format
+        console.error('Unexpected receipt data format:', result);
+        setReceiptError('Received invalid receipt data format from server');
+      }
+    } catch (error) {
+      console.error('Error fetching receipts:', error);
+      setReceiptError('Failed to load receipts. Please try again. Error: ' + (error.message || error));
+    } finally {
+      setLoadingReceipts(false);
+    }
+  };
+
+  const handleSummaryPageChange = (event, value) => {
+    setSummaryPage(value);
     fetchSessionSummaries(value);
+  };
+
+  const handleReceiptPageChange = (event, value) => {
+    setReceiptPage(value);
+    fetchReceipts(value);
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  const handleViewReceipt = (receipt) => {
+    setSelectedReceipt(receipt);
+    setReceiptDialog(true);
   };
 
   const fetchPin = async () => {
@@ -273,80 +329,188 @@ const CafeDashboard = () => {
         </Alert>
       )}
 
-      <Typography variant="h5" gutterBottom>
-        Session History
-      </Typography>
-      
-      {loadingSummaries ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress />
-        </Box>
-      ) : summaryError ? (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {summaryError}
-        </Alert>
-      ) : sessionSummaries.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography variant="body1">
-            No session summaries available yet.
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Tabs value={tabValue} onChange={handleTabChange}>
+          <Tab label="Session History" />
+          <Tab label="Receipt History" />
+        </Tabs>
+      </Box>
+
+      {/* Session History Tab */}
+      {tabValue === 0 && (
+        <Box>
+          <Typography variant="h5" gutterBottom>
+            Session History
           </Typography>
-        </Paper>
-      ) : (
-        <>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Cashier</TableCell>
-                  <TableCell>Start Time</TableCell>
-                  <TableCell>End Time</TableCell>
-                  <TableCell>Starting Balance</TableCell>
-                  <TableCell>Sales</TableCell>
-                  <TableCell>Final Balance</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {sessionSummaries.map((session) => (
-                  <TableRow key={session._id}>
-                    <TableCell>{formatDate(session.date)}</TableCell>
-                    <TableCell>
-                      {session.cashier ? 
-                        (session.cashier.firstName && session.cashier.lastName ? 
-                          `${session.cashier.firstName} ${session.cashier.lastName}` : 
-                          (session.cashier.name || 'Unknown')
-                        ) : 'Unknown'
-                      }
-                    </TableCell>
-                    <TableCell>{formatTime(session.startTime)}</TableCell>
-                    <TableCell>{formatTime(session.endTime)}</TableCell>
-                    <TableCell>{formatCurrency(session.startingBalance)}</TableCell>
-                    <TableCell>{formatCurrency(session.totalSales)}</TableCell>
-                    <TableCell>{formatCurrency(session.finalBalance)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
           
-          {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-              <Pagination 
-                count={totalPages} 
-                page={page} 
-                onChange={handlePageChange} 
-                color="primary" 
-              />
+          {loadingSummaries ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
             </Box>
+          ) : summaryError ? (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {summaryError}
+            </Alert>
+          ) : sessionSummaries.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1">
+                No session summaries available yet.
+              </Typography>
+            </Paper>
+          ) : (
+            <>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Cashier</TableCell>
+                      <TableCell>Start Time</TableCell>
+                      <TableCell>End Time</TableCell>
+                      <TableCell>Starting Balance</TableCell>
+                      <TableCell>Sales</TableCell>
+                      <TableCell>Final Balance</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {sessionSummaries.map((session) => (
+                      <TableRow key={session._id}>
+                        <TableCell>{formatDate(session.date)}</TableCell>
+                        <TableCell>
+                          {session.cashier ? 
+                            (session.cashier.firstName && session.cashier.lastName ? 
+                              `${session.cashier.firstName} ${session.cashier.lastName}` : 
+                              (session.cashier.name || 'Unknown')
+                            ) : 'Unknown'
+                          }
+                        </TableCell>
+                        <TableCell>{formatTime(session.startTime)}</TableCell>
+                        <TableCell>{formatTime(session.endTime)}</TableCell>
+                        <TableCell>{formatCurrency(session.startingBalance)}</TableCell>
+                        <TableCell>{formatCurrency(session.totalSales)}</TableCell>
+                        <TableCell>{formatCurrency(session.finalBalance)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              
+              {summaryTotalPages > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                  <Pagination 
+                    count={summaryTotalPages} 
+                    page={summaryPage} 
+                    onChange={handleSummaryPageChange} 
+                    color="primary" 
+                  />
+                </Box>
+              )}
+            </>
           )}
-        </>
+        </Box>
+      )}
+
+      {/* Receipt History Tab */}
+      {tabValue === 1 && (
+        <Box>
+          <Typography variant="h5" gutterBottom>
+            Receipt History
+          </Typography>
+          
+          {loadingReceipts ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : receiptError ? (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {receiptError}
+            </Alert>
+          ) : receipts.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1">
+                No receipts available yet.
+              </Typography>
+              <Box mt={2}>
+                <Button 
+                  variant="outlined" 
+                  color="primary"
+                  onClick={() => fetchReceipts(1)}
+                >
+                  Check Again
+                </Button>
+              </Box>
+            </Paper>
+          ) : (
+            <>
+              <Box mb={2}>
+                <Typography variant="body2">
+                  Found {receipts.length} receipt(s)
+                </Typography>
+              </Box>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Receipt #</TableCell>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Customer</TableCell>
+                      <TableCell>Items</TableCell>
+                      <TableCell>Total</TableCell>
+                      <TableCell>Payment</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {receipts.map((receipt) => (
+                      <TableRow key={receipt._id}>
+                        <TableCell>{receipt.orderNumber}</TableCell>
+                        <TableCell>{formatDateTime(receipt.date)}</TableCell>
+                        <TableCell>{receipt.customer}</TableCell>
+                        <TableCell>{receipt.items.length}</TableCell>
+                        <TableCell>{formatCurrency(receipt.total)}</TableCell>
+                        <TableCell>{receipt.paymentMethod}</TableCell>
+                        <TableCell>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<ReceiptIcon />}
+                            onClick={() => handleViewReceipt(receipt)}
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              
+              {receiptTotalPages > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                  <Pagination 
+                    count={receiptTotalPages} 
+                    page={receiptPage} 
+                    onChange={handleReceiptPageChange} 
+                    color="primary" 
+                  />
+                </Box>
+              )}
+            </>
+          )}
+        </Box>
       )}
 
       <Box sx={{ mt: 3, textAlign: 'right' }}>
         <Button 
           variant="outlined" 
           color="primary"
-          onClick={() => fetchSessionSummaries(1)}
+          onClick={() => {
+            if (tabValue === 0) {
+              fetchSessionSummaries(1);
+            } else {
+              fetchReceipts(1);
+            }
+          }}
           sx={{ mr: 2 }}
         >
           Refresh Data
@@ -354,7 +518,7 @@ const CafeDashboard = () => {
       </Box>
 
       {/* Change PIN Dialog */}
-      <Dialog open={changePinOpen} onClose={() => !savingPin && setChangePinOpen(false)}>
+      <Dialog open={changePinOpen} onClose={() => setChangePinOpen(false)}>
         <DialogTitle>
           {currentPin ? 'Change Cashier PIN' : 'Set Cashier PIN'}
         </DialogTitle>
@@ -415,6 +579,15 @@ const CafeDashboard = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Receipt Dialog */}
+      {selectedReceipt && (
+        <ReceiptPrint
+          receipt={selectedReceipt}
+          open={receiptDialog}
+          onClose={() => setReceiptDialog(false)}
+        />
+      )}
     </Box>
   );
 };
