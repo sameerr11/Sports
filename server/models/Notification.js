@@ -12,7 +12,24 @@ const NotificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['new_registration', 'role_change', 'document_upload', 'system', 'child_account_linked'],
+    enum: [
+      'new_registration', 
+      'role_change', 
+      'document_upload', 
+      'system', 
+      'child_account_linked', 
+      'training_scheduled', 
+      'training_updated', 
+      'training_cancelled',
+      'match_scheduled',
+      'match_updated',
+      'match_result',
+      'player_performance',
+      'coach_feedback',
+      'team_announcement',
+      'payment_reminder',
+      'attendance_update'
+    ],
     required: true
   },
   title: {
@@ -26,7 +43,7 @@ const NotificationSchema = new mongoose.Schema({
   relatedTo: {
     model: {
       type: String,
-      enum: ['User', 'Team', 'Match', 'Training', 'Payment', 'PlayerRegistration']
+      enum: ['User', 'Team', 'Match', 'Training', 'Payment', 'PlayerRegistration', 'TrainingPlan', 'PlayerStats']
     },
     id: {
       type: mongoose.Schema.Types.ObjectId

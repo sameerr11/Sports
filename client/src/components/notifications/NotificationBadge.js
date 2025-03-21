@@ -19,6 +19,19 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import PersonIcon from '@mui/icons-material/Person';
 import SportsIcon from '@mui/icons-material/Sports';
 import PaymentIcon from '@mui/icons-material/Payment';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import BadgeIcon from '@mui/icons-material/Badge';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import FamilyRestroomIcon from '@mui/icons-material/FamilyRestroom';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import FeedbackIcon from '@mui/icons-material/Feedback';
+import CampaignIcon from '@mui/icons-material/Campaign';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+import GroupsIcon from '@mui/icons-material/Groups';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import HowToRegIcon from '@mui/icons-material/HowToReg';
 import { 
   getUserNotifications, 
   getUnreadCount, 
@@ -94,19 +107,55 @@ const NotificationBadge = () => {
   };
 
   const getNotificationIcon = (type, model) => {
-    if (type === 'new_registration') return <PersonIcon />;
-    
-    switch (model) {
-      case 'User':
-        return <PersonIcon />;
-      case 'Team':
-      case 'Match':
-      case 'Training':
-        return <SportsIcon />;
-      case 'Payment':
+    // Handle notification type-specific icons
+    switch (type) {
+      case 'new_registration':
+        return <PersonAddIcon />;
+      case 'role_change':
+        return <BadgeIcon />;
+      case 'document_upload':
+        return <CloudUploadIcon />;
+      case 'child_account_linked':
+        return <FamilyRestroomIcon />;
+      case 'training_scheduled':
+      case 'training_updated':
+      case 'training_cancelled':
+        return <FitnessCenterIcon />;
+      case 'match_scheduled':
+      case 'match_updated':
+      case 'match_result':
+        return <SportsSoccerIcon />;
+      case 'player_performance':
+        return <ShowChartIcon />;
+      case 'coach_feedback':
+        return <FeedbackIcon />;
+      case 'team_announcement':
+        return <CampaignIcon />;
+      case 'payment_reminder':
         return <PaymentIcon />;
+      case 'attendance_update':
+        return <EventAvailableIcon />;
       default:
-        return <NotificationsIcon />;
+        // Fallback to model-based icons
+        switch (model) {
+          case 'User':
+            return <PersonIcon />;
+          case 'Team':
+            return <GroupsIcon />;
+          case 'Match':
+            return <SportsSoccerIcon />;
+          case 'Training':
+          case 'TrainingPlan':
+            return <FitnessCenterIcon />;
+          case 'Payment':
+            return <PaymentIcon />;
+          case 'PlayerStats':
+            return <AssessmentIcon />;
+          case 'PlayerRegistration':
+            return <HowToRegIcon />;
+          default:
+            return <NotificationsIcon />;
+        }
     }
   };
 

@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const TrainingPlan = require('../models/TrainingPlan');
 const User = require('../models/User');
 const Team = require('../models/Team');
+const notificationService = require('../utils/notificationService');
 
 // @desc    Create a new training plan
 // @route   POST /api/training-plans
@@ -19,64 +20,60 @@ exports.createTrainingPlan = async (req, res) => {
       team, 
       date, 
       duration, 
-      activities, 
-      notes, 
-      attachments,
-      scheduleId,
-      isRecurring
+      coach,
+      location,
+      exercises,
+      notes
     } = req.body;
 
-    // Use default description if empty
-    const planDescription = description || 'Created from scheduling';
-
-    // Verify team exists
-    const teamExists = await Team.findById(team).populate('coaches.coach');
-    if (!teamExists) {
-      return res.status(404).json({ msg: 'Team not found' });
-    }
-    
-    // Automatically assign to the first coach of the team if available
-    let assignedTo = null;
-    let planStatus = 'Draft';
-    
-    if (teamExists.coaches && teamExists.coaches.length > 0) {
-      // Get the first coach from the team
-      assignedTo = teamExists.coaches[0].coach._id;
-      planStatus = 'Assigned';
-    }
-
-    const newTrainingPlan = new TrainingPlan({
+    // Create the training plan
+    const trainingPlan = new TrainingPlan({
       title,
-      description: planDescription,
+      description,
       team,
-      createdBy: req.user.id,
-      assignedTo,
-      date: new Date(date),
+      date,
       duration,
-      activities: activities || [],
+      coach: coach || req.user.id,
+      location,
+      exercises,
       notes,
-      attachments: attachments || [],
-      status: planStatus,
-      scheduleId,
-      isRecurring: isRecurring || false
+      createdBy: req.user.id
     });
 
-    const trainingPlan = await newTrainingPlan.save();
-    
-    // Populate related fields
-    await trainingPlan.populate('team', 'name sportType');
-    await trainingPlan.populate('createdBy', 'firstName lastName');
-    await trainingPlan.populate('assignedTo', 'firstName lastName');
-    
-    // If a schedule was attached, include it in the response
-    if (scheduleId) {
-      await trainingPlan.populate('scheduleId');
+    await trainingPlan.save();
+
+    // Notify all coaches about the new training plan
+    if (team) {
+      await notificationService.createRoleNotifications({
+        role: 'coach',
+        senderId: req.user.id,
+        type: 'training_scheduled',
+        title: 'New Training Plan',
+        message: `A new training plan "${title}" has been scheduled for ${new Date(date).toLocaleDateString()}`,
+        relatedTo: {
+          model: 'TrainingPlan',
+          id: trainingPlan._id
+        }
+      });
+
+      // Notify all players in the team
+      await notificationService.notifyTeamPlayers({
+        teamId: team,
+        senderId: req.user.id,
+        type: 'training_scheduled',
+        title: 'New Training Scheduled',
+        message: `A new training session "${title}" has been scheduled for ${new Date(date).toLocaleDateString()}`,
+        relatedTo: {
+          model: 'TrainingPlan',
+          id: trainingPlan._id
+        }
+      });
     }
-    
+
     res.status(201).json(trainingPlan);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server Error');
+    res.status(500).json({ msg: 'Server error' });
   }
 };
 

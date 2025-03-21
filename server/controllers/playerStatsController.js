@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const mongoose = require('mongoose');
 const PlayerStats = require('../models/PlayerStats');
 const User = require('../models/User');
+const notificationService = require('../utils/notificationService');
 
 // @desc    Get all player stats
 // @route   GET /api/player-stats
@@ -62,9 +63,9 @@ exports.getPlayerStatsById = async (req, res) => {
   }
 };
 
-// @desc    Create player stats
+// @desc    Create new player stats
 // @route   POST /api/player-stats
-// @access  Private (Admin, Support, Coach)
+// @access  Private (Coach)
 exports.createPlayerStats = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -72,39 +73,64 @@ exports.createPlayerStats = async (req, res) => {
   }
 
   try {
-    const { player: playerId, sportType } = req.body;
+    const {
+      player,
+      sport,
+      matchDate,
+      metrics,
+      notes
+    } = req.body;
 
-    // Check if player exists and has player role
-    const player = await User.findById(playerId);
-    if (!player) {
+    // Check if player exists
+    const playerUser = await User.findById(player);
+    if (!playerUser) {
       return res.status(404).json({ msg: 'Player not found' });
     }
-    
-    if (player.role !== 'player') {
-      return res.status(400).json({ msg: 'User is not a player' });
-    }
 
-    // Check if stats already exist for this player and sport
-    const existingStats = await PlayerStats.findOne({ 
-      player: playerId, 
-      sportType 
-    });
-
-    if (existingStats) {
-      return res.status(400).json({ 
-        msg: 'Stats already exist for this player and sport. Use the update endpoint instead.' 
-      });
-    }
-
-    // Create new player stats
-    const newPlayerStats = new PlayerStats({
-      ...req.body,
+    const playerStats = new PlayerStats({
+      player,
+      sport,
+      matchDate,
+      metrics,
+      notes,
       createdBy: req.user.id
     });
 
-    const playerStats = await newPlayerStats.save();
-    
-    res.json(playerStats);
+    await playerStats.save();
+
+    // Populate fields for response
+    await playerStats.populate('player', 'firstName lastName');
+    await playerStats.populate('createdBy', 'firstName lastName');
+
+    // Notify other coaches about the player performance
+    if (playerUser.role === 'player') {
+      // Notify other coaches about the player stats update
+      await notificationService.notifyCoachesAboutPlayer({
+        playerId: player,
+        type: 'player_performance',
+        title: 'Player Stats Updated',
+        message: `Performance metrics have been updated for ${playerUser.firstName} ${playerUser.lastName}`,
+        relatedTo: {
+          model: 'PlayerStats',
+          id: playerStats._id
+        }
+      });
+      
+      // Also notify the player about their updated stats
+      await notificationService.createNotification({
+        recipientId: player,
+        senderId: req.user.id,
+        type: 'player_performance',
+        title: 'Your Performance Stats',
+        message: `Coach has updated your performance metrics for ${new Date(matchDate).toLocaleDateString()}`,
+        relatedTo: {
+          model: 'PlayerStats',
+          id: playerStats._id
+        }
+      });
+    }
+
+    res.status(201).json(playerStats);
   } catch (err) {
     console.error('Error creating player stats:', err.message);
     res.status(500).send('Server Error');

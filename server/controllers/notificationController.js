@@ -108,4 +108,33 @@ exports.getUnreadCount = async (req, res) => {
     console.error(err.message);
     res.status(500).json({ msg: 'Server error' });
   }
+};
+
+// @desc    Create a new notification (admin/system only)
+// @route   POST /api/notifications
+// @access  Private/Admin
+exports.createNotification = async (req, res) => {
+  try {
+    const { recipientId, type, title, message, relatedTo } = req.body;
+    
+    if (!recipientId || !type || !title || !message) {
+      return res.status(400).json({ msg: 'Please include all required fields' });
+    }
+
+    const notification = new Notification({
+      recipient: recipientId,
+      sender: req.user.id, // The current user is the sender
+      type,
+      title,
+      message,
+      relatedTo: relatedTo || null
+    });
+
+    await notification.save();
+    
+    res.status(201).json(notification);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server error' });
+  }
 }; 
