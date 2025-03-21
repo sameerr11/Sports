@@ -3,14 +3,13 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Container, Typography, Box, Button, Grid, Paper, Chip, Divider,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Card, CardContent, Alert, Tab, Tabs
+  Card, CardContent, Alert
 } from '@mui/material';
 import { 
   ArrowBack, Edit, EventAvailable, AccessTime, LocationOn, Group
 } from '@mui/icons-material';
 import { getCourtById, getCourtAvailability } from '../../services/courtService';
 import { isSupervisor } from '../../services/authService';
-import BookingForm from '../bookings/BookingForm';
 import { getSportIcon } from '../../utils/sportIcons';
 
 const CourtDetail = () => {
@@ -21,7 +20,6 @@ const CourtDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [tabValue, setTabValue] = useState(0);
   const canManageCourts = isSupervisor();
 
   useEffect(() => {
@@ -54,10 +52,6 @@ const CourtDetail = () => {
     } catch (err) {
       setError(err.toString());
     }
-  };
-
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
   };
 
   if (loading) {
@@ -162,140 +156,131 @@ const CourtDetail = () => {
 
         <Grid item xs={12} md={7}>
           <Paper sx={{ p: 3, mb: 3 }}>
-            <Tabs 
-              value={tabValue} 
-              onChange={handleTabChange}
-              sx={{ mb: 3 }}
-            >
-              <Tab label="Availability" icon={<EventAvailable />} iconPosition="start" />
-              <Tab label="Book Court" icon={getSportIcon(court.sportType)} iconPosition="start" />
-            </Tabs>
+            <Typography variant="h6" gutterBottom>
+              Court Availability
+            </Typography>
+            
+            <Box sx={{ display: 'flex', gap: 1, mb: 3, overflowX: 'auto', pb: 1 }}>
+              {getNextDays().map((date, index) => (
+                <Button
+                  key={index}
+                  variant={date.toDateString() === selectedDate.toDateString() ? 'contained' : 'outlined'}
+                  onClick={() => handleDateChange(date)}
+                  sx={{ minWidth: '100px' }}
+                >
+                  {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                </Button>
+              ))}
+            </Box>
 
-            {tabValue === 0 && (
+            {availability && (
               <>
-                <Typography variant="h6" gutterBottom>
-                  Court Availability
+                <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                  {formatDayOfWeek(availability.dayOfWeek)} Schedule
                 </Typography>
-                
-                <Box sx={{ display: 'flex', gap: 1, mb: 3, overflowX: 'auto', pb: 1 }}>
-                  {getNextDays().map((date, index) => (
-                    <Button
-                      key={index}
-                      variant={date.toDateString() === selectedDate.toDateString() ? 'contained' : 'outlined'}
-                      onClick={() => handleDateChange(date)}
-                      sx={{ minWidth: '100px' }}
-                    >
-                      {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                    </Button>
-                  ))}
-                </Box>
 
-                {availability && (
-                  <>
-                    <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                      {formatDayOfWeek(availability.dayOfWeek)} Schedule
-                    </Typography>
-
-                    {availability.courtAvailability.length === 0 ? (
-                      <Alert severity="info">
-                        No regular availability set for {formatDayOfWeek(availability.dayOfWeek)}
-                      </Alert>
-                    ) : (
-                      <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
-                        <Table size="small">
-                          <TableHead>
-                            <TableRow>
-                              <TableCell>Start Time</TableCell>
-                              <TableCell>End Time</TableCell>
-                              <TableCell>Status</TableCell>
+                {availability.courtAvailability.length === 0 ? (
+                  <Alert severity="info">
+                    No regular availability set for {formatDayOfWeek(availability.dayOfWeek)}
+                  </Alert>
+                ) : (
+                  <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Start Time</TableCell>
+                          <TableCell>End Time</TableCell>
+                          <TableCell>Type</TableCell>
+                          <TableCell>Status</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {availability.courtAvailability.map((slot, index) => {
+                          // Check if slot is booked
+                          const isBooked = availability.bookings.some(booking => {
+                            const bookingStart = new Date(booking.startTime);
+                            const bookingEnd = new Date(booking.endTime);
+                            const slotStart = new Date(`${selectedDate.toDateString()} ${slot.start}`);
+                            const slotEnd = new Date(`${selectedDate.toDateString()} ${slot.end}`);
+                            
+                            return (
+                              (bookingStart <= slotStart && bookingEnd > slotStart) ||
+                              (bookingStart < slotEnd && bookingEnd >= slotEnd) ||
+                              (bookingStart >= slotStart && bookingEnd <= slotEnd)
+                            );
+                          });
+                          
+                          return (
+                            <TableRow key={index}>
+                              <TableCell>{slot.start}</TableCell>
+                              <TableCell>{slot.end}</TableCell>
+                              <TableCell>
+                                <Chip 
+                                  label={slot.type || 'Rental'} 
+                                  color={slot.type === 'Academy' ? 'primary' : 'secondary'} 
+                                  size="small"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Chip 
+                                  label={isBooked ? 'Booked' : 'Available'} 
+                                  color={isBooked ? 'error' : 'success'} 
+                                  size="small"
+                                />
+                              </TableCell>
                             </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {availability.courtAvailability.map((slot, index) => {
-                              // Check if slot is booked
-                              const isBooked = availability.bookings.some(booking => {
-                                const bookingStart = new Date(booking.startTime);
-                                const bookingEnd = new Date(booking.endTime);
-                                const slotStart = new Date(`${selectedDate.toDateString()} ${slot.start}`);
-                                const slotEnd = new Date(`${selectedDate.toDateString()} ${slot.end}`);
-                                
-                                return (
-                                  (bookingStart <= slotStart && bookingEnd > slotStart) ||
-                                  (bookingStart < slotEnd && bookingEnd >= slotEnd) ||
-                                  (bookingStart >= slotStart && bookingEnd <= slotEnd)
-                                );
-                              });
-                              
-                              return (
-                                <TableRow key={index}>
-                                  <TableCell>{slot.start}</TableCell>
-                                  <TableCell>{slot.end}</TableCell>
-                                  <TableCell>
-                                    <Chip 
-                                      label={isBooked ? 'Booked' : 'Available'} 
-                                      color={isBooked ? 'error' : 'success'} 
-                                      size="small"
-                                    />
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    )}
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )}
 
-                    <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                      Bookings for {selectedDate.toLocaleDateString()}
-                    </Typography>
+                <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                  Bookings for {selectedDate.toLocaleDateString()}
+                </Typography>
 
-                    {availability.bookings.length === 0 ? (
-                      <Alert severity="info">
-                        No bookings for this date
-                      </Alert>
-                    ) : (
-                      <TableContainer component={Paper} variant="outlined">
-                        <Table size="small">
-                          <TableHead>
-                            <TableRow>
-                              <TableCell>Start Time</TableCell>
-                              <TableCell>End Time</TableCell>
-                              <TableCell>Status</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {availability.bookings.map((booking) => (
-                              <TableRow key={booking.id}>
-                                <TableCell>
-                                  {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </TableCell>
-                                <TableCell>
-                                  {new Date(booking.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </TableCell>
-                                <TableCell>
-                                  <Chip 
-                                    label={booking.status} 
-                                    color={
-                                      booking.status === 'Confirmed' ? 'success' :
-                                      booking.status === 'Pending' ? 'warning' :
-                                      booking.status === 'Cancelled' ? 'error' : 'default'
-                                    } 
-                                    size="small"
-                                  />
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    )}
-                  </>
+                {availability.bookings.length === 0 ? (
+                  <Alert severity="info">
+                    No bookings for this date
+                  </Alert>
+                ) : (
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Start Time</TableCell>
+                          <TableCell>End Time</TableCell>
+                          <TableCell>Status</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {availability.bookings.map((booking) => (
+                          <TableRow key={booking.id}>
+                            <TableCell>
+                              {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </TableCell>
+                            <TableCell>
+                              {new Date(booking.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </TableCell>
+                            <TableCell>
+                              <Chip 
+                                label={booking.status} 
+                                color={
+                                  booking.status === 'Confirmed' ? 'success' :
+                                  booking.status === 'Pending' ? 'warning' :
+                                  booking.status === 'Cancelled' ? 'error' : 'default'
+                                } 
+                                size="small"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
                 )}
               </>
-            )}
-
-            {tabValue === 1 && (
-              <BookingForm courtId={id} court={court} />
             )}
           </Paper>
         </Grid>

@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container, Typography, Box, TextField, Button, Grid, Paper,
   FormControl, InputLabel, Select, MenuItem, Divider, IconButton,
-  InputAdornment, FormHelperText, Alert, Avatar, CircularProgress
+  InputAdornment, FormHelperText, Alert, Avatar, CircularProgress,
+  useTheme
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { ArrowBack, Save, Add, Delete, CloudUpload } from '@mui/icons-material';
@@ -23,6 +24,7 @@ const CourtForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
+  const theme = useTheme();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -142,29 +144,42 @@ const CourtForm = () => {
   };
 
   const addTimeSlot = (day) => {
-    setFormData(prev => ({
-      ...prev,
-      availability: {
-        ...prev.availability,
-        [day]: [...prev.availability[day], { start: '09:00', end: '10:00' }]
-      }
-    }));
+    setFormData(prev => {
+      // Create a new time slot with default time and type
+      const newSlot = { start: '08:00', end: '18:00', type: 'Rental' };
+      
+      return {
+        ...prev,
+        availability: {
+          ...prev.availability,
+          [day]: [...(prev.availability[day] || []), newSlot]
+        }
+      };
+    });
   };
 
   const removeTimeSlot = (day, index) => {
-    setFormData(prev => ({
-      ...prev,
-      availability: {
-        ...prev.availability,
-        [day]: prev.availability[day].filter((_, i) => i !== index)
-      }
-    }));
+    setFormData(prev => {
+      const updatedSlots = [...prev.availability[day]];
+      updatedSlots.splice(index, 1);
+      
+      return {
+        ...prev,
+        availability: {
+          ...prev.availability,
+          [day]: updatedSlots
+        }
+      };
+    });
   };
 
   const handleTimeSlotChange = (day, index, field, value) => {
     setFormData(prev => {
       const updatedSlots = [...prev.availability[day]];
-      updatedSlots[index] = { ...updatedSlots[index], [field]: value };
+      updatedSlots[index] = {
+        ...updatedSlots[index],
+        [field]: value
+      };
       
       return {
         ...prev,
@@ -400,7 +415,10 @@ const CourtForm = () => {
                           display: 'flex', 
                           alignItems: 'center', 
                           mb: 1,
-                          gap: 2
+                          gap: 2,
+                          p: 1.5,
+                          borderRadius: 1,
+                          bgcolor: alpha(theme.palette.background.default, 0.5)
                         }}
                       >
                         <TextField
@@ -409,7 +427,6 @@ const CourtForm = () => {
                           value={slot.start}
                           onChange={(e) => handleTimeSlotChange(day, index, 'start', e.target.value)}
                           InputLabelProps={{ shrink: true }}
-                          inputProps={{ step: 300 }}
                           size="small"
                           sx={{ width: 150 }}
                         />
@@ -419,10 +436,21 @@ const CourtForm = () => {
                           value={slot.end}
                           onChange={(e) => handleTimeSlotChange(day, index, 'end', e.target.value)}
                           InputLabelProps={{ shrink: true }}
-                          inputProps={{ step: 300 }}
                           size="small"
                           sx={{ width: 150 }}
                         />
+                        <FormControl sx={{ width: 150 }} size="small">
+                          <InputLabel id={`time-slot-type-${day}-${index}`}>Type</InputLabel>
+                          <Select
+                            labelId={`time-slot-type-${day}-${index}`}
+                            value={slot.type || 'Rental'}
+                            label="Type"
+                            onChange={(e) => handleTimeSlotChange(day, index, 'type', e.target.value)}
+                          >
+                            <MenuItem value="Academy">Academy</MenuItem>
+                            <MenuItem value="Rental">Rental</MenuItem>
+                          </Select>
+                        </FormControl>
                         <IconButton 
                           color="error" 
                           onClick={() => removeTimeSlot(day, index)}

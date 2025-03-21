@@ -31,13 +31,69 @@ const CourtSchema = new mongoose.Schema({
     required: true
   },
   availability: {
-    monday: [{ start: String, end: String }],
-    tuesday: [{ start: String, end: String }],
-    wednesday: [{ start: String, end: String }],
-    thursday: [{ start: String, end: String }],
-    friday: [{ start: String, end: String }],
-    saturday: [{ start: String, end: String }],
-    sunday: [{ start: String, end: String }]
+    monday: [{ 
+      start: String, 
+      end: String,
+      type: {
+        type: String,
+        enum: ['Academy', 'Rental'],
+        default: 'Rental'
+      }
+    }],
+    tuesday: [{ 
+      start: String, 
+      end: String,
+      type: {
+        type: String,
+        enum: ['Academy', 'Rental'],
+        default: 'Rental'
+      }
+    }],
+    wednesday: [{ 
+      start: String, 
+      end: String,
+      type: {
+        type: String,
+        enum: ['Academy', 'Rental'],
+        default: 'Rental'
+      }
+    }],
+    thursday: [{ 
+      start: String, 
+      end: String,
+      type: {
+        type: String,
+        enum: ['Academy', 'Rental'],
+        default: 'Rental'
+      }
+    }],
+    friday: [{ 
+      start: String, 
+      end: String,
+      type: {
+        type: String,
+        enum: ['Academy', 'Rental'],
+        default: 'Rental'
+      }
+    }],
+    saturday: [{ 
+      start: String, 
+      end: String,
+      type: {
+        type: String,
+        enum: ['Academy', 'Rental'],
+        default: 'Rental'
+      }
+    }],
+    sunday: [{ 
+      start: String, 
+      end: String,
+      type: {
+        type: String,
+        enum: ['Academy', 'Rental'],
+        default: 'Rental'
+      }
+    }]
   },
   isActive: {
     type: Boolean,

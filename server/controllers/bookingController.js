@@ -13,82 +13,75 @@ exports.createBooking = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  try {
-    const { court, team, startTime, endTime, purpose, notes, isRecurring, recurringDay } = req.body;
+  const { court, startTime, endTime, purpose, team, notes } = req.body;
 
-    // Validate court exists
+  try {
+    const user = req.user.id;
+    
+    // Verify that the court exists
     const courtDoc = await Court.findById(court);
+    
     if (!courtDoc) {
       return res.status(404).json({ msg: 'Court not found' });
     }
     
-    // Check if sports supervisor is trying to create a booking for a court with sport type they're not assigned to
-    if (req.user.role === 'supervisor') {
-      const supervisor = await User.findById(req.user.id);
-      
-      if (supervisor.supervisorType === 'sports' && 
-          Array.isArray(supervisor.supervisorSportTypes) && 
-          supervisor.supervisorSportTypes.length > 0) {
-        
-        // If the court's sport type is not in the supervisor's assigned types
-        if (!supervisor.supervisorSportTypes.includes(courtDoc.sportType)) {
-          return res.status(403).json({ 
-            msg: 'Not authorized to create bookings for this sport type' 
-          });
-        }
-      }
-    }
-    
-    // Validate team exists if team is provided
-    if (team) {
-      const teamDoc = await Team.findById(team);
-      if (!teamDoc) {
-        return res.status(404).json({ msg: 'Team not found' });
-      }
-      
-      // Additional check: If team is provided, check if sports supervisor has permission for this team's sport type
-      if (req.user.role === 'supervisor') {
-        const supervisor = await User.findById(req.user.id);
-        
-        if (supervisor.supervisorType === 'sports' && 
-            Array.isArray(supervisor.supervisorSportTypes) && 
-            supervisor.supervisorSportTypes.length > 0) {
-          
-          // If the team's sport type is not in the supervisor's assigned types
-          if (!supervisor.supervisorSportTypes.includes(teamDoc.sportType)) {
-            return res.status(403).json({ 
-              msg: 'Not authorized to create bookings for this team\'s sport type' 
-            });
-          }
-        }
-      }
-    }
-    
-    // Format dates
+    // Parse dates
     const startDate = new Date(startTime);
     const endDate = new Date(endTime);
     
-    // Get day of week for the booking
-    const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][startDate.getDay()];
-    
-    // Check if the court is available on this day
-    const dayAvailability = courtDoc.availability[dayOfWeek] || [];
-    
-    if (dayAvailability.length === 0) {
-      return res.status(400).json({ msg: `Court is not available on ${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}s` });
+    // Verify end time is after start time
+    if (endDate <= startDate) {
+      return res.status(400).json({ msg: 'End time must be after start time' });
     }
     
-    // Check if the booking time is within the court's available time slots
+    // Get day of week (0 = Sunday, 1 = Monday, etc.)
+    const dayOfWeek = startDate.getDay();
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = days[dayOfWeek];
+    
+    // Get court availability for this day
+    const dayAvailability = courtDoc.availability[dayName] || [];
+    
+    if (dayAvailability.length === 0) {
+      return res.status(400).json({ msg: `Court is not available on ${dayName}` });
+    }
+    
+    // Convert booking time to HH:MM format for comparison
     const startHour = startDate.getHours();
     const startMinute = startDate.getMinutes();
+    const bookingStartTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
+    
     const endHour = endDate.getHours();
     const endMinute = endDate.getMinutes();
-    
-    const bookingStartTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
     const bookingEndTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
     
+    // Filter available slots based on booking purpose
+    let availableSlots = dayAvailability;
+    
+    // If purpose is Training or Match, only allow booking during Academy hours
+    if (purpose === 'Training' || purpose === 'Match') {
+      availableSlots = dayAvailability.filter(slot => slot.type === 'Academy');
+      
+      if (availableSlots.length === 0) {
+        return res.status(400).json({ 
+          msg: 'No Academy hours available for this court. Training and matches can only be scheduled during Academy hours.',
+          availableSlots: [] 
+        });
+      }
+    } else if (purpose === 'Rental') {
+      // For rentals, only allow booking during Rental hours
+      availableSlots = dayAvailability.filter(slot => slot.type === 'Rental');
+      
+      if (availableSlots.length === 0) {
+        return res.status(400).json({ 
+          msg: 'No Rental hours available for this court.',
+          availableSlots: [] 
+        });
+      }
+    }
+    
     // Check if booking time falls within any of the available time slots
-    const isWithinAvailableHours = dayAvailability.some(slot => {
+    const isWithinAvailableHours = availableSlots.some(slot => {
       // Convert slot times to comparable format (minutes since midnight)
       const slotStart = slot.start.split(':').map(Number);
       const slotEnd = slot.end.split(':').map(Number);
@@ -105,8 +98,8 @@ exports.createBooking = async (req, res) => {
     
     if (!isWithinAvailableHours) {
       return res.status(400).json({ 
-        msg: 'Booking time is outside the court\'s available hours for this day',
-        availableSlots: dayAvailability 
+        msg: `Booking time is outside the court's available ${purpose === 'Training' || purpose === 'Match' ? 'Academy' : 'Rental'} hours for this day`,
+        availableSlots: availableSlots 
       });
     }
     
@@ -142,8 +135,8 @@ exports.createBooking = async (req, res) => {
       purpose,
       totalPrice,
       notes,
-      isRecurring,
-      recurringDay
+      isRecurring: false,
+      recurringDay: null
     });
 
     // If user is a guest, set status to pending
