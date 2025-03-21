@@ -122,8 +122,11 @@ exports.createBooking = async (req, res) => {
     // Calculate duration in hours
     const durationHours = (endDate - startDate) / (1000 * 60 * 60);
     
-    // Calculate total price
-    const totalPrice = durationHours * courtDoc.hourlyRate;
+    // Calculate total price - free for Training and Match bookings
+    let totalPrice = 0;
+    if (purpose === 'Rental') {
+      totalPrice = durationHours * courtDoc.hourlyRate;
+    }
 
     // Create new booking
     const newBooking = new Booking({

@@ -384,7 +384,7 @@ const BookingForm = ({ courtId, court }) => {
               />
             </Grid>
             
-            {totalPrice > 0 && (
+            {totalPrice > 0 && formData.purpose === 'Rental' && (
               <Grid item xs={12}>
                 <Paper sx={{ p: 2, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
                   <Typography variant="h6">
@@ -392,6 +392,19 @@ const BookingForm = ({ courtId, court }) => {
                   </Typography>
                   <Typography variant="body2">
                     {court.hourlyRate} per hour × {((formData.endTime - formData.startTime) / (1000 * 60 * 60)).toFixed(1)} hours
+                  </Typography>
+                </Paper>
+              </Grid>
+            )}
+            
+            {formData.purpose !== 'Rental' && formData.startTime && formData.endTime && (
+              <Grid item xs={12}>
+                <Paper sx={{ p: 2, bgcolor: 'success.light', color: 'success.contrastText' }}>
+                  <Typography variant="h6">
+                    Free Academy Booking
+                  </Typography>
+                  <Typography variant="body2">
+                    No payment required for {formData.purpose.toLowerCase()} bookings
                   </Typography>
                 </Paper>
               </Grid>

@@ -220,16 +220,16 @@ const BookingList = ({ userOnly = false }) => {
           overflow: 'hidden',
           boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
         }}>
-          <Table>
+          <Table sx={{ minWidth: 850 }}>
             <TableHead>
               <TableRow>
-                <TableCell>Court</TableCell>
-                <TableCell>Date & Time</TableCell>
-                <TableCell>Duration</TableCell>
-                <TableCell>Purpose</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Price</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell width="15%">Court</TableCell>
+                <TableCell width="18%">Date & Time</TableCell>
+                <TableCell width="12%">Duration</TableCell>
+                <TableCell width="12%">Purpose</TableCell>
+                <TableCell width="12%">Status</TableCell>
+                <TableCell width="12%">Price</TableCell>
+                <TableCell width="19%">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -270,9 +270,14 @@ const BookingList = ({ userOnly = false }) => {
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>${booking.totalPrice.toFixed(2)}</TableCell>
                     <TableCell>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
+                      {booking.purpose === 'Rental' ? 
+                        `$${booking.totalPrice.toFixed(2)}` : 
+                        <Chip label="Free" color="success" size="small" />
+                      }
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', minWidth: '150px' }}>
                         {canManageBookings && booking.status !== 'Cancelled' && (
                           <Button
                             size="small"
@@ -280,6 +285,7 @@ const BookingList = ({ userOnly = false }) => {
                             color="primary"
                             startIcon={<CheckCircle />}
                             onClick={() => handleStatusDialogOpen(booking._id, booking.status)}
+                            sx={{ mb: 1, minWidth: '90px' }}
                           >
                             Status
                           </Button>
@@ -292,6 +298,7 @@ const BookingList = ({ userOnly = false }) => {
                             color="error"
                             startIcon={<Cancel />}
                             onClick={() => handleCancelDialogOpen(booking._id)}
+                            sx={{ minWidth: '90px' }}
                           >
                             Cancel
                           </Button>
