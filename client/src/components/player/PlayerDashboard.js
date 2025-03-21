@@ -90,13 +90,19 @@ const PlayerDashboard = () => {
         
         // Filter for training sessions and matches
         const trainingSessions = uniqueBookings.filter(
-          booking => booking.purpose === 'Training' && new Date(booking.startTime) >= new Date()
+          booking => 
+            booking.purpose === 'Training' && 
+            new Date(booking.startTime) >= new Date() && 
+            booking.status !== 'Cancelled'
         );
         setTrainingSessions(trainingSessions);
         
         // 3. Filter for upcoming matches
         const matchSessions = uniqueBookings.filter(
-          booking => booking.purpose === 'Match' && new Date(booking.startTime) >= new Date()
+          booking => 
+            booking.purpose === 'Match' && 
+            new Date(booking.startTime) >= new Date() && 
+            booking.status !== 'Cancelled'
         );
         setUpcomingMatches(matchSessions);
         
