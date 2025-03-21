@@ -362,6 +362,18 @@ const CoachDashboard = () => {
                 }
                 Upcoming Training Sessions
               </Typography>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                  {coachTeams.length > 0 ?
+                    React.cloneElement(getSportIcon(coachTeams[0]?.sportType || 'Sports'), { sx: { mr: 1 } }) :
+                    <FitnessCenter sx={{ mr: 1 }} />
+                  }
+                  Upcoming Training Sessions (From Bookings)
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  This section shows only direct training bookings not assigned to any training plan
+                </Typography>
+              </Box>
               <Button 
                 variant="outlined" 
                 size="small"
@@ -376,14 +388,14 @@ const CoachDashboard = () => {
           <Grid item xs={12}>
             <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
               <Table>
-                <TableHead sx={{ bgcolor: alpha(theme.palette.background.default, 0.8) }}>
+                <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Date & Time</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Team</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Title/Purpose</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Location</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Duration</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                    <TableCell>Date & Time</TableCell>
+                    <TableCell>Team</TableCell>
+                    <TableCell>Title/Purpose</TableCell>
+                    <TableCell>Location</TableCell>
+                    <TableCell>Duration</TableCell>
+                    <TableCell>Status</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>

@@ -38,6 +38,16 @@ const TrainingPlanSchema = new mongoose.Schema({
     type: Number, // Duration in minutes
     required: true
   },
+  // Add reference to booking schedule
+  scheduleId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Booking'
+  },
+  // Add flag for recurring plans
+  isRecurring: {
+    type: Boolean,
+    default: false
+  },
   activities: [{
     title: {
       type: String,

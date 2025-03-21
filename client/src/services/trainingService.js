@@ -61,12 +61,52 @@ export const getCoachTrainingSessions = async () => {
       new Map(allBookings.map(booking => [booking._id, booking])).values()
     );
     
-    // Filter for training sessions (where purpose is 'Training')
-    const trainingSessions = uniqueBookings.filter(
-      booking => booking.purpose === 'Training' && new Date(booking.startTime) >= new Date()
-    ).sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    // Get all training plans to check which bookings are already assigned to plans
+    let trainingPlans = [];
+    try {
+      // Get directly assigned plans
+      const assignedPlansRes = await api.get('/training-plans/coach');
+      const assignedPlans = assignedPlansRes.data || [];
+      
+      // Get team plans if there are teams
+      const teamPlansArrays = await Promise.all(
+        coachTeams.map(team => 
+          team && team._id ? 
+            api.get(`/training-plans/team/${team._id}`)
+              .then(res => res.data)
+              .catch(() => []) : 
+            Promise.resolve([])
+        )
+      );
+      
+      // Combine all plans
+      trainingPlans = [...assignedPlans, ...teamPlansArrays.flat()];
+    } catch (err) {
+      console.error('Error fetching training plans for booking filter:', err);
+      trainingPlans = [];
+    }
     
-    console.log('Filtered training sessions:', trainingSessions);
+    // Get a list of booking IDs that are already assigned to training plans
+    const assignedBookingIds = trainingPlans
+      .filter(plan => plan.scheduleId)
+      .map(plan => {
+        if (typeof plan.scheduleId === 'object' && plan.scheduleId._id) {
+          return plan.scheduleId._id;
+        }
+        return plan.scheduleId;
+      });
+    
+    console.log('Booking IDs already assigned to training plans:', assignedBookingIds);
+    
+    // Filter for training sessions (where purpose is 'Training')
+    // AND exclude those that are already assigned to training plans
+    const trainingSessions = uniqueBookings.filter(booking => {
+      return booking.purpose === 'Training' && 
+             new Date(booking.startTime) >= new Date() &&
+             !assignedBookingIds.includes(booking._id);
+    }).sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    
+    console.log('Filtered training sessions (excluded those assigned to plans):', trainingSessions);
     return trainingSessions;
   } catch (error) {
     console.error('Error fetching coach training sessions:', error);
@@ -90,7 +130,7 @@ export const getCoachTrainingSchedules = async () => {
     // Check if teams array is valid
     if (!Array.isArray(coachTeams) || coachTeams.length === 0) {
       console.log('No coach teams found, returning only assigned plans');
-      return assignedPlans;
+      return [];  // Return empty array instead of assigned plans
     }
     
     // Get training plans for each team the coach is part of
@@ -134,8 +174,17 @@ export const getCoachTrainingSchedules = async () => {
       }
     });
     
+    // Filter out any plans that have a scheduleId because those should only appear
+    // in the training plans section, not in the schedules section
+    const filteredPlans = allPlans.filter(plan => {
+      return !plan.scheduleId && 
+             !(plan.schedule && plan.schedule._id);
+    });
+    
+    console.log('Filtered plans (removed plans with scheduleId):', filteredPlans);
+    
     // Sort by date
-    const sortedPlans = allPlans.sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sortedPlans = filteredPlans.sort((a, b) => new Date(a.date) - new Date(b.date));
     console.log('All sorted plans:', sortedPlans);
     return sortedPlans;
   } catch (error) {

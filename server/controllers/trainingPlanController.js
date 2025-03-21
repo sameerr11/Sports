@@ -13,7 +13,18 @@ exports.createTrainingPlan = async (req, res) => {
   }
 
   try {
-    const { title, description, team, date, duration, activities, notes, attachments } = req.body;
+    const { 
+      title, 
+      description, 
+      team, 
+      date, 
+      duration, 
+      activities, 
+      notes, 
+      attachments,
+      scheduleId,
+      isRecurring
+    } = req.body;
 
     // Use default description if empty
     const planDescription = description || 'Created from scheduling';
@@ -45,7 +56,9 @@ exports.createTrainingPlan = async (req, res) => {
       activities: activities || [],
       notes,
       attachments: attachments || [],
-      status: planStatus
+      status: planStatus,
+      scheduleId,
+      isRecurring: isRecurring || false
     });
 
     const trainingPlan = await newTrainingPlan.save();
@@ -54,6 +67,11 @@ exports.createTrainingPlan = async (req, res) => {
     await trainingPlan.populate('team', 'name sportType');
     await trainingPlan.populate('createdBy', 'firstName lastName');
     await trainingPlan.populate('assignedTo', 'firstName lastName');
+    
+    // If a schedule was attached, include it in the response
+    if (scheduleId) {
+      await trainingPlan.populate('scheduleId');
+    }
     
     res.status(201).json(trainingPlan);
   } catch (err) {
@@ -107,6 +125,7 @@ exports.getAllTrainingPlans = async (req, res) => {
       .populate('team', 'name sportType')
       .populate('createdBy', 'firstName lastName')
       .populate('assignedTo', 'firstName lastName')
+      .populate('scheduleId')
       .sort({ date: 1 });
     
     res.json(trainingPlans);
@@ -127,6 +146,7 @@ exports.getCoachTrainingPlans = async (req, res) => {
     })
       .populate('team', 'name sportType')
       .populate('createdBy', 'firstName lastName')
+      .populate('scheduleId')
       .sort({ date: 1 });
     
     res.json(trainingPlans);
@@ -199,6 +219,7 @@ exports.getTeamTrainingPlans = async (req, res) => {
       .populate('assignedTo', 'firstName lastName')
       .populate('createdBy', 'firstName lastName')
       .populate('team', 'name sportType')
+      .populate('scheduleId')
       .sort({ date: 1 });
     
     res.json(trainingPlans);
@@ -216,7 +237,8 @@ exports.getTrainingPlanById = async (req, res) => {
     const trainingPlan = await TrainingPlan.findById(req.params.id)
       .populate('team', 'name sportType')
       .populate('createdBy', 'firstName lastName')
-      .populate('assignedTo', 'firstName lastName');
+      .populate('assignedTo', 'firstName lastName')
+      .populate('scheduleId');
     
     if (!trainingPlan) {
       return res.status(404).json({ msg: 'Training plan not found' });
@@ -328,7 +350,18 @@ exports.updateTrainingPlan = async (req, res) => {
   }
 
   try {
-    const { title, description, team, date, duration, activities, notes, attachments } = req.body;
+    const { 
+      title, 
+      description, 
+      team, 
+      date, 
+      duration, 
+      activities, 
+      notes, 
+      attachments,
+      scheduleId,
+      isRecurring
+    } = req.body;
 
     // Use default description if empty
     const planDescription = description || 'Created from scheduling';
@@ -386,6 +419,15 @@ exports.updateTrainingPlan = async (req, res) => {
     plan.activities = activities || [];
     plan.notes = notes;
     plan.attachments = attachments || [];
+    
+    // Update schedule fields if provided
+    if (scheduleId !== undefined) {
+      plan.scheduleId = scheduleId;
+    }
+    
+    if (isRecurring !== undefined) {
+      plan.isRecurring = isRecurring;
+    }
 
     await plan.save();
     
@@ -393,6 +435,11 @@ exports.updateTrainingPlan = async (req, res) => {
     await plan.populate('team', 'name sportType');
     await plan.populate('createdBy', 'firstName lastName');
     await plan.populate('assignedTo', 'firstName lastName');
+    
+    // If a schedule is attached, include it in the response
+    if (plan.scheduleId) {
+      await plan.populate('scheduleId');
+    }
     
     res.json(plan);
   } catch (err) {
