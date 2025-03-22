@@ -48,6 +48,8 @@ import { Box, CircularProgress } from '@mui/material';
 import UtilityBillList from './components/utilities/UtilityBillList';
 import UtilityBillForm from './components/utilities/UtilityBillForm';
 import RoleSalaryConfig from './components/admin/RoleSalaryConfig';
+// Import the RegistrationFeeConfig component
+import RegistrationFeeConfig from './components/admin/RegistrationFeeConfig';
 
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
@@ -476,6 +478,14 @@ function App() {
           <ProtectedRoute requiredRole="admin">
             <MainLayout>
               <RoleSalaryConfig />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/admin/registration-fees" element={
+          <ProtectedRoute requiredRole="admin">
+            <MainLayout>
+              <RegistrationFeeConfig />
             </MainLayout>
           </ProtectedRoute>
         } />
