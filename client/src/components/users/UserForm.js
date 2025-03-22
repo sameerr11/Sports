@@ -36,7 +36,8 @@ const ROLES = [
 const SUPERVISOR_TYPES = [
   { value: 'cafeteria', label: 'Cafeteria Supervisor' },
   { value: 'sports', label: 'Sports Supervisor' },
-  { value: 'general', label: 'General Supervisor' }
+  { value: 'general', label: 'General Supervisor' },
+  { value: 'booking', label: 'Booking Supervisor' }
 ];
 
 const SPORT_TYPES = [

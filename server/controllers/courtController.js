@@ -19,7 +19,11 @@ exports.createCourt = async (req, res) => {
     if (req.user.role === 'supervisor') {
       const supervisor = await User.findById(req.user.id);
       
-      if (supervisor.supervisorType === 'sports' && 
+      // Allow booking supervisors full court management access
+      if (supervisor.supervisorType === 'booking') {
+        // Booking supervisors can create courts for any sport type
+      }
+      else if (supervisor.supervisorType === 'sports' && 
           Array.isArray(supervisor.supervisorSportTypes) && 
           supervisor.supervisorSportTypes.length > 0) {
         
@@ -124,7 +128,11 @@ exports.updateCourt = async (req, res) => {
     if (req.user.role === 'supervisor' && sportType) {
       const supervisor = await User.findById(req.user.id);
       
-      if (supervisor.supervisorType === 'sports' && 
+      // Allow booking supervisors full court management access
+      if (supervisor.supervisorType === 'booking') {
+        // Booking supervisors can update courts for any sport type
+      }
+      else if (supervisor.supervisorType === 'sports' && 
           Array.isArray(supervisor.supervisorSportTypes) && 
           supervisor.supervisorSportTypes.length > 0) {
         

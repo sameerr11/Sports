@@ -144,6 +144,7 @@ const UserList = () => {
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Role</TableCell>
+              <TableCell>Type</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Last Login</TableCell>
               <TableCell align="right">Actions</TableCell>
@@ -167,6 +168,28 @@ const UserList = () => {
                       color={getRoleColor(user.role)}
                       size="small"
                     />
+                  </TableCell>
+                  <TableCell>
+                    {user.role === 'supervisor' && user.supervisorType && (
+                      <Chip 
+                        label={user.supervisorType.charAt(0).toUpperCase() + user.supervisorType.slice(1)} 
+                        color="secondary"
+                        size="small"
+                      />
+                    )}
+                    {user.role === 'supervisor' && user.supervisorType === 'sports' && user.supervisorSportTypes && user.supervisorSportTypes.length > 0 && (
+                      <Box sx={{ mt: 1 }}>
+                        {user.supervisorSportTypes.map((sport, index) => (
+                          <Chip
+                            key={index}
+                            label={sport}
+                            variant="outlined"
+                            size="small"
+                            sx={{ mr: 0.5, mb: 0.5 }}
+                          />
+                        ))}
+                      </Box>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Chip 

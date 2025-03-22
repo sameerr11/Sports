@@ -15,7 +15,7 @@ import {
   DirectionsRun, Sports
 } from '@mui/icons-material';
 import { getTeams, deleteTeam } from '../../services/teamService';
-import { isSupervisor } from '../../services/authService';
+import { canManageTeams } from '../../services/authService';
 import AlertMessage from '../common/AlertMessage';
 import './TeamList.css';
 
@@ -26,7 +26,7 @@ const TeamList = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, teamId: null });
-  const canManageTeams = isSupervisor();
+  const userCanManageTeams = canManageTeams();
 
   useEffect(() => {
     const fetchTeams = async () => {
@@ -153,7 +153,7 @@ const TeamList = () => {
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 4 }}>
-        {canManageTeams && (
+        {userCanManageTeams && (
           <Button 
             variant="contained" 
             color="primary" 
@@ -204,7 +204,7 @@ const TeamList = () => {
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3, textAlign: 'center', maxWidth: 500 }}>
             Create a new team to get started with team management and scheduling
           </Typography>
-          {canManageTeams && (
+          {userCanManageTeams && (
             <Button 
               component={Link}
               to="/teams/new"
@@ -389,7 +389,7 @@ const TeamList = () => {
                 
                 <CardActions sx={{ p: 2, justifyContent: 'space-between' }}>
                   <Box>
-                    {canManageTeams && (
+                    {userCanManageTeams && (
                       <>
                         <IconButton 
                           component={Link} 

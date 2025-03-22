@@ -63,6 +63,28 @@ exports.supervisor = (req, res, next) => {
   next();
 };
 
+// Middleware to check if user has supervisor role but exclude booking supervisors
+exports.teamSupervisor = async (req, res, next) => {
+  if (req.user.role !== 'supervisor' && req.user.role !== 'admin') {
+    return res.status(403).json({ msg: 'Access denied. Supervisor privileges required.' });
+  }
+  
+  // If user is admin, allow access
+  if (req.user.role === 'admin') {
+    return next();
+  }
+  
+  // Check supervisor type - booking supervisors cannot manage teams
+  const User = require('../models/User');
+  const supervisor = await User.findById(req.user.id);
+  
+  if (supervisor.supervisorType === 'booking') {
+    return res.status(403).json({ msg: 'Booking supervisors cannot manage teams.' });
+  }
+  
+  next();
+};
+
 // Middleware to check if user has coach role
 exports.coach = (req, res, next) => {
   if (req.user.role !== 'coach' && req.user.role !== 'supervisor' && req.user.role !== 'admin') {

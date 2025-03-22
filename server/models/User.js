@@ -32,7 +32,7 @@ const UserSchema = new mongoose.Schema({
   },
   supervisorType: {
     type: String,
-    enum: ['cafeteria', 'sports', 'general'],
+    enum: ['cafeteria', 'sports', 'general', 'booking'],
     default: 'general'
   },
   supervisorSportTypes: {

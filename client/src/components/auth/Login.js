@@ -35,7 +35,13 @@ const Login = () => {
     try {
       const userData = await login(email, password);
       authLogin(userData); // Update auth context with user data
-      navigate('/');
+      
+      // Redirect to appropriate page based on user role
+      if (userData.role === 'supervisor' && userData.supervisorType === 'booking') {
+        navigate('/bookings');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError(err.toString());
     } finally {

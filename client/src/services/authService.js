@@ -104,10 +104,32 @@ export const isSportsSupervisor = () => {
   return user && user.role === 'supervisor' && user.supervisorType === 'sports';
 };
 
+// Check if user is a booking supervisor
+export const isBookingSupervisor = () => {
+  const user = getStoredUser();
+  return user && user.role === 'supervisor' && user.supervisorType === 'booking';
+};
+
 // Check if user is a general supervisor with access to all areas
 export const isGeneralSupervisor = () => {
   const user = getStoredUser();
   return user && user.role === 'supervisor' && user.supervisorType === 'general';
+};
+
+// Check if user can manage teams
+export const canManageTeams = () => {
+  const user = getStoredUser();
+  if (!user) return false;
+  
+  // Admin can always manage teams
+  if (user.role === 'admin') return true;
+  
+  // Supervisor can manage teams if they are not booking supervisors
+  if (user.role === 'supervisor') {
+    return user.supervisorType !== 'booking';
+  }
+  
+  return false;
 };
 
 // Check if user is a supervisor for a specific sport type

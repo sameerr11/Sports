@@ -33,7 +33,7 @@ const registrationRoutes = require('./registrationRoutes');
 const utilityRoutes = require('./utilityRoutes');
 
 // Middleware
-const { auth, admin, supervisor, coach, player, parent, adminOrSupport, adminSupportOrAccounting, support } = require('../middleware/auth');
+const { auth, admin, supervisor, coach, player, parent, adminOrSupport, adminSupportOrAccounting, support, teamSupervisor } = require('../middleware/auth');
 
 // Auth routes
 router.post(
@@ -155,43 +155,43 @@ router.post(
   '/teams',
   [
     auth,
-    supervisor,
+    teamSupervisor,
     check('name', 'Name is required').not().isEmpty(),
     check('sportType', 'Sport type is required').not().isEmpty()
   ],
   teamController.createTeam
 );
-router.get('/teams', auth, teamController.getTeams);
+router.get('/teams', [auth], teamController.getTeams);
 router.get('/teams/coach', [auth, coach], teamController.getTeamsByCoach);
 router.get('/teams/player', [auth, player], teamController.getTeamsByPlayer);
 router.get('/teams/player/:playerId', [auth], teamController.getTeamsByPlayerId);
-router.get('/teams/:id', teamController.getTeamById);
-router.put('/teams/:id', [auth, supervisor], teamController.updateTeam);
-router.delete('/teams/:id', [auth, supervisor], teamController.deleteTeam);
+router.get('/teams/:id', [auth], teamController.getTeamById);
+router.put('/teams/:id', [auth, teamSupervisor], teamController.updateTeam);
+router.delete('/teams/:id', [auth, teamSupervisor], teamController.deleteTeam);
 
 // Team player management
 router.post(
   '/teams/:id/players',
   [
     auth,
-    supervisor,
+    teamSupervisor,
     check('playerId', 'Player ID is required').not().isEmpty()
   ],
   teamController.addPlayerToTeam
 );
-router.delete('/teams/:id/players/:playerId', [auth, supervisor], teamController.removePlayerFromTeam);
+router.delete('/teams/:id/players/:playerId', [auth, teamSupervisor], teamController.removePlayerFromTeam);
 
 // Team coach management
 router.post(
   '/teams/:id/coaches',
   [
     auth,
-    supervisor,
+    teamSupervisor,
     check('coachId', 'Coach ID is required').not().isEmpty()
   ],
   teamController.addCoachToTeam
 );
-router.delete('/teams/:id/coaches/:coachId', [auth, supervisor], teamController.removeCoachFromTeam);
+router.delete('/teams/:id/coaches/:coachId', [auth, teamSupervisor], teamController.removeCoachFromTeam);
 
 // Cafeteria routes
 router.use('/cafeteria', cafeteriaRoutes);
@@ -201,7 +201,7 @@ router.post(
   '/training-plans',
   [
     auth,
-    supervisor,
+    teamSupervisor,
     check('title', 'Title is required').not().isEmpty(),
     check('team', 'Team is required').not().isEmpty(),
     check('date', 'Date is required').not().isEmpty(),
@@ -210,15 +210,15 @@ router.post(
   trainingPlanController.createTrainingPlan
 );
 
-router.get('/training-plans', [auth, supervisor], trainingPlanController.getAllTrainingPlans);
+router.get('/training-plans', [auth, teamSupervisor], trainingPlanController.getAllTrainingPlans);
 router.get('/training-plans/coach', [auth, coach], trainingPlanController.getCoachTrainingPlans);
 router.get('/training-plans/team/:teamId', auth, trainingPlanController.getTeamTrainingPlans);
 router.get('/training-plans/:id', auth, trainingPlanController.getTrainingPlanById);
-router.put('/training-plans/:id', [auth, supervisor], trainingPlanController.updateTrainingPlan);
+router.put('/training-plans/:id', [auth, teamSupervisor], trainingPlanController.updateTrainingPlan);
 router.put('/training-plans/:id/status', auth, trainingPlanController.updateTrainingPlanStatus);
 router.get('/training-plans/:id/attendance', auth, trainingPlanController.getAttendance);
 router.put('/training-plans/:id/attendance', auth, trainingPlanController.updateAttendance);
-router.delete('/training-plans/:id', [auth, supervisor], trainingPlanController.deleteTrainingPlan);
+router.delete('/training-plans/:id', [auth, teamSupervisor], trainingPlanController.deleteTrainingPlan);
 
 // Feedback routes
 router.post(

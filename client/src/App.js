@@ -18,7 +18,7 @@ import Profile from './components/profile/Profile';
 import { 
   isAuthenticated, isAdmin, isSupervisor, 
   isCoach, isPlayer, isParent, isCashier, isPlayerOnly, isAdminOrSupport, isCafeteriaSupervisor, isAccounting,
-  isSupport, hasRole, isSportsSupervisor
+  isSupport, hasRole, isSportsSupervisor, isBookingSupervisor
 } from './services/authService';
 import Cafeteria from './components/cafeteria/Cafeteria';
 import CafeteriaManagement from './components/cafeteria/CafeteriaManagement';
@@ -166,8 +166,13 @@ const PublicRoute = ({ children }) => {
     );
   }
   
-  // If user is already authenticated, redirect to home
+  // If user is already authenticated, redirect to appropriate page based on role
   if (user) {
+    // Redirect booking supervisors directly to bookings page
+    if (user.role === 'supervisor' && user.supervisorType === 'booking') {
+      return <Navigate to="/bookings" />;
+    }
+    // Default redirect for other users
     return <Navigate to="/" />;
   }
   

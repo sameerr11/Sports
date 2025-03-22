@@ -41,7 +41,8 @@ import {
     AdminPanelSettings as AdminPanelSettingsIcon,
     Restaurant as RestaurantIcon,
     Support as SupportIcon,
-    Receipt as ReceiptIcon
+    Receipt as ReceiptIcon,
+    Add
 } from '@mui/icons-material';
 import { 
     isAdmin, 
@@ -56,6 +57,7 @@ import {
     isSupport,
     isAdminOrSupport,
     isAccounting,
+    isBookingSupervisor,
     getStoredUser
 } from '../../services/authService';
 import './Sidebar.css';
@@ -68,6 +70,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const supervisor = isSupervisor();
     const cafeteriaSupervisor = isCafeteriaSupervisor();
     const sportsSupervisor = isSportsSupervisor();
+    const bookingSupervisor = isBookingSupervisor();
     const generalSupervisor = isGeneralSupervisor();
     const cashier = isCashier();
     const coach = isCoach();
@@ -82,8 +85,8 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const menuItems = [
         { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
         ...(sportsSupervisor ? [] : [{ text: 'Courts', icon: <LocationOnIcon />, path: '/courts' }]),
-        { text: 'Teams', icon: <Sports />, path: '/teams' },
-        { text: 'My Bookings', icon: <EventIcon />, path: '/bookings/me' }
+        ...(!bookingSupervisor ? [{ text: 'Teams', icon: <Sports />, path: '/teams' }] : []),
+        ...(!bookingSupervisor ? [{ text: 'My Bookings', icon: <EventIcon />, path: '/bookings/me' }] : [])
     ];
 
     const cashierItems = [
@@ -109,6 +112,13 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'Team Scheduling', icon: <Sports />, path: '/teams/schedule' },
         { text: 'Training Plans', icon: <AssignmentIcon />, path: '/training-plans' },
         { text: 'Manage Cafeteria', icon: <FastfoodIcon />, path: '/cafeteria/manage' }
+    ];
+
+    // Booking supervisor items - they handle courts and bookings management
+    const bookingSupervisorItems = [
+        { text: 'Courts', icon: <LocationOnIcon />, path: '/courts' },
+        { text: 'All Bookings', icon: <EventIcon />, path: '/bookings' },
+        { text: 'Add Court', icon: <Add />, path: '/courts/new' },
     ];
 
     const adminItems = [
@@ -171,6 +181,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
         if (generalSupervisor) return generalSupervisorItems;
         if (cafeteriaSupervisor) return cafeteriaSupervisorItems;
         if (sportsSupervisor) return sportsSupervisorItems;
+        if (bookingSupervisor) return bookingSupervisorItems;
         return generalSupervisorItems; // Fallback to general items for backward compatibility
     };
 
@@ -229,7 +240,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
             <Divider />
             
             {/* Show regular menu items if user is admin/supervisor OR not a cashier/parent/player/coach/support/accounting */}
-            {(admin || (supervisor && !cafeteriaSupervisor) || (!cashier && !parent && !player && !coach && !cafeteriaSupervisor && !support && !accounting)) && (
+            {(admin || (supervisor && !cafeteriaSupervisor && !bookingSupervisor) || (!cashier && !parent && !player && !coach && !cafeteriaSupervisor && !support && !accounting)) && (
                 <List component="nav" className="sidebar-nav">
                     {menuItems.map((item) => (
                         <ListItem 

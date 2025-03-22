@@ -17,28 +17,31 @@ import {
   addCoachToTeam, removeCoachFromTeam, deleteTeam
 } from '../../services/teamService';
 import { getUsersByRole } from '../../services/userService';
-import { isSupervisor, isCoach, isPlayer, isParent } from '../../services/authService';
+import { canManageTeams, isCoach, isPlayer, isParent } from '../../services/authService';
 import AlertMessage from '../common/AlertMessage';
 import { getSportIcon } from '../../utils/sportIcons';
 
 const TeamDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [team, setTeam] = useState(null);
+  const [team, setTeam] = useState({
+    name: '',
+    sportType: '',
+    players: [],
+    coaches: []
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [tabValue, setTabValue] = useState(0);
-  const [playerDialog, setPlayerDialog] = useState({ open: false });
-  const [coachDialog, setCoachDialog] = useState({ open: false });
-  const [deleteDialog, setDeleteDialog] = useState({ open: false });
-  const [playerFormData, setPlayerFormData] = useState({ playerId: '', position: '' });
-  const [coachFormData, setCoachFormData] = useState({ coachId: '', role: 'Assistant Coach' });
+  const [successMessage, setSuccessMessage] = useState('');
   const [users, setUsers] = useState({ players: [], coaches: [] });
-  const [successMessage, setSuccessMessage] = useState(null);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  
-  const canManageTeams = isSupervisor();
-  const canViewTeam = isSupervisor() || isCoach() || isPlayer() || isParent();
+  const [tabValue, setTabValue] = useState(0);
+  const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
+  const [coachDialogOpen, setCoachDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [playerFormData, setPlayerFormData] = useState({ playerId: '' });
+  const [coachFormData, setCoachFormData] = useState({ coachId: '', role: 'Head Coach' });
+  const userCanManageTeams = canManageTeams();
 
   useEffect(() => {
     const fetchTeamData = async () => {
@@ -101,30 +104,30 @@ const TeamDetail = () => {
 
   const handleOpenPlayerDialog = () => {
     fetchAvailableUsers();
-    setPlayerDialog({ open: true });
+    setPlayerDialogOpen(true);
   };
 
   const handleClosePlayerDialog = () => {
-    setPlayerDialog({ open: false });
-    setPlayerFormData({ playerId: '', position: '' });
+    setPlayerDialogOpen(false);
+    setPlayerFormData({ playerId: '' });
   };
 
   const handleOpenCoachDialog = () => {
     fetchAvailableUsers();
-    setCoachDialog({ open: true });
+    setCoachDialogOpen(true);
   };
 
   const handleCloseCoachDialog = () => {
-    setCoachDialog({ open: false });
-    setCoachFormData({ coachId: '', role: 'Assistant Coach' });
+    setCoachDialogOpen(false);
+    setCoachFormData({ coachId: '', role: 'Head Coach' });
   };
 
   const handleOpenDeleteDialog = () => {
-    setDeleteDialog({ open: true });
+    setDeleteDialogOpen(true);
   };
 
   const handleCloseDeleteDialog = () => {
-    setDeleteDialog({ open: false });
+    setDeleteDialogOpen(false);
   };
 
   const handlePlayerFormChange = (e) => {
@@ -145,14 +148,14 @@ const TeamDetail = () => {
 
   const handleAddPlayer = async () => {
     try {
-      const { playerId, position } = playerFormData;
+      const { playerId } = playerFormData;
       if (!playerId) {
         setError('Please select a player');
         return;
       }
       
       // Add player to team
-      await addPlayerToTeam(id, playerId, position);
+      await addPlayerToTeam(id, playerId);
       
       // Refresh team data to get updated players list
       const updatedTeam = await getTeamById(id);
@@ -282,7 +285,7 @@ const TeamDetail = () => {
     return <Alert severity="error">Team not found</Alert>;
   }
 
-  if (!canViewTeam) {
+  if (!userCanManageTeams) {
     return <Alert severity="error">You don't have permission to view this team</Alert>;
   }
 
@@ -300,7 +303,7 @@ const TeamDetail = () => {
           <Typography variant="h4" component="h1" gutterBottom>
             {team.name}
           </Typography>
-          {canManageTeams && (
+          {userCanManageTeams && (
             <Button
               variant="outlined"
               color="primary"
@@ -382,7 +385,7 @@ const TeamDetail = () => {
                   <Typography variant="h6">
                     Team Players
                   </Typography>
-                  {canManageTeams && (
+                  {userCanManageTeams && (
                     <Button
                       variant="contained"
                       color="primary"
@@ -417,7 +420,7 @@ const TeamDetail = () => {
                             primary={`${firstName} ${lastName}`}
                             secondary={position ? `Position: ${position}` : 'No position specified'}
                           />
-                          {canManageTeams && (
+                          {userCanManageTeams && (
                             <ListItemSecondaryAction>
                               <IconButton 
                                 edge="end" 
@@ -445,7 +448,7 @@ const TeamDetail = () => {
                   <Typography variant="h6">
                     Team Coaches
                   </Typography>
-                  {canManageTeams && (
+                  {userCanManageTeams && (
                     <Button
                       variant="contained"
                       color="primary"
@@ -480,7 +483,7 @@ const TeamDetail = () => {
                             primary={`${firstName} ${lastName}`}
                             secondary={`Role: ${role}`}
                           />
-                          {canManageTeams && (
+                          {userCanManageTeams && (
                             <ListItemSecondaryAction>
                               <IconButton 
                                 edge="end" 
@@ -506,7 +509,7 @@ const TeamDetail = () => {
       </Grid>
 
       {/* Add Player Dialog */}
-      <Dialog open={playerDialog.open} onClose={handleClosePlayerDialog}>
+      <Dialog open={playerDialogOpen} onClose={handleClosePlayerDialog}>
         <DialogTitle>Add Player to Team</DialogTitle>
         <DialogContent>
           {loadingUsers ? (
@@ -536,15 +539,6 @@ const TeamDetail = () => {
                   </Select>
                 </FormControl>
               )}
-              <TextField
-                fullWidth
-                label="Position (Optional)"
-                name="position"
-                value={playerFormData.position}
-                onChange={handlePlayerFormChange}
-                placeholder="e.g. Forward, Goalkeeper, etc."
-                disabled={users.players.length === 0}
-              />
             </Box>
           )}
         </DialogContent>
@@ -562,7 +556,7 @@ const TeamDetail = () => {
       </Dialog>
 
       {/* Add Coach Dialog */}
-      <Dialog open={coachDialog.open} onClose={handleCloseCoachDialog}>
+      <Dialog open={coachDialogOpen} onClose={handleCloseCoachDialog}>
         <DialogTitle>Add Coach to Team</DialogTitle>
         <DialogContent>
           {loadingUsers ? (
@@ -623,7 +617,7 @@ const TeamDetail = () => {
       </Dialog>
 
       {/* Delete Team Confirmation Dialog */}
-      <Dialog open={deleteDialog.open} onClose={handleCloseDeleteDialog}>
+      <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog}>
         <DialogTitle>Delete Team</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1 }}>
@@ -647,7 +641,7 @@ const TeamDetail = () => {
         </DialogActions>
       </Dialog>
 
-      {canManageTeams && (
+      {userCanManageTeams && (
         <Button
           variant="outlined"
           color="error"
