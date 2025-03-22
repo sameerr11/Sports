@@ -81,7 +81,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     // Regular menu items - not shown to cafeteria supervisors
     const menuItems = [
         { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-        { text: 'Courts', icon: <LocationOnIcon />, path: '/courts' },
+        ...(sportsSupervisor ? [] : [{ text: 'Courts', icon: <LocationOnIcon />, path: '/courts' }]),
         { text: 'Teams', icon: <Sports />, path: '/teams' },
         { text: 'My Bookings', icon: <EventIcon />, path: '/bookings/me' }
     ];

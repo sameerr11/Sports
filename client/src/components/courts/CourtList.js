@@ -11,7 +11,7 @@ import {
   LocationOn, AttachMoney, ArrowForward 
 } from '@mui/icons-material';
 import { getCourts, deleteCourt } from '../../services/courtService';
-import { isSupervisor } from '../../services/authService';
+import { isSupervisor, isSportsSupervisor } from '../../services/authService';
 import AlertMessage from '../common/AlertMessage';
 import { getSportIcon } from '../../utils/sportIcons';
 import './CourtList.css';
@@ -22,7 +22,7 @@ const CourtList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, courtId: null });
-  const canManageCourts = isSupervisor();
+  const canManageCourts = isSupervisor() && !isSportsSupervisor();
 
   useEffect(() => {
     const fetchCourts = async () => {

@@ -18,7 +18,7 @@ import Profile from './components/profile/Profile';
 import { 
   isAuthenticated, isAdmin, isSupervisor, 
   isCoach, isPlayer, isParent, isCashier, isPlayerOnly, isAdminOrSupport, isCafeteriaSupervisor, isAccounting,
-  isSupport, hasRole
+  isSupport, hasRole, isSportsSupervisor
 } from './services/authService';
 import Cafeteria from './components/cafeteria/Cafeteria';
 import CafeteriaManagement from './components/cafeteria/CafeteriaManagement';
@@ -71,6 +71,14 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     }
   }
 
+  // Prevent sports supervisors from accessing courts routes
+  if (isSportsSupervisor() && (
+    window.location.pathname.startsWith('/courts/new') || 
+    window.location.pathname.startsWith('/courts/edit')
+  )) {
+    return <Navigate to="/" />;
+  }
+  
   // Redirect cashiers to POS if they try to access any other route
   if (isCashier() && window.location.pathname !== '/cafeteria') {
     return <Navigate to="/cafeteria" />;
@@ -246,7 +254,7 @@ function App() {
         <Route path="/courts/new" element={
           <ProtectedRoute requiredRole={["admin", "supervisor"]}>
             <MainLayout>
-              <CourtForm />
+              {!isSportsSupervisor() ? <CourtForm /> : <Navigate to="/" />}
             </MainLayout>
           </ProtectedRoute>
         } />
@@ -254,7 +262,7 @@ function App() {
         <Route path="/courts/edit/:id" element={
           <ProtectedRoute requiredRole={["admin", "supervisor"]}>
             <MainLayout>
-              <CourtForm />
+              {!isSportsSupervisor() ? <CourtForm /> : <Navigate to="/" />}
             </MainLayout>
           </ProtectedRoute>
         } />
