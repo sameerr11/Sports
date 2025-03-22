@@ -32,80 +32,12 @@ const TeamList = () => {
     const fetchTeams = async () => {
       try {
         const data = await getTeams();
-        
-        // If no teams returned in development, use sample data
-        if (data.length === 0 && process.env.NODE_ENV !== 'production') {
-          setTeams([
-            {
-              _id: 'sample1',
-              name: 'Eagles Football Club',
-              sportType: 'Football',
-              description: 'A competitive football team with focus on technical skills and teamwork.',
-              ageGroup: 'adults',
-              level: 'Intermediate',
-              players: Array(8).fill().map((_, i) => ({ _id: `player${i}` })),
-              coaches: Array(2).fill().map((_, i) => ({ _id: `coach${i}`, firstName: 'Coach', lastName: `${i+1}` })),
-              logo: 'https://source.unsplash.com/random?football'
-            },
-            {
-              _id: 'sample2',
-              name: 'Sameer Cricket Club',
-              sportType: 'Cricket',
-              description: 'Premier cricket club focused on developing batting and bowling skills.',
-              ageGroup: 'Adult',
-              level: 'Intermediate',
-              players: Array(11).fill().map((_, i) => ({ _id: `player${i}` })),
-              coaches: Array(2).fill().map((_, i) => ({ _id: `coach${i}`, firstName: 'Coach', lastName: `${i+1}` })),
-              logo: 'https://source.unsplash.com/random?cricket'
-            },
-            {
-              _id: 'sample3',
-              name: 'Rockets Basketball',
-              sportType: 'Basketball',
-              description: 'Youth basketball program focused on fundamental skills and teamwork.',
-              ageGroup: 'Youth',
-              level: 'Beginner',
-              players: Array(5).fill().map((_, i) => ({ _id: `player${i}` })),
-              coaches: Array(1).fill().map((_, i) => ({ _id: `coach${i}`, firstName: 'Coach', lastName: `${i+1}` })),
-              logo: 'https://source.unsplash.com/random?basketball'
-            }
-          ]);
-        } else {
-          setTeams(data);
-        }
+        setTeams(data);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching teams:', err);
         setError('Failed to load teams. Please try again later.');
         setLoading(false);
-        
-        // Add sample data even in case of error for development
-        if (process.env.NODE_ENV !== 'production') {
-          setTeams([
-            {
-              _id: 'sample1',
-              name: 'Eagles Football Club',
-              sportType: 'Football',
-              description: 'A competitive football team with focus on technical skills and teamwork.',
-              ageGroup: 'adults',
-              level: 'Intermediate',
-              players: Array(8).fill().map((_, i) => ({ _id: `player${i}` })),
-              coaches: Array(2).fill().map((_, i) => ({ _id: `coach${i}`, firstName: 'Coach', lastName: `${i+1}` })),
-              logo: 'https://source.unsplash.com/random?football'
-            },
-            {
-              _id: 'sample2',
-              name: 'Sameer Cricket Club',
-              sportType: 'Cricket',
-              description: 'Premier cricket club focused on developing batting and bowling skills.',
-              ageGroup: 'Adult',
-              level: 'Intermediate',
-              players: Array(11).fill().map((_, i) => ({ _id: `player${i}` })),
-              coaches: Array(2).fill().map((_, i) => ({ _id: `coach${i}`, firstName: 'Coach', lastName: `${i+1}` })),
-              logo: 'https://source.unsplash.com/random?cricket'
-            }
-          ]);
-        }
       }
     };
 

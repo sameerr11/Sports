@@ -28,75 +28,12 @@ const CourtList = () => {
     const fetchCourts = async () => {
       try {
         const data = await getCourts();
-        // If no courts are returned, use sample data for display
-        if (data.length === 0 && process.env.NODE_ENV !== 'production') {
-          // Sample data for development only
-          setCourts([
-            {
-              _id: 'sample1',
-              name: 'Football Field',
-              sportType: 'Football',
-              description: 'A professional football field with proper markings and goals.',
-              hourlyRate: 20,
-              location: 'Main Stadium',
-              courtNumber: 2,
-              image: 'https://source.unsplash.com/random?football'
-            },
-            {
-              _id: 'sample2',
-              name: 'Cricket Pitch',
-              sportType: 'Cricket',
-              description: 'Standard cricket pitch with well-maintained grounds.',
-              hourlyRate: 10,
-              location: 'East Wing',
-              courtNumber: 1,
-              image: 'https://source.unsplash.com/random?cricket'
-            },
-            {
-              _id: 'sample3',
-              name: 'Basketball Court',
-              sportType: 'Basketball',
-              description: 'Indoor basketball court with professional flooring and equipment.',
-              hourlyRate: 15,
-              location: 'Indoor Arena',
-              courtNumber: 3,
-              image: 'https://source.unsplash.com/random?basketball'
-            }
-          ]);
-        } else {
-          setCourts(data);
-        }
+        setCourts(data);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching courts:', err);
         setError(err.toString());
         setLoading(false);
-        
-        // Add sample data even in case of error for development
-        if (process.env.NODE_ENV !== 'production') {
-          setCourts([
-            {
-              _id: 'sample1',
-              name: 'Football Field',
-              sportType: 'Football',
-              description: 'A professional football field with proper markings and goals.',
-              hourlyRate: 20,
-              location: 'Main Stadium',
-              courtNumber: 2,
-              image: 'https://source.unsplash.com/random?football'
-            },
-            {
-              _id: 'sample2',
-              name: 'Cricket Pitch',
-              sportType: 'Cricket',
-              description: 'Standard cricket pitch with well-maintained grounds.',
-              hourlyRate: 10,
-              location: 'East Wing',
-              courtNumber: 1,
-              image: 'https://source.unsplash.com/random?cricket'
-            }
-          ]);
-        }
       }
     };
 
