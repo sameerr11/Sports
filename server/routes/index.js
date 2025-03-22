@@ -93,10 +93,10 @@ router.delete(
 
 // Notification routes
 router.get('/notifications', auth, notificationController.getUserNotifications);
-router.put('/notifications/:id', auth, notificationController.markAsRead);
-router.put('/notifications/read-all', auth, notificationController.markAllAsRead);
-router.delete('/notifications/:id', auth, notificationController.deleteNotification);
 router.get('/notifications/unread-count', auth, notificationController.getUnreadCount);
+router.put('/notifications/read-all', auth, notificationController.markAllAsRead);
+router.put('/notifications/:id', auth, notificationController.markAsRead);
+router.delete('/notifications/:id', auth, notificationController.deleteNotification);
 router.post('/notifications', [auth, adminOrSupport], notificationController.createNotification);
 
 // Court routes
