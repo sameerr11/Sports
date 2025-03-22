@@ -83,13 +83,13 @@ exports.createRegistration = async (req, res) => {
       return notification.save();
     });
     
-    // Also notify supervisors (except cafeteria supervisors)
-    const supervisors = await User.find({ 
+    // Get general supervisors (they always receive notifications)
+    const generalSupervisors = await User.find({ 
       role: 'supervisor',
-      supervisorType: { $ne: 'cafeteria' } // Exclude cafeteria supervisors
+      supervisorType: 'general'
     });
     
-    const supervisorNotificationPromises = supervisors.map(supervisor => {
+    const generalSupervisorNotificationPromises = generalSupervisors.map(supervisor => {
       const notification = new Notification({
         recipient: supervisor._id,
         sender: req.user.id,
@@ -104,6 +104,41 @@ exports.createRegistration = async (req, res) => {
       
       return notification.save();
     });
+    
+    // Get sports supervisors and filter by relevant sports
+    const sportsSupervisors = await User.find({ 
+      role: 'supervisor',
+      supervisorType: 'sports'
+    });
+    
+    const sportsSupervisorNotificationPromises = [];
+    
+    // Only notify sports supervisors for sports they manage
+    for (const supervisor of sportsSupervisors) {
+      // Skip supervisors with no assigned sports
+      if (!supervisor.supervisorSportTypes || !supervisor.supervisorSportTypes.length) {
+        continue;
+      }
+      
+      // Check if there's an overlap between player sports and supervisor sports
+      const relevantSports = sports.filter(sport => supervisor.supervisorSportTypes.includes(sport));
+      
+      if (relevantSports.length > 0) {
+        const notification = new Notification({
+          recipient: supervisor._id,
+          sender: req.user.id,
+          type: 'new_registration',
+          title: 'New Player Registration',
+          message: `${player.firstName} ${player.lastName} has been registered for ${relevantSports.join(', ')} by the accounting department.`,
+          relatedTo: {
+            model: 'PlayerRegistration',
+            id: registration._id
+          }
+        });
+        
+        sportsSupervisorNotificationPromises.push(notification.save());
+      }
+    }
     
     // Also notify support users
     const supportUsers = await User.find({ role: 'support' });
@@ -124,7 +159,12 @@ exports.createRegistration = async (req, res) => {
       return notification.save();
     });
     
-    await Promise.all([...notificationPromises, ...supervisorNotificationPromises, ...supportNotificationPromises]);
+    await Promise.all([
+      ...notificationPromises, 
+      ...generalSupervisorNotificationPromises,
+      ...sportsSupervisorNotificationPromises,
+      ...supportNotificationPromises
+    ]);
 
     res.status(201).json(registration);
   } catch (err) {

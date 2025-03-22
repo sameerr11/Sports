@@ -1,14 +1,105 @@
 const Notification = require('../models/Notification');
+const User = require('../models/User');
+const Team = require('../models/Team');
+const Court = require('../models/Court');
+const PlayerRegistration = require('../models/PlayerRegistration');
+const TrainingPlan = require('../models/TrainingPlan');
+const PlayerStats = require('../models/PlayerStats');
+
+/**
+ * Helper function to check if a notification is relevant to a sports supervisor
+ * @param {Object} notification - The notification object
+ * @param {Array} supervisorSportTypes - Array of sport types the supervisor manages
+ * @returns {Promise<boolean>} - Whether the notification is relevant
+ */
+const isRelevantToSportsSupervisor = async (notification, supervisorSportTypes) => {
+  // If notification doesn't have related model info, include it (system messages, etc.)
+  if (!notification.relatedTo || !notification.relatedTo.model || !notification.relatedTo.id) {
+    return true;
+  }
+  
+  let include = false;
+  let sportType = null;
+  
+  // Check different models to determine the sport type
+  if (notification.relatedTo.model === 'Team') {
+    // Get team sport type
+    const team = await Team.findById(notification.relatedTo.id).select('sportType');
+    if (team) {
+      sportType = team.sportType;
+    }
+  }
+  else if (notification.relatedTo.model === 'Court') {
+    // Get court sport type
+    const court = await Court.findById(notification.relatedTo.id).select('sportType');
+    if (court) {
+      sportType = court.sportType;
+    }
+  }
+  else if (notification.relatedTo.model === 'TrainingPlan') {
+    // Get training plan's team sport type
+    const trainingPlan = await TrainingPlan.findById(notification.relatedTo.id).populate('team', 'sportType');
+    if (trainingPlan && trainingPlan.team) {
+      sportType = trainingPlan.team.sportType;
+    }
+  }
+  else if (notification.relatedTo.model === 'PlayerStats') {
+    // Get player stats sport type
+    const playerStats = await PlayerStats.findById(notification.relatedTo.id).select('sport');
+    if (playerStats) {
+      sportType = playerStats.sport;
+    }
+  }
+  else if (notification.relatedTo.model === 'PlayerRegistration') {
+    // Player registration might have multiple sports, check if any match
+    const registration = await PlayerRegistration.findById(notification.relatedTo.id).select('sports');
+    if (registration && Array.isArray(registration.sports)) {
+      // Include if any sport in the registration matches supervisor's sports
+      include = registration.sports.some(sport => supervisorSportTypes.includes(sport));
+    }
+  }
+  
+  // Check if the notification's sport type matches any of the supervisor's sport types
+  if (sportType && supervisorSportTypes.includes(sportType)) {
+    include = true;
+  }
+  
+  // Include if it matches or if we couldn't determine a sport type
+  return include || sportType === null;
+};
 
 // @desc    Get notifications for a user
 // @route   GET /api/notifications
 // @access  Private
 exports.getUserNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({ recipient: req.user.id })
+    // First, check if user is a sports supervisor
+    const user = await User.findById(req.user.id);
+    const isSportsSupervisor = user.role === 'supervisor' && user.supervisorType === 'sports';
+    
+    // Get all notifications for the user
+    let notifications = await Notification.find({ recipient: req.user.id })
       .sort({ createdAt: -1 })
       .populate('sender', 'firstName lastName profilePicture');
     
+    // Filter notifications for sports supervisors based on their assigned sport types
+    if (isSportsSupervisor && Array.isArray(user.supervisorSportTypes) && user.supervisorSportTypes.length > 0) {
+      // Create an array to store filtered notifications
+      let filteredNotifications = [];
+      
+      // Process each notification
+      for (const notification of notifications) {
+        // Check if the notification is relevant to this sports supervisor
+        if (await isRelevantToSportsSupervisor(notification, user.supervisorSportTypes)) {
+          filteredNotifications.push(notification);
+        }
+      }
+      
+      // Return the filtered notifications
+      return res.json(filteredNotifications);
+    }
+    
+    // For non-sports supervisors, return all notifications
     res.json(notifications);
   } catch (err) {
     console.error(err.message);
@@ -98,12 +189,36 @@ exports.deleteNotification = async (req, res) => {
 // @access  Private
 exports.getUnreadCount = async (req, res) => {
   try {
-    const count = await Notification.countDocuments({ 
+    // First, check if user is a sports supervisor
+    const user = await User.findById(req.user.id);
+    const isSportsSupervisor = user.role === 'supervisor' && user.supervisorType === 'sports';
+    
+    // If not a sports supervisor, simply count all unread notifications
+    if (!isSportsSupervisor || !Array.isArray(user.supervisorSportTypes) || user.supervisorSportTypes.length === 0) {
+      const count = await Notification.countDocuments({ 
+        recipient: req.user.id,
+        isRead: false
+      });
+      
+      return res.json({ count });
+    }
+    
+    // For sports supervisors, we need to filter notifications first
+    const unreadNotifications = await Notification.find({ 
       recipient: req.user.id,
       isRead: false
     });
     
-    res.json({ count });
+    // Count filtered notifications using our helper function
+    let filteredCount = 0;
+    
+    for (const notification of unreadNotifications) {
+      if (await isRelevantToSportsSupervisor(notification, user.supervisorSportTypes)) {
+        filteredCount++;
+      }
+    }
+    
+    res.json({ count: filteredCount });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ msg: 'Server error' });

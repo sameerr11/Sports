@@ -64,15 +64,80 @@ exports.registerUser = async (req, res) => {
     try {
       // Create notification for supervisors if new player registration
       if (role === 'player') {
-        // Get all supervisors except cafeteria supervisors
-        const supervisors = await User.find({ 
-          role: 'supervisor',
-          supervisorType: { $ne: 'cafeteria' } // Exclude cafeteria supervisors
+        // Define the player's sports if provided in the request
+        const playerSports = req.body.sports || [];
+        
+        // Get all general supervisors and admin users (they always receive notifications)
+        const generalSupervisors = await User.find({
+          $or: [
+            { role: 'supervisor', supervisorType: 'general' },
+            { role: 'admin' }
+          ]
         });
         
-        for (const supervisor of supervisors) {
+        // Create notifications for general supervisors and admins
+        for (const supervisor of generalSupervisors) {
           const notification = new Notification({
             recipient: supervisor._id,
+            type: 'new_registration',
+            title: 'New Player Registration',
+            message: `${firstName} ${lastName} has registered as a new player.`,
+            relatedTo: {
+              model: 'User',
+              id: user._id
+            }
+          });
+          
+          await notification.save();
+        }
+        
+        // Get sports supervisors
+        const sportsSupervisors = await User.find({ 
+          role: 'supervisor',
+          supervisorType: 'sports'
+        });
+        
+        // Only notify sports supervisors if their assigned sports match the player's sports
+        // If player sports are not specified, notify all sports supervisors
+        for (const supervisor of sportsSupervisors) {
+          // If no player sports defined or if supervisor has no assigned sports, send notification
+          if (!playerSports.length || !supervisor.supervisorSportTypes || !supervisor.supervisorSportTypes.length) {
+            const notification = new Notification({
+              recipient: supervisor._id,
+              type: 'new_registration',
+              title: 'New Player Registration',
+              message: `${firstName} ${lastName} has registered as a new player.`,
+              relatedTo: {
+                model: 'User',
+                id: user._id
+              }
+            });
+            
+            await notification.save();
+          } 
+          // Otherwise, check if there's an overlap between player sports and supervisor sports
+          else if (playerSports.some(sport => supervisor.supervisorSportTypes.includes(sport))) {
+            const notification = new Notification({
+              recipient: supervisor._id,
+              type: 'new_registration',
+              title: 'New Player Registration',
+              message: `${firstName} ${lastName} has registered as a new player for ${playerSports.join(', ')}.`,
+              relatedTo: {
+                model: 'User',
+                id: user._id
+              }
+            });
+            
+            await notification.save();
+          }
+        }
+        
+        // Also notify support users
+        const supportUsers = await User.find({ role: 'support' });
+        
+        for (const supportUser of supportUsers) {
+          const notification = new Notification({
+            recipient: supportUser._id,
             type: 'new_registration',
             title: 'New Player Registration',
             message: `${firstName} ${lastName} has registered as a new player.`,
