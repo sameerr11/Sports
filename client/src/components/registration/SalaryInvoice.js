@@ -20,12 +20,16 @@ import {
   Card,
   CardContent,
   FormHelperText,
-  Divider
+  Divider,
+  Link
 } from '@mui/material';
-import { Send as SendIcon, Print as PrintIcon } from '@mui/icons-material';
+import { Send as SendIcon, Print as PrintIcon, Info as InfoIcon } from '@mui/icons-material';
+import { Link as RouterLink } from 'react-router-dom';
 import { getAllUsers } from '../../services/userService';
 import { createSalaryInvoice } from '../../services/registrationService';
+import { getRoleSalaryByRole } from '../../services/roleSalaryService';
 import { formatCurrency } from '../../utils/format';
+import { isAdmin } from '../../services/authService';
 
 const SalaryInvoice = () => {
   const [users, setUsers] = useState([]);
@@ -34,6 +38,7 @@ const SalaryInvoice = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [userLoading, setUserLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -83,12 +88,51 @@ const SalaryInvoice = () => {
     }
   };
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const { name, value } = e.target;
+    
     setFormData({
       ...formData,
       [name]: value
     });
+
+    // If the user ID has changed, try to get the salary for that user's role
+    if (name === 'userId' && value) {
+      try {
+        setUserLoading(true);
+        // Find the selected user
+        const selectedUser = users.find(user => user._id === value);
+        if (selectedUser) {
+          let roleKey = selectedUser.role;
+          
+          // For supervisors, check their specific supervisor type
+          if (selectedUser.role === 'supervisor' && selectedUser.supervisorType) {
+            roleKey = `supervisor-${selectedUser.supervisorType}`;
+          }
+          
+          // Get the predefined salary for this role
+          let roleSalary = await getRoleSalaryByRole(roleKey);
+          
+          // If no specific supervisor type salary is found, fall back to generic supervisor
+          if (!roleSalary && selectedUser.role === 'supervisor') {
+            roleSalary = await getRoleSalaryByRole('supervisor');
+          }
+          
+          if (roleSalary) {
+            // Update the form with the predefined salary amount and description
+            setFormData(prevData => ({
+              ...prevData,
+              amount: roleSalary.amount,
+              description: roleSalary.description || prevData.description || `Monthly salary for ${selectedUser.firstName} ${selectedUser.lastName}`
+            }));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching role salary:', err);
+      } finally {
+        setUserLoading(false);
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -291,6 +335,20 @@ const SalaryInvoice = () => {
         Issue Salary Invoice
       </Typography>
       
+      {isAdmin() && (
+        <Alert 
+          severity="info" 
+          sx={{ mb: 3 }}
+          icon={<InfoIcon />}
+        >
+          You can configure default salaries for each role in the{' '}
+          <Link component={RouterLink} to="/admin/salary-config">
+            Salary Configuration
+          </Link>{' '}
+          page.
+        </Alert>
+      )}
+      
       <Paper sx={{ p: 3, mb: 3 }}>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
@@ -306,7 +364,9 @@ const SalaryInvoice = () => {
                 >
                   {users.map(user => (
                     <MenuItem key={user._id} value={user._id}>
-                      {`${user.firstName} ${user.lastName} (${user.role})`}
+                      {`${user.firstName} ${user.lastName} (${user.role === 'supervisor' && user.supervisorType ? 
+                        `${user.supervisorType} Supervisor` : 
+                        user.role})`}
                     </MenuItem>
                   ))}
                 </Select>
@@ -320,9 +380,17 @@ const SalaryInvoice = () => {
                 label="Amount"
                 name="amount"
                 type="number"
-                InputProps={{ inputProps: { min: 0, step: "0.01" } }}
+                InputProps={{ 
+                  inputProps: { min: 0, step: "0.01" },
+                  endAdornment: userLoading && <CircularProgress size={20} />,
+                  readOnly: !isAdmin()
+                }}
                 value={formData.amount}
-                onChange={handleChange}
+                onChange={isAdmin() ? handleChange : undefined}
+                disabled={!isAdmin()}
+                helperText={isAdmin() 
+                  ? "Amount will auto-populate based on staff role if configured" 
+                  : "Amount is automatically set based on staff role configured by admin"}
               />
             </Grid>
             
@@ -370,37 +438,38 @@ const SalaryInvoice = () => {
               </FormControl>
             </Grid>
             
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
-                disabled
                 label="Invoice Number"
                 name="invoiceNumber"
                 value={formData.invoiceNumber}
+                onChange={handleChange}
+                disabled
+                helperText="Auto-generated"
               />
-              <FormHelperText>Auto-generated</FormHelperText>
             </Grid>
             
-            <Grid item xs={12}>
-              <Box display="flex" justifyContent="space-between" mt={2}>
-                <Button
-                  variant="outlined"
-                  onClick={handlePreview}
-                  startIcon={<PrintIcon />}
-                  disabled={submitting}
-                >
-                  Preview Invoice
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  type="submit"
-                  startIcon={<SendIcon />}
-                  disabled={submitting}
-                >
-                  {submitting ? <CircularProgress size={24} /> : 'Issue Invoice'}
-                </Button>
-              </Box>
+            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => setPreviewOpen(true)}
+                disabled={!formData.userId || !formData.amount}
+                startIcon={<PrintIcon />}
+              >
+                Preview Invoice
+              </Button>
+              
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                disabled={submitting || !formData.userId || !formData.amount}
+                startIcon={submitting ? <CircularProgress size={24} /> : <SendIcon />}
+              >
+                {submitting ? 'Creating...' : 'Issue Invoice'}
+              </Button>
             </Grid>
           </Grid>
         </form>

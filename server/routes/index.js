@@ -31,6 +31,7 @@ const feedbackController = require('../controllers/feedbackController');
 const playerStatsRoutes = require('./playerStatsRoutes');
 const registrationRoutes = require('./registrationRoutes');
 const utilityRoutes = require('./utilityRoutes');
+const roleSalaryRoutes = require('./roleSalaryRoutes');
 
 // Middleware
 const { auth, admin, supervisor, coach, player, parent, adminOrSupport, adminSupportOrAccounting, support, teamSupervisor } = require('../middleware/auth');
@@ -250,5 +251,8 @@ router.use('/player-stats', playerStatsRoutes);
 
 // Utility routes
 router.use('/utilities', utilityRoutes);
+
+// Role Salary routes
+router.use('/role-salaries', roleSalaryRoutes);
 
 module.exports = router; 

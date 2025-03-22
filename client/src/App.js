@@ -47,6 +47,7 @@ import { Box, CircularProgress } from '@mui/material';
 // Import utility components
 import UtilityBillList from './components/utilities/UtilityBillList';
 import UtilityBillForm from './components/utilities/UtilityBillForm';
+import RoleSalaryConfig from './components/admin/RoleSalaryConfig';
 
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
@@ -467,6 +468,14 @@ function App() {
           <ProtectedRoute requiredRole="admin">
             <MainLayout>
               <AdminFeedbackList />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/admin/salary-config" element={
+          <ProtectedRoute requiredRole="admin">
+            <MainLayout>
+              <RoleSalaryConfig />
             </MainLayout>
           </ProtectedRoute>
         } />
