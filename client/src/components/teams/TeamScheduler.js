@@ -47,10 +47,12 @@ import {
   SportsSoccer,
   FitnessCenter,
   CalendarMonth,
-  Sports
+  Sports,
+  FilterAlt,
+  Clear
 } from '@mui/icons-material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
+import { LocalizationProvider, DateTimePicker, DatePicker } from '@mui/x-date-pickers';
 import { format } from 'date-fns';
 import axios from 'axios';
 import api from '../../services/api';
@@ -96,6 +98,14 @@ const TeamScheduler = () => {
   const [isRecurring, setIsRecurring] = useState(false);
   const [selectedDays, setSelectedDays] = useState([]);
   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  
+  // Add new state for single date filter
+  const [dateFilterOpen, setDateFilterOpen] = useState(false);
+  const [dateRangeStart, setDateRangeStart] = useState(null);
+  const [dateRangeEnd, setDateRangeEnd] = useState(null);
+  const [singleDateFilter, setSingleDateFilter] = useState(null);
+  const [isFilterActive, setIsFilterActive] = useState(false);
+  const [filterMode, setFilterMode] = useState('range'); // 'range' or 'single'
   
   // Fetch teams, courts, and schedules
   useEffect(() => {
@@ -365,12 +375,67 @@ const TeamScheduler = () => {
   const handleCloseAlert = () => {
     setAlert({ ...alert, open: false });
   };
+
+  // Open and close date filter dialog
+  const handleOpenDateFilter = () => {
+    setDateFilterOpen(true);
+  };
+
+  const handleCloseDateFilter = () => {
+    setDateFilterOpen(false);
+  };
+
+  // Apply date range filter
+  const applyDateFilter = () => {
+    setIsFilterActive(true);
+    setDateFilterOpen(false);
+  };
+
+  // Clear date range filter
+  const clearDateFilter = () => {
+    setDateRangeStart(null);
+    setDateRangeEnd(null);
+    setSingleDateFilter(null);
+    setIsFilterActive(false);
+    setDateFilterOpen(false);
+  };
   
-  // Filter schedules based on tab (upcoming or past)
+  // Filter schedules based on tab (upcoming or past) and date range if active
   const filteredSchedules = schedules.filter(schedule => {
     const scheduleDate = new Date(schedule.startTime);
     const now = new Date();
-    return tabValue === 0 ? scheduleDate >= now : scheduleDate < now;
+    
+    // First apply the basic upcoming/past filter
+    const passesTimeFilter = tabValue === 0 ? scheduleDate >= now : scheduleDate < now;
+    
+    // Then apply date filter if active
+    if (isFilterActive) {
+      if (filterMode === 'single' && singleDateFilter) {
+        // When single date filter is active
+        const filterDate = new Date(singleDateFilter);
+        return passesTimeFilter && 
+               scheduleDate.getFullYear() === filterDate.getFullYear() &&
+               scheduleDate.getMonth() === filterDate.getMonth() &&
+               scheduleDate.getDate() === filterDate.getDate();
+      } else if (filterMode === 'range') {
+        // When range filter is active
+        if (dateRangeStart && dateRangeEnd) {
+          // When both start and end dates are set
+          return passesTimeFilter && 
+                 scheduleDate >= new Date(dateRangeStart) && 
+                 scheduleDate <= new Date(dateRangeEnd);
+        } else if (dateRangeStart) {
+          // When only start date is set
+          return passesTimeFilter && scheduleDate >= new Date(dateRangeStart);
+        } else if (dateRangeEnd) {
+          // When only end date is set
+          return passesTimeFilter && scheduleDate <= new Date(dateRangeEnd);
+        }
+      }
+    }
+    
+    // If no date filter is active, just use the basic filter
+    return passesTimeFilter;
   });
   
   // Group schedules by date
@@ -502,7 +567,60 @@ const TeamScheduler = () => {
                 borderBottom: `1px solid ${theme.palette.divider}`,
                 py: 2
               }}
+              action={
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<FilterAlt />}
+                  size="small"
+                  onClick={handleOpenDateFilter}
+                  sx={{ mr: 1 }}
+                >
+                  {isFilterActive ? 'Change Date Filter' : 'Filter by Date'}
+                </Button>
+              }
             />
+            {isFilterActive && (
+              <Box 
+                sx={{ 
+                  px: 2, 
+                  py: 1, 
+                  bgcolor: alpha(theme.palette.info.light, 0.1),
+                  borderBottom: `1px solid ${theme.palette.divider}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}
+              >
+                <Chip 
+                  icon={<FilterAlt />} 
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Typography variant="body2">
+                        <b>Date Filter Active:</b> {
+                          filterMode === 'single' 
+                            ? singleDateFilter ? format(new Date(singleDateFilter), 'MMM dd, yyyy') : 'Not set'
+                            : (dateRangeStart ? format(new Date(dateRangeStart), 'MMM dd, yyyy') : 'Any') + 
+                              ' to ' + 
+                              (dateRangeEnd ? format(new Date(dateRangeEnd), 'MMM dd, yyyy') : 'Any')
+                        }
+                      </Typography>
+                      <IconButton 
+                        size="small" 
+                        onClick={clearDateFilter}
+                        sx={{ ml: 1 }}
+                      >
+                        <Clear fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  }
+                  sx={{
+                    height: 'auto',
+                    '& .MuiChip-label': { px: 1 }
+                  }}
+                />
+              </Box>
+            )}
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <Tabs 
                 value={tabValue} 
@@ -528,6 +646,86 @@ const TeamScheduler = () => {
                 />
               </Tabs>
             </Box>
+
+            {/* Date Range Filter Dialog */}
+            <Dialog open={dateFilterOpen} onClose={handleCloseDateFilter}>
+              <DialogTitle>Filter Schedules by Date</DialogTitle>
+              <DialogContent>
+                <Grid container spacing={2} sx={{ mt: 0.5, mb: 2 }}>
+                  <Grid item xs={12}>
+                    <FormControl component="fieldset">
+                      <Box sx={{ mb: 2 }}>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={filterMode === 'single'}
+                              onChange={() => setFilterMode(filterMode === 'single' ? 'range' : 'single')}
+                              color="primary"
+                            />
+                          }
+                          label="Single day filter"
+                        />
+                        <FormHelperText>
+                          {filterMode === 'single' 
+                            ? 'Show schedules for a specific day only' 
+                            : 'Show schedules within a date range'}
+                        </FormHelperText>
+                      </Box>
+                    </FormControl>
+                  </Grid>
+
+                  {filterMode === 'single' ? (
+                    <Grid item xs={12}>
+                      <LocalizationProvider dateAdapter={AdapterDateFns}>
+                        <DatePicker
+                          label="Select Date"
+                          value={singleDateFilter}
+                          onChange={(newDate) => setSingleDateFilter(newDate)}
+                          renderInput={(params) => <TextField {...params} fullWidth />}
+                        />
+                      </LocalizationProvider>
+                    </Grid>
+                  ) : (
+                    <>
+                      <Grid item xs={12} sm={6}>
+                        <LocalizationProvider dateAdapter={AdapterDateFns}>
+                          <DatePicker
+                            label="Start Date"
+                            value={dateRangeStart}
+                            onChange={(newDate) => setDateRangeStart(newDate)}
+                            renderInput={(params) => <TextField {...params} fullWidth />}
+                            maxDate={dateRangeEnd}
+                          />
+                        </LocalizationProvider>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <LocalizationProvider dateAdapter={AdapterDateFns}>
+                          <DatePicker
+                            label="End Date"
+                            value={dateRangeEnd}
+                            onChange={(newDate) => setDateRangeEnd(newDate)}
+                            renderInput={(params) => <TextField {...params} fullWidth />}
+                            minDate={dateRangeStart}
+                          />
+                        </LocalizationProvider>
+                      </Grid>
+                    </>
+                  )}
+                </Grid>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={clearDateFilter} color="inherit">
+                  Clear Filter
+                </Button>
+                <Button onClick={handleCloseDateFilter} color="inherit">
+                  Cancel
+                </Button>
+                <Button onClick={applyDateFilter} color="primary" variant="contained">
+                  Apply Filter
+                </Button>
+              </DialogActions>
+            </Dialog>
+            
             <CardContent sx={{ p: 3 }}>
               {sortedDates.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 6, px: 3 }}>

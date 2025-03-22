@@ -26,7 +26,16 @@ import {
   TableRow,
   CircularProgress,
   useTheme,
-  alpha
+  alpha,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControl,
+  FormControlLabel,
+  FormHelperText,
+  Switch
 } from '@mui/material';
 import { 
   People, 
@@ -45,7 +54,9 @@ import {
   Sports,
   DirectionsRun,
   AccessTime,
-  PeopleAlt
+  PeopleAlt,
+  FilterAlt,
+  Clear
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router-dom';
@@ -58,6 +69,8 @@ import {
 } from '../../services/trainingService';
 import { getStoredUser, isCoach } from '../../services/authService';
 import { getSportIcon } from '../../utils/sportIcons';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 
 const CoachDashboard = () => {
   const theme = useTheme();
@@ -73,6 +86,14 @@ const CoachDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [plansTab, setPlansTab] = useState(0);
+  
+  // Add state for date range filter
+  const [dateFilterOpen, setDateFilterOpen] = useState(false);
+  const [dateRangeStart, setDateRangeStart] = useState(null);
+  const [dateRangeEnd, setDateRangeEnd] = useState(null);
+  const [singleDateFilter, setSingleDateFilter] = useState(null);
+  const [isFilterActive, setIsFilterActive] = useState(false);
+  const [filterMode, setFilterMode] = useState('range'); // 'range' or 'single'
   
   // Check if user is a coach
   const coach = isCoach();
@@ -206,6 +227,39 @@ const CoachDashboard = () => {
     }
   };
   
+  // Filter sessions based on selected date if filter is active
+  const filterSessionsByDate = (sessions) => {
+    if (!isFilterActive) return sessions;
+    
+    return sessions.filter(session => {
+      const sessionDate = new Date(session.startTime);
+      
+      if (filterMode === 'single' && singleDateFilter) {
+        // When single date filter is active
+        const filterDate = new Date(singleDateFilter);
+        return sessionDate.getFullYear() === filterDate.getFullYear() &&
+               sessionDate.getMonth() === filterDate.getMonth() &&
+               sessionDate.getDate() === filterDate.getDate();
+      } else if (filterMode === 'range') {
+        // When range filter is active
+        if (dateRangeStart && dateRangeEnd) {
+          // When both start and end dates are set
+          return sessionDate >= new Date(dateRangeStart) && 
+                 sessionDate <= new Date(dateRangeEnd);
+        } else if (dateRangeStart) {
+          // When only start date is set
+          return sessionDate >= new Date(dateRangeStart);
+        } else if (dateRangeEnd) {
+          // When only end date is set
+          return sessionDate <= new Date(dateRangeEnd);
+        }
+      }
+      
+      // If no date criteria matches or if filter is not properly set
+      return true;
+    });
+  };
+  
   // Render teams and players tab
   const renderTeamsTab = () => (
     <Grid container spacing={3}>
@@ -333,6 +387,56 @@ const CoachDashboard = () => {
       if (!court) return 'Location not specified';
       return `${court.name}${court.location ? `, ${court.location}` : ''}`;
     };
+
+    // Handle date filter dialog
+    const handleOpenDateFilter = () => {
+      setDateFilterOpen(true);
+    };
+
+    const handleCloseDateFilter = () => {
+      setDateFilterOpen(false);
+    };
+
+    const applyDateFilter = () => {
+      // Only set filter as active if at least one date is selected
+      const hasDateCriteria = 
+        (filterMode === 'single' && singleDateFilter) || 
+        (filterMode === 'range' && (dateRangeStart || dateRangeEnd));
+        
+      setIsFilterActive(hasDateCriteria);
+      setDateFilterOpen(false);
+    };
+
+    const clearDateFilter = () => {
+      setDateRangeStart(null);
+      setDateRangeEnd(null);
+      setSingleDateFilter(null);
+      setIsFilterActive(false);
+      setDateFilterOpen(false);
+    };
+
+    // Filter schedules based on date range if filter is active
+    const filterSchedulesByDate = (schedule) => {
+      try {
+        if (!isFilterActive) return true;
+        
+        const scheduleDate = new Date(schedule.date);
+        
+        if (dateRangeStart && dateRangeEnd) {
+          return scheduleDate >= new Date(dateRangeStart) && 
+                 scheduleDate <= new Date(dateRangeEnd);
+        } else if (dateRangeStart) {
+          return scheduleDate >= new Date(dateRangeStart);
+        } else if (dateRangeEnd) {
+          return scheduleDate <= new Date(dateRangeEnd);
+        }
+        
+        return true;
+      } catch (err) {
+        console.error('Error filtering schedule by date:', err, schedule);
+        return false;
+      }
+    };
     
     return (
     <Grid container spacing={3}>
@@ -355,13 +459,6 @@ const CoachDashboard = () => {
                 alignItems: 'center'
               }}
             >
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-                {coachTeams.length > 0 ?
-                  React.cloneElement(getSportIcon(coachTeams[0]?.sportType || 'Sports'), { sx: { mr: 1 } }) :
-                  <FitnessCenter sx={{ mr: 1 }} />
-                }
-                Upcoming Training Sessions
-              </Typography>
               <Box>
                 <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
                   {coachTeams.length > 0 ?
@@ -374,16 +471,61 @@ const CoachDashboard = () => {
                   This section shows only direct training bookings not assigned to any training plan
                 </Typography>
               </Box>
-              <Button 
-                variant="outlined" 
-                size="small"
-                onClick={refreshSchedules}
-                disabled={isLoading}
-              >
-                Refresh Schedules
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button 
+                  variant="outlined" 
+                  size="small"
+                  startIcon={<FilterAlt />}
+                  onClick={handleOpenDateFilter}
+                >
+                  {isFilterActive ? 'Change Date Filter' : 'Filter by Date'}
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  size="small"
+                  onClick={refreshSchedules}
+                  disabled={isLoading}
+                >
+                  Refresh Schedules
+                </Button>
+              </Box>
             </Paper>
           </Grid>
+          
+          {isFilterActive && (
+            <Grid item xs={12}>
+              <Box 
+                sx={{ 
+                  px: 2, 
+                  py: 1, 
+                  bgcolor: alpha(theme.palette.info.light, 0.1),
+                  borderRadius: 2,
+                  border: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  mb: 2
+                }}
+              >
+                <Typography variant="body2">
+                  <b>Date Filter Active:</b> {
+                    filterMode === 'single' 
+                      ? singleDateFilter ? format(new Date(singleDateFilter), 'MMM dd, yyyy') : 'Not set'
+                      : (dateRangeStart ? format(new Date(dateRangeStart), 'MMM dd, yyyy') : 'Any') + 
+                        ' to ' + 
+                        (dateRangeEnd ? format(new Date(dateRangeEnd), 'MMM dd, yyyy') : 'Any')
+                  }
+                </Typography>
+                <IconButton 
+                  size="small" 
+                  onClick={clearDateFilter}
+                  color="default"
+                >
+                  <Clear fontSize="small" />
+                </IconButton>
+              </Box>
+            </Grid>
+          )}
           
           <Grid item xs={12}>
             <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
@@ -402,10 +544,13 @@ const CoachDashboard = () => {
                   {console.log('Rendering sessions:', trainingSessions)}
                   {console.log('Rendering schedules:', trainingSchedules)}
                   
-                  {(trainingSessions.length > 0 || (trainingSchedules && trainingSchedules.length > 0)) ? (
+                  {(trainingSessions.some(filterSessionsByDate) || 
+                     (trainingSchedules && trainingSchedules.some(filterSchedulesByDate))) ? (
                     <>
                       {/* Display booking-based training sessions */}
-                      {trainingSessions.filter(session => new Date(session.startTime) >= new Date())
+                      {trainingSessions
+                        .filter(session => new Date(session.startTime) >= new Date())
+                        .filter(filterSessionsByDate)
                         .map(session => {
                           try {
                             const startTime = new Date(session.startTime);
@@ -454,57 +599,61 @@ const CoachDashboard = () => {
                         })}
                       
                       {/* Display training plans */}
-                      {trainingSchedules && trainingSchedules.filter(schedule => {
-                        try {
-                          const scheduleDate = new Date(schedule.date);
-                          return scheduleDate >= new Date();
-                        } catch (err) {
-                          console.error('Error filtering schedule:', err, schedule);
-                          return false;
-                        }
-                      })
-                      .map(schedule => {
-                        try {
-                          const teamName = schedule.team && schedule.team.name ? schedule.team.name : 'Unknown Team';
-                          // Calculate duration in hours for consistency with sessions
-                          const durationHours = schedule.duration / 60;
-                          
-                          return (
-                            <TableRow key={`plan-${schedule._id}`} hover>
-                              <TableCell>
-                                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                  <Typography variant="body2" fontWeight={500}>
-                                    {format(new Date(schedule.date), 'EEEE, MMMM d, yyyy')}
-                                  </Typography>
-                                  <Typography variant="body2" color="text.secondary">
-                                    {format(new Date(schedule.date), 'h:mm a')}
-                                  </Typography>
-                                </Box>
-                              </TableCell>
-                              <TableCell>{teamName}</TableCell>
-                              <TableCell>{schedule.title}</TableCell>
-                              <TableCell>Not specified</TableCell>
-                              <TableCell>{Math.round(durationHours * 10) / 10} hours</TableCell>
-                              <TableCell>
-                                <Chip 
-                                  icon={getStatusIcon(schedule.status)}
-                                  label={schedule.status}
-                                  color={getStatusColor(schedule.status)}
-                                  size="small"
-                                />
-                              </TableCell>
-                            </TableRow>
-                          );
-                        } catch (err) {
-                          console.error('Error rendering schedule row:', err, schedule);
-                          return null;
-                        }
-                      })}
+                      {trainingSchedules && trainingSchedules
+                        .filter(schedule => {
+                          try {
+                            const scheduleDate = new Date(schedule.date);
+                            return scheduleDate >= new Date();
+                          } catch (err) {
+                            console.error('Error filtering schedule:', err, schedule);
+                            return false;
+                          }
+                        })
+                        .filter(filterSchedulesByDate)
+                        .map(schedule => {
+                          try {
+                            const teamName = schedule.team && schedule.team.name ? schedule.team.name : 'Unknown Team';
+                            // Calculate duration in hours for consistency with sessions
+                            const durationHours = schedule.duration / 60;
+                            
+                            return (
+                              <TableRow key={`plan-${schedule._id}`} hover>
+                                <TableCell>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                    <Typography variant="body2" fontWeight={500}>
+                                      {format(new Date(schedule.date), 'EEEE, MMMM d, yyyy')}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                      {format(new Date(schedule.date), 'h:mm a')}
+                                    </Typography>
+                                  </Box>
+                                </TableCell>
+                                <TableCell>{teamName}</TableCell>
+                                <TableCell>{schedule.title}</TableCell>
+                                <TableCell>Not specified</TableCell>
+                                <TableCell>{Math.round(durationHours * 10) / 10} hours</TableCell>
+                                <TableCell>
+                                  <Chip 
+                                    icon={getStatusIcon(schedule.status)}
+                                    label={schedule.status}
+                                    color={getStatusColor(schedule.status)}
+                                    size="small"
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            );
+                          } catch (err) {
+                            console.error('Error rendering schedule row:', err, schedule);
+                            return null;
+                          }
+                        })}
                     </>
                   ) : (
                     <TableRow>
                       <TableCell colSpan={6} align="center">
-                        No upcoming training sessions found
+                        {isFilterActive 
+                          ? 'No sessions found within the selected date range' 
+                          : 'No upcoming training sessions found'}
                       </TableCell>
                     </TableRow>
                   )}
@@ -512,6 +661,85 @@ const CoachDashboard = () => {
               </Table>
             </TableContainer>
           </Grid>
+
+          {/* Date Range Filter Dialog */}
+          <Dialog open={dateFilterOpen} onClose={handleCloseDateFilter}>
+            <DialogTitle>Filter Schedules by Date</DialogTitle>
+            <DialogContent>
+              <Grid container spacing={2} sx={{ mt: 0.5, mb: 2 }}>
+                <Grid item xs={12}>
+                  <FormControl component="fieldset">
+                    <Box sx={{ mb: 2 }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={filterMode === 'single'}
+                            onChange={() => setFilterMode(filterMode === 'single' ? 'range' : 'single')}
+                            color="primary"
+                          />
+                        }
+                        label="Single day filter"
+                      />
+                      <FormHelperText>
+                        {filterMode === 'single' 
+                          ? 'Show sessions for a specific day only' 
+                          : 'Show sessions within a date range'}
+                      </FormHelperText>
+                    </Box>
+                  </FormControl>
+                </Grid>
+
+                {filterMode === 'single' ? (
+                  <Grid item xs={12}>
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <DatePicker
+                        label="Select Date"
+                        value={singleDateFilter}
+                        onChange={(newDate) => setSingleDateFilter(newDate)}
+                        renderInput={(params) => <TextField {...params} fullWidth />}
+                      />
+                    </LocalizationProvider>
+                  </Grid>
+                ) : (
+                  <>
+                    <Grid item xs={12} sm={6}>
+                      <LocalizationProvider dateAdapter={AdapterDateFns}>
+                        <DatePicker
+                          label="Start Date"
+                          value={dateRangeStart}
+                          onChange={(newDate) => setDateRangeStart(newDate)}
+                          renderInput={(params) => <TextField {...params} fullWidth />}
+                          maxDate={dateRangeEnd}
+                        />
+                      </LocalizationProvider>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <LocalizationProvider dateAdapter={AdapterDateFns}>
+                        <DatePicker
+                          label="End Date"
+                          value={dateRangeEnd}
+                          onChange={(newDate) => setDateRangeEnd(newDate)}
+                          renderInput={(params) => <TextField {...params} fullWidth />}
+                          minDate={dateRangeStart}
+                        />
+                      </LocalizationProvider>
+                    </Grid>
+                  </>
+                )}
+              </Grid>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={clearDateFilter} color="inherit">
+                Clear Filter
+              </Button>
+              <Button onClick={handleCloseDateFilter} color="inherit">
+                Cancel
+              </Button>
+              <Button onClick={applyDateFilter} color="primary" variant="contained">
+                Apply Filter
+              </Button>
+            </DialogActions>
+          </Dialog>
         </>
       )}
     </Grid>

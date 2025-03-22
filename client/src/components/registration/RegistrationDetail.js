@@ -26,6 +26,8 @@ import {
   createUserAccount 
 } from '../../services/registrationService';
 import { useAuth } from '../../contexts/AuthContext';
+import { Print as PrintIcon } from '@mui/icons-material';
+import RegistrationReceipt from './RegistrationReceipt';
 
 const RegistrationDetail = () => {
   const { id } = useParams();
@@ -42,6 +44,7 @@ const RegistrationDetail = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionSuccess, setActionSuccess] = useState(null);
   const [actionError, setActionError] = useState(null);
+  const [receiptOpen, setReceiptOpen] = useState(false);
   
   const isAdmin = user && user.role === 'admin';
   const isSupport = user && user.role === 'support';
@@ -385,6 +388,20 @@ const RegistrationDetail = () => {
           )}
         </Grid>
         
+        {/* Show receipt button if payment status is Paid */}
+        {fee.paymentStatus === 'Paid' && (
+          <Box mt={3} display="flex" justifyContent="center">
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<PrintIcon />}
+              onClick={() => setReceiptOpen(true)}
+            >
+              Print Receipt
+            </Button>
+          </Box>
+        )}
+        
         {hasAccessRights && (
           <Box mt={3} display="flex" gap={2} justifyContent="flex-end">
             {status === 'Pending' && (
@@ -509,6 +526,13 @@ const RegistrationDetail = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      
+      {/* Registration Receipt Dialog */}
+      <RegistrationReceipt 
+        registration={registration} 
+        open={receiptOpen} 
+        onClose={() => setReceiptOpen(false)} 
+      />
     </Container>
   );
 };

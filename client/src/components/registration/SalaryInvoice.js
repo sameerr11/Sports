@@ -19,7 +19,8 @@ import {
   CircularProgress,
   Card,
   CardContent,
-  FormHelperText
+  FormHelperText,
+  Divider
 } from '@mui/material';
 import { Send as SendIcon, Print as PrintIcon } from '@mui/icons-material';
 import { getAllUsers } from '../../services/userService';
@@ -143,6 +144,127 @@ const SalaryInvoice = () => {
       return;
     }
     setPreviewOpen(true);
+  };
+
+  const handlePrint = () => {
+    const content = document.getElementById('invoice-to-print');
+    
+    if (!content) {
+      console.error('Invoice content not found');
+      return;
+    }
+    
+    // Create a new iframe
+    const printFrame = document.createElement('iframe');
+    
+    // Make it invisible
+    printFrame.style.position = 'fixed';
+    printFrame.style.right = '0';
+    printFrame.style.bottom = '0';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = '0';
+    
+    // Add to document
+    document.body.appendChild(printFrame);
+    
+    // Get the iframe document
+    const frameDoc = printFrame.contentWindow || printFrame.contentDocument.document || printFrame.contentDocument;
+    
+    // Write the print content
+    frameDoc.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Salary Invoice #${formData.invoiceNumber}</title>
+          <style>
+            body {
+              font-family: 'Arial', sans-serif;
+              margin: 0;
+              padding: 1cm;
+              font-size: 12px;
+            }
+            .invoice {
+              width: 21cm;
+              margin: 0 auto;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .logo {
+              max-width: 80px;
+              max-height: 80px;
+              margin: 0 auto 10px;
+              display: block;
+            }
+            .company-name {
+              font-size: 24px;
+              font-weight: bold;
+              margin: 5px 0;
+            }
+            .invoice-title {
+              font-size: 18px;
+              font-weight: bold;
+              margin: 8px 0;
+            }
+            .invoice-details {
+              margin: 5px 0;
+            }
+            .divider {
+              border-top: 1px solid #000;
+              margin: 15px 0;
+            }
+            .flex-container {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 20px;
+            }
+            .flex-item {
+              flex: 1;
+            }
+            .text-right {
+              text-align: right;
+            }
+            .bold {
+              font-weight: bold;
+            }
+            .mb-10 {
+              margin-bottom: 10px;
+            }
+            .mt-20 {
+              margin-top: 20px;
+            }
+            .text-center {
+              text-align: center;
+            }
+            @media print {
+              body {
+                padding: 0;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="invoice">
+            ${content.innerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+    
+    frameDoc.document.close();
+    
+    // Print the iframe after it loads
+    setTimeout(() => {
+      frameDoc.focus();
+      frameDoc.print();
+      
+      // Remove the iframe after printing
+      setTimeout(() => {
+        document.body.removeChild(printFrame);
+      }, 500);
+    }, 500);
   };
 
   const getUserName = (userId) => {
@@ -293,73 +415,55 @@ const SalaryInvoice = () => {
       >
         <DialogTitle>Salary Invoice Preview</DialogTitle>
         <DialogContent>
-          <Card variant="outlined" sx={{ mt: 2, p: 2 }}>
-            <CardContent>
-              <Box display="flex" justifyContent="space-between" mb={3}>
-                <Box>
-                  <Typography variant="h6">SALARY INVOICE</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Invoice #: {formData.invoiceNumber}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Date: {new Date().toLocaleDateString()}
-                  </Typography>
-                </Box>
-                <Box textAlign="right">
-                  <Typography variant="body1">SPORTS MANAGEMENT</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    123 Sports Avenue
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    City, State, ZIP
-                  </Typography>
-                </Box>
-              </Box>
+          <div id="invoice-to-print">
+            <div style={{ padding: '16px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <img src="/logo192.png" alt="Company Logo" style={{ maxWidth: '80px', maxHeight: '80px', margin: '0 auto 10px', display: 'block' }} />
+                <h1 style={{ margin: '5px 0', fontSize: '24px', fontWeight: 'bold' }}>SPORTS MANAGEMENT</h1>
+                <h2 style={{ margin: '8px 0', fontSize: '18px', fontWeight: 'bold' }}>SALARY INVOICE</h2>
+                <p style={{ margin: '4px 0' }}>Invoice #: {formData.invoiceNumber}</p>
+                <p style={{ margin: '4px 0' }}>Date: {new Date().toLocaleDateString()}</p>
+              </div>
               
-              <Box mb={4}>
-                <Typography variant="subtitle1" gutterBottom>Bill To:</Typography>
-                <Typography variant="body1">
-                  {getUserName(formData.userId)}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Position: {getUserRole(formData.userId)}
-                </Typography>
-              </Box>
+              <hr style={{ margin: '15px 0', border: 'none', borderTop: '1px solid #000' }} />
               
-              <Box mb={3}>
-                <Typography variant="subtitle1" gutterBottom>Payment Details:</Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <Typography variant="body2">Description:</Typography>
-                    <Typography variant="body1">
-                      {formData.description || 'Salary Payment'}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6} textAlign="right">
-                    <Typography variant="body2">Amount:</Typography>
-                    <Typography variant="h6">
-                      {formatCurrency(formData.amount || 0)}
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </Box>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 10px 0' }}>Bill To:</h3>
+                  <p style={{ margin: '5px 0' }}>{getUserName(formData.userId)}</p>
+                  <p style={{ margin: '5px 0', color: '#666' }}>Position: {getUserRole(formData.userId)}</p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <h3 style={{ margin: '0 0 10px 0' }}>Company Address:</h3>
+                  <p style={{ margin: '5px 0', color: '#666' }}>123 Sports Avenue</p>
+                  <p style={{ margin: '5px 0', color: '#666' }}>City, State, ZIP</p>
+                </div>
+              </div>
               
-              <Box mt={4}>
-                <Typography variant="body2" color="textSecondary">
-                  Payment Method: {formData.paymentMethod}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Payment Status: {formData.paymentStatus}
-                </Typography>
-              </Box>
+              <div style={{ marginBottom: '20px' }}>
+                <h3 style={{ margin: '0 0 10px 0' }}>Payment Details:</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div>
+                    <p style={{ margin: '5px 0', color: '#666' }}>Description:</p>
+                    <p style={{ margin: '5px 0' }}>{formData.description || 'Salary Payment'}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ margin: '5px 0', color: '#666' }}>Amount:</p>
+                    <p style={{ margin: '5px 0', fontSize: '18px', fontWeight: 'bold' }}>{formatCurrency(formData.amount || 0)}</p>
+                  </div>
+                </div>
+              </div>
               
-              <Box mt={4} textAlign="center">
-                <Typography variant="body2">
-                  Thank you for your service!
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
+              <div style={{ marginTop: '30px' }}>
+                <p style={{ margin: '5px 0', color: '#666' }}>Payment Method: {formData.paymentMethod}</p>
+                <p style={{ margin: '5px 0', color: '#666' }}>Payment Status: {formData.paymentStatus}</p>
+              </div>
+              
+              <div style={{ marginTop: '30px', textAlign: 'center' }}>
+                <p style={{ margin: '5px 0' }}>Thank you for your service!</p>
+              </div>
+            </div>
+          </div>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPreviewOpen(false)}>Close</Button>
@@ -367,10 +471,7 @@ const SalaryInvoice = () => {
             variant="contained" 
             color="primary"
             startIcon={<PrintIcon />}
-            onClick={() => {
-              setPreviewOpen(false);
-              window.print();
-            }}
+            onClick={handlePrint}
           >
             Print
           </Button>

@@ -22,7 +22,17 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Link as MuiLink
+  Link as MuiLink,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  IconButton,
+  FormControl,
+  FormControlLabel,
+  FormHelperText,
+  Switch
 } from '@mui/material';
 import { 
   Person, 
@@ -33,13 +43,17 @@ import {
   LocationOn, 
   AccessTime, 
   ArrowForward,
-  Sports
+  Sports,
+  FilterAlt,
+  Clear
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import api from '../../services/api';
 import { getStoredUser, isPlayerOnly } from '../../services/authService';
 import { getSportIcon } from '../../utils/sportIcons';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 
 const PlayerDashboard = () => {
   const theme = useTheme();
@@ -51,6 +65,14 @@ const PlayerDashboard = () => {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Add state for date range filter
+  const [dateFilterOpen, setDateFilterOpen] = useState(false);
+  const [dateRangeStart, setDateRangeStart] = useState(null);
+  const [dateRangeEnd, setDateRangeEnd] = useState(null);
+  const [singleDateFilter, setSingleDateFilter] = useState(null);
+  const [isFilterActive, setIsFilterActive] = useState(false);
+  const [filterMode, setFilterMode] = useState('range'); // 'range' or 'single'
   
   // Check if user is a player
   const playerAccess = isPlayerOnly();
@@ -202,6 +224,64 @@ const PlayerDashboard = () => {
     const defaultSportType = trainingSessions.length > 0 && trainingSessions[0].team 
       ? trainingSessions[0].team.sportType 
       : null;
+    
+    // Handle date filter related functions
+    const handleOpenDateFilter = () => {
+      setDateFilterOpen(true);
+    };
+
+    const handleCloseDateFilter = () => {
+      setDateFilterOpen(false);
+    };
+
+    const applyDateFilter = () => {
+      setIsFilterActive(true);
+      setDateFilterOpen(false);
+    };
+
+    const clearDateFilter = () => {
+      setDateRangeStart(null);
+      setDateRangeEnd(null);
+      setSingleDateFilter(null);
+      setIsFilterActive(false);
+      setDateFilterOpen(false);
+    };
+
+    // Filter sessions based on selected date range if filter is active
+    const filterSessionsByDate = (sessions) => {
+      if (!isFilterActive) return sessions;
+      
+      return sessions.filter(session => {
+        const sessionDate = new Date(session.startTime);
+        
+        if (filterMode === 'single' && singleDateFilter) {
+          // When single date filter is active
+          const filterDate = new Date(singleDateFilter);
+          return sessionDate.getFullYear() === filterDate.getFullYear() &&
+                 sessionDate.getMonth() === filterDate.getMonth() &&
+                 sessionDate.getDate() === filterDate.getDate();
+        } else if (filterMode === 'range') {
+          // When range filter is active
+          if (dateRangeStart && dateRangeEnd) {
+            // When both start and end dates are set
+            return sessionDate >= new Date(dateRangeStart) && 
+                   sessionDate <= new Date(dateRangeEnd);
+          } else if (dateRangeStart) {
+            // When only start date is set
+            return sessionDate >= new Date(dateRangeStart);
+          } else if (dateRangeEnd) {
+            // When only end date is set
+            return sessionDate <= new Date(dateRangeEnd);
+          }
+        }
+        
+        // If no date criteria matches or if filter is not properly set
+        return true;
+      });
+    };
+
+    // Filter the sessions based on the date range
+    const filteredSessions = filterSessionsByDate(trainingSessions);
       
     return (
       <Grid container spacing={3}>
@@ -213,7 +293,10 @@ const PlayerDashboard = () => {
               mb: 3, 
               borderRadius: 2,
               bgcolor: alpha(theme.palette.primary.main, 0.05),
-              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
             }}
           >
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
@@ -223,12 +306,52 @@ const PlayerDashboard = () => {
               }
               Your Upcoming Training Sessions
             </Typography>
+            <Button 
+              variant="outlined" 
+              size="small"
+              startIcon={<FilterAlt />}
+              onClick={handleOpenDateFilter}
+            >
+              {isFilterActive ? 'Change Date Filter' : 'Filter by Date'}
+            </Button>
           </Paper>
           
-          {trainingSessions.length === 0 ? (
+          {isFilterActive && (
+            <Chip 
+              icon={<FilterAlt />} 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography variant="body2">
+                    <b>Date Filter:</b> {
+                      filterMode === 'single' 
+                        ? singleDateFilter ? format(new Date(singleDateFilter), 'MMM dd, yyyy') : 'Not set'
+                        : (dateRangeStart ? format(new Date(dateRangeStart), 'MMM dd, yyyy') : 'Any') + 
+                          ' to ' + 
+                          (dateRangeEnd ? format(new Date(dateRangeEnd), 'MMM dd, yyyy') : 'Any')
+                    }
+                  </Typography>
+                  <IconButton 
+                    size="small" 
+                    onClick={clearDateFilter}
+                    sx={{ ml: 1 }}
+                  >
+                    <Clear fontSize="small" />
+                  </IconButton>
+                </Box>
+              }
+              sx={{
+                height: 'auto',
+                '& .MuiChip-label': { px: 1 }
+              }}
+            />
+          )}
+          
+          {filteredSessions.length === 0 ? (
             <Paper sx={{ p: 3, textAlign: 'center' }}>
               <Typography variant="body1">
-                You have no upcoming training sessions scheduled.
+                {isFilterActive 
+                  ? 'No training sessions found within the selected date range.' 
+                  : 'You have no upcoming training sessions scheduled.'}
               </Typography>
             </Paper>
           ) : (
@@ -244,7 +367,7 @@ const PlayerDashboard = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {trainingSessions.map((session) => {
+                  {filteredSessions.map((session) => {
                     const startTime = new Date(session.startTime);
                     const endTime = new Date(session.endTime);
                     const durationHours = (endTime - startTime) / (1000 * 60 * 60);
@@ -289,6 +412,85 @@ const PlayerDashboard = () => {
             </TableContainer>
           )}
         </Grid>
+
+        {/* Date Range Filter Dialog */}
+        <Dialog open={dateFilterOpen} onClose={handleCloseDateFilter}>
+          <DialogTitle>Filter Sessions by Date</DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ mt: 0.5, mb: 2 }}>
+              <Grid item xs={12}>
+                <FormControl component="fieldset">
+                  <Box sx={{ mb: 2 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={filterMode === 'single'}
+                          onChange={() => setFilterMode(filterMode === 'single' ? 'range' : 'single')}
+                          color="primary"
+                        />
+                      }
+                      label="Single day filter"
+                    />
+                    <FormHelperText>
+                      {filterMode === 'single' 
+                        ? 'Show sessions for a specific day only' 
+                        : 'Show sessions within a date range'}
+                    </FormHelperText>
+                  </Box>
+                </FormControl>
+              </Grid>
+
+              {filterMode === 'single' ? (
+                <Grid item xs={12}>
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <DatePicker
+                      label="Select Date"
+                      value={singleDateFilter}
+                      onChange={(newDate) => setSingleDateFilter(newDate)}
+                      renderInput={(params) => <TextField {...params} fullWidth />}
+                    />
+                  </LocalizationProvider>
+                </Grid>
+              ) : (
+                <>
+                  <Grid item xs={12} sm={6}>
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <DatePicker
+                        label="Start Date"
+                        value={dateRangeStart}
+                        onChange={(newDate) => setDateRangeStart(newDate)}
+                        renderInput={(params) => <TextField {...params} fullWidth />}
+                        maxDate={dateRangeEnd}
+                      />
+                    </LocalizationProvider>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <DatePicker
+                        label="End Date"
+                        value={dateRangeEnd}
+                        onChange={(newDate) => setDateRangeEnd(newDate)}
+                        renderInput={(params) => <TextField {...params} fullWidth />}
+                        minDate={dateRangeStart}
+                      />
+                    </LocalizationProvider>
+                  </Grid>
+                </>
+              )}
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={clearDateFilter} color="inherit">
+              Clear Filter
+            </Button>
+            <Button onClick={handleCloseDateFilter} color="inherit">
+              Cancel
+            </Button>
+            <Button onClick={applyDateFilter} color="primary" variant="contained">
+              Apply Filter
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Grid>
     );
   };

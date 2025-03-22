@@ -327,72 +327,84 @@ const UtilityBillList = () => {
         <DialogTitle>Utility Bill Details</DialogTitle>
         {selectedBill && (
           <DialogContent>
-            <Card variant="outlined" sx={{ mt: 2, p: 2 }}>
-              <CardContent>
-                <Box display="flex" justifyContent="space-between" mb={3}>
-                  <Box>
-                    <Typography variant="h6">{selectedBill.billType} BILL</Typography>
-                    <Typography variant="body2" color="textSecondary">
+            <div id="bill-to-print">
+              <Card variant="outlined" sx={{ mt: 2, p: 2 }}>
+                <CardContent>
+                  <Box sx={{ textAlign: 'center', mb: 3 }}>
+                    <img src="/logo192.png" alt="Company Logo" style={{ maxWidth: '80px', maxHeight: '80px', margin: '0 auto 10px', display: 'block' }} />
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', margin: '5px 0' }}>SPORTS MANAGEMENT</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', margin: '8px 0' }}>{selectedBill.billType} BILL</Typography>
+                    <Typography variant="body2" color="textSecondary" sx={{ margin: '4px 0' }}>
                       Bill #: {selectedBill.billNumber}
                     </Typography>
-                    <Typography variant="body2" color="textSecondary">
+                    <Typography variant="body2" color="textSecondary" sx={{ margin: '4px 0' }}>
                       Date: {formatDate(selectedBill.billDate)}
                     </Typography>
                   </Box>
-                  <Box textAlign="right">
-                    <Typography variant="h6">
-                      <Chip
-                        label={selectedBill.paymentStatus}
-                        color={getStatusColor(selectedBill.paymentStatus)}
-                      />
+                  
+                  <Box display="flex" justifyContent="space-between" mb={3}>
+                    <Box>
+                      <Typography variant="subtitle1" gutterBottom>Vendor:</Typography>
+                      <Typography variant="body1">
+                        {selectedBill.vendor}
+                      </Typography>
+                    </Box>
+                    <Box textAlign="right">
+                      <Typography variant="subtitle1" gutterBottom>Due Date:</Typography>
+                      <Typography variant="body1">
+                        {formatDate(selectedBill.dueDate)}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        <Chip
+                          label={selectedBill.paymentStatus}
+                          color={getStatusColor(selectedBill.paymentStatus)}
+                          size="small"
+                        />
+                      </Typography>
+                    </Box>
+                  </Box>
+                  
+                  <Box mb={3}>
+                    <Typography variant="subtitle1" gutterBottom>Bill Details:</Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} textAlign="right">
+                        <Typography variant="body2">Amount:</Typography>
+                        <Typography variant="h6">
+                          {formatCurrency(selectedBill.amount)}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                  
+                  <Box mt={4}>
+                    <Typography variant="body2" color="textSecondary">
+                      Payment Method: Cash
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
-                      Due Date: {formatDate(selectedBill.dueDate)}
+                      Created By: {selectedBill.createdBy ? 
+                        `${selectedBill.createdBy.firstName} ${selectedBill.createdBy.lastName}` : 
+                        'Unknown'}
+                    </Typography>
+                    {selectedBill.paidDate && (
+                      <Typography variant="body2" color="textSecondary">
+                        Paid Date: {formatDate(selectedBill.paidDate)}
+                      </Typography>
+                    )}
+                    {selectedBill.paidBy && (
+                      <Typography variant="body2" color="textSecondary">
+                        Paid By: {`${selectedBill.paidBy.firstName} ${selectedBill.paidBy.lastName}`}
+                      </Typography>
+                    )}
+                  </Box>
+                  
+                  <Box mt={4} textAlign="center">
+                    <Typography variant="body2">
+                      Thank you for your service.
                     </Typography>
                   </Box>
-                </Box>
-                
-                <Box mb={4}>
-                  <Typography variant="subtitle1" gutterBottom>Vendor:</Typography>
-                  <Typography variant="body1">
-                    {selectedBill.vendor}
-                  </Typography>
-                </Box>
-                
-                <Box mb={3}>
-                  <Typography variant="subtitle1" gutterBottom>Bill Details:</Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} textAlign="right">
-                      <Typography variant="body2">Amount:</Typography>
-                      <Typography variant="h6">
-                        {formatCurrency(selectedBill.amount)}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                </Box>
-                
-                <Box mt={4}>
-                  <Typography variant="body2" color="textSecondary">
-                    Payment Method: Cash
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Created By: {selectedBill.createdBy ? 
-                      `${selectedBill.createdBy.firstName} ${selectedBill.createdBy.lastName}` : 
-                      'Unknown'}
-                  </Typography>
-                  {selectedBill.paidDate && (
-                    <Typography variant="body2" color="textSecondary">
-                      Paid Date: {formatDate(selectedBill.paidDate)}
-                    </Typography>
-                  )}
-                  {selectedBill.paidBy && (
-                    <Typography variant="body2" color="textSecondary">
-                      Paid By: {`${selectedBill.paidBy.firstName} ${selectedBill.paidBy.lastName}`}
-                    </Typography>
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </DialogContent>
         )}
         <DialogActions>
@@ -426,7 +438,202 @@ const UtilityBillList = () => {
             color="primary"
             startIcon={<PrintIcon />}
             onClick={() => {
-              window.print();
+              const content = document.getElementById('bill-to-print');
+              
+              if (!content) {
+                console.error('Bill content not found');
+                return;
+              }
+              
+              // Create a new iframe
+              const printFrame = document.createElement('iframe');
+              
+              // Make it invisible
+              printFrame.style.position = 'fixed';
+              printFrame.style.right = '0';
+              printFrame.style.bottom = '0';
+              printFrame.style.width = '0';
+              printFrame.style.height = '0';
+              printFrame.style.border = '0';
+              
+              // Add to document
+              document.body.appendChild(printFrame);
+              
+              // Get the iframe document
+              const frameDoc = printFrame.contentWindow || printFrame.contentDocument.document || printFrame.contentDocument;
+              
+              // Write the print content
+              frameDoc.document.write(`
+                <!DOCTYPE html>
+                <html>
+                  <head>
+                    <title>${selectedBill.billType} Bill #${selectedBill.billNumber}</title>
+                    <style>
+                      body {
+                        font-family: 'Arial', sans-serif;
+                        margin: 0;
+                        padding: 20px;
+                      }
+                      .invoice-container {
+                        max-width: 800px;
+                        margin: 0 auto;
+                        border: 1px solid #e0e0e0;
+                        border-radius: 4px;
+                        padding: 20px;
+                      }
+                      .text-center {
+                        text-align: center;
+                      }
+                      .mb-3 {
+                        margin-bottom: 24px;
+                      }
+                      .company-logo {
+                        max-width: 80px;
+                        max-height: 80px;
+                        margin: 0 auto 10px;
+                        display: block;
+                      }
+                      .company-name {
+                        font-weight: bold;
+                        font-size: 24px;
+                        margin: 5px 0;
+                      }
+                      .invoice-title {
+                        font-weight: bold;
+                        font-size: 20px;
+                        margin: 8px 0;
+                      }
+                      .invoice-details {
+                        margin: 4px 0;
+                        color: #666;
+                      }
+                      .flex-row {
+                        display: flex;
+                        justify-content: space-between;
+                        margin-bottom: 16px;
+                      }
+                      .bill-to {
+                        font-weight: 600;
+                        margin-bottom: 8px;
+                      }
+                      .text-right {
+                        text-align: right;
+                      }
+                      .payment-details {
+                        margin-bottom: 32px;
+                      }
+                      .payment-grid {
+                        display: flex;
+                        justify-content: space-between;
+                      }
+                      .payment-grid-item {
+                        width: 48%;
+                      }
+                      .payment-info {
+                        margin-top: 32px;
+                        color: #666;
+                      }
+                      .amount {
+                        font-size: 20px;
+                        font-weight: 600;
+                      }
+                      .status-chip {
+                        display: inline-block;
+                        padding: 4px 8px;
+                        border-radius: 16px;
+                        font-size: 12px;
+                        color: white;
+                        background-color: #ff9800;
+                      }
+                      .status-chip.success {
+                        background-color: #4caf50;
+                      }
+                      .status-chip.error {
+                        background-color: #f44336;
+                      }
+                      .thank-you {
+                        text-align: center;
+                        margin-top: 32px;
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="invoice-print">
+                      <div class="invoice-container">
+                        <div class="text-center mb-3">
+                          <img src="/logo192.png" alt="Company Logo" class="company-logo" />
+                          <h1 class="company-name">SPORTS MANAGEMENT</h1>
+                          <h2 class="invoice-title">${selectedBill.billType} BILL</h2>
+                          <p class="invoice-details">Bill #: ${selectedBill.billNumber}</p>
+                          <p class="invoice-details">Date: ${formatDate(selectedBill.billDate)}</p>
+                        </div>
+                        
+                        <div class="flex-row">
+                          <div>
+                            <p class="bill-to">Vendor:</p>
+                            <p>${selectedBill.vendor}</p>
+                          </div>
+                          <div class="text-right">
+                            <p class="bill-to">Due Date:</p>
+                            <p>${formatDate(selectedBill.dueDate)}</p>
+                            <div style="margin-top: 8px;">
+                              <span class="status-chip ${selectedBill.paymentStatus === 'Paid' 
+                                ? 'success' 
+                                : selectedBill.paymentStatus === 'Overdue' 
+                                  ? 'error' 
+                                  : ''}">${selectedBill.paymentStatus}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="payment-details">
+                          <p class="bill-to">Bill Details:</p>
+                          <div class="payment-grid">
+                            <div class="payment-grid-item">
+                              <p class="invoice-details">Description:</p>
+                              <p>${selectedBill.billType} Payment</p>
+                            </div>
+                            <div class="payment-grid-item text-right">
+                              <p class="invoice-details">Amount:</p>
+                              <p class="amount">${formatCurrency(selectedBill.amount)}</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="payment-info">
+                          <p class="invoice-details">Payment Method: Cash</p>
+                          <p class="invoice-details">Created By: ${selectedBill.createdBy ? 
+                            `${selectedBill.createdBy.firstName} ${selectedBill.createdBy.lastName}` : 
+                            'Unknown'}</p>
+                          ${selectedBill.paidDate ? 
+                            `<p class="invoice-details">Paid Date: ${formatDate(selectedBill.paidDate)}</p>` : 
+                            ''}
+                          ${selectedBill.paidBy ? 
+                            `<p class="invoice-details">Paid By: ${selectedBill.paidBy.firstName} ${selectedBill.paidBy.lastName}</p>` : 
+                            ''}
+                        </div>
+                        
+                        <div class="thank-you">
+                          <p>Thank you for your service.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </body>
+                </html>
+              `);
+              
+              frameDoc.document.close();
+              
+              // Print the iframe after it loads
+              setTimeout(() => {
+                frameDoc.focus();
+                frameDoc.print();
+                
+                // Remove the iframe after printing
+                setTimeout(() => {
+                  document.body.removeChild(printFrame);
+                }, 500);
+              }, 500);
             }}
           >
             Print

@@ -61,6 +61,17 @@ const ReceiptPrint = ({ receipt, open, onClose }) => {
               text-align: center;
               margin-bottom: 10px;
             }
+            .logo {
+              max-width: 60px;
+              max-height: 60px;
+              margin: 0 auto 8px;
+              display: block;
+            }
+            .company-name {
+              font-size: 18px;
+              font-weight: bold;
+              margin: 5px 0;
+            }
             .divider {
               border-top: 1px dashed #000;
               margin: 10px 0;
@@ -159,7 +170,8 @@ const ReceiptPrint = ({ receipt, open, onClose }) => {
       <DialogContent>
         <div id="receipt-to-print" style={{ padding: '16px' }}>
           <div className="header">
-            <h3 style={{ margin: '0', textAlign: 'center' }}>Cafe POS</h3>
+            <img src="/logo192.png" alt="Logo" className="logo" style={{ maxWidth: '60px', maxHeight: '60px', margin: '0 auto 8px', display: 'block' }} />
+            <h2 style={{ margin: '5px 0', fontSize: '18px' }}>SPORTS MANAGEMENT</h2>
             <p style={{ margin: '4px 0', textAlign: 'center' }}>Receipt #{receipt.orderNumber}</p>
             <p style={{ margin: '4px 0', textAlign: 'center' }}>
               {format(new Date(receipt.date), 'MMM d, yyyy h:mm a')}
