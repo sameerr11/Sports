@@ -434,9 +434,18 @@ function App() {
         } />
         
         <Route path="/users/edit/:id" element={
-          <ProtectedRoute requiredRole="admin">
+          <ProtectedRoute requiredRole={["admin", "support"]}>
             <MainLayout>
               <UserForm />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        {/* Added a route to specifically view players */}
+        <Route path="/users/role/:role" element={
+          <ProtectedRoute requiredRole={["admin", "support"]}>
+            <MainLayout>
+              <UserList />
             </MainLayout>
           </ProtectedRoute>
         } />

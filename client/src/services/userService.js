@@ -87,9 +87,14 @@ export const changePassword = async (passwordData) => {
 };
 
 // Upload profile picture
-export const uploadProfilePicture = async (formData) => {
+export const uploadProfilePicture = async (formData, userId = null) => {
     try {
-        const response = await api.post('/users/profile/picture', formData, {
+        // If userId is provided, we're uploading for a specific user (admin function)
+        const endpoint = userId 
+            ? `/users/${userId}/picture` 
+            : '/users/profile/picture';
+            
+        const response = await api.post(endpoint, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }

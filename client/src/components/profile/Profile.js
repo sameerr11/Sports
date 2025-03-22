@@ -26,7 +26,7 @@ import {
     updateUserProfile,
     uploadProfilePicture
 } from '../../services/userService';
-import { getStoredUser } from '../../services/authService';
+import { getStoredUser, isAdmin } from '../../services/authService';
 import PersonalInfoForm from './PersonalInfoForm';
 import SecurityForm from './SecurityForm';
 import './Profile.css';
@@ -132,18 +132,29 @@ const Profile = () => {
                 const response = await uploadProfilePicture(formData);
                 imageUrl = response.imageUrl; // Assuming the API returns the image URL
             } catch (apiError) {
-                console.warn('Could not upload via API, using local file URL', apiError);
-                // Create a temporary URL for the uploaded file as fallback
+                console.warn('Could not upload via API, using local file URL as fallback', apiError);
+                // Create a temporary URL for the uploaded file
                 imageUrl = URL.createObjectURL(file);
             }
             
             // Update profile with new image URL
-            setProfile({
+            const updatedProfile = {
                 ...profile,
                 profilePicture: imageUrl
-            });
+            };
             
-            setSuccess('Profile picture updated successfully!');
+            // Save the updated profile to persist the change
+            try {
+                await updateUserProfile({ profilePicture: imageUrl });
+                setProfile(updatedProfile);
+                setSuccess('Profile picture updated successfully!');
+            } catch (saveError) {
+                console.error('Error saving profile picture to user record:', saveError);
+                // Still update the UI even if the API call fails
+                setProfile(updatedProfile);
+                setSuccess('Profile picture updated locally but may not persist after refresh');
+            }
+            
             setUploadLoading(false);
             
             // Clear success message after 3 seconds
@@ -192,26 +203,30 @@ const Profile = () => {
                                 >
                                     {profile?.firstName?.charAt(0)}
                                 </Avatar>
-                                <input
-                                    accept="image/*"
-                                    className="hidden-input"
-                                    id="profile-picture-upload"
-                                    type="file"
-                                    onChange={handleProfilePictureUpload}
-                                />
-                                <label htmlFor="profile-picture-upload">
-                                    <Button
-                                        component="span"
-                                        className="upload-button"
-                                        disabled={uploadLoading}
-                                    >
-                                        {uploadLoading ? (
-                                            <CircularProgress size={24} />
-                                        ) : (
-                                            <PhotoCamera />
-                                        )}
-                                    </Button>
-                                </label>
+                                {isAdmin() && (
+                                  <>
+                                    <input
+                                        accept="image/*"
+                                        className="hidden-input"
+                                        id="profile-picture-upload"
+                                        type="file"
+                                        onChange={handleProfilePictureUpload}
+                                    />
+                                    <label htmlFor="profile-picture-upload">
+                                        <Button
+                                            component="span"
+                                            className="upload-button"
+                                            disabled={uploadLoading}
+                                        >
+                                            {uploadLoading ? (
+                                                <CircularProgress size={24} />
+                                            ) : (
+                                                <PhotoCamera />
+                                            )}
+                                        </Button>
+                                    </label>
+                                  </>
+                                )}
                             </Box>
                             
                             <Box className="profile-info">

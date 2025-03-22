@@ -16,9 +16,11 @@ import {
   CircularProgress,
   Switch,
   FormControlLabel,
-  Divider
+  Divider,
+  Avatar
 } from '@mui/material';
-import { createUser, getUserById, updateUser, getUsersByRole } from '../../services/userService';
+import { PhotoCamera } from '@mui/icons-material';
+import { createUser, getUserById, updateUser, getUsersByRole, uploadProfilePicture } from '../../services/userService';
 
 const ROLES = [
   { value: 'admin', label: 'Admin' },
@@ -67,7 +69,8 @@ const initialState = {
     zipCode: '',
     country: ''
   },
-  isActive: true
+  isActive: true,
+  profilePicture: ''
 };
 
 const UserForm = () => {
@@ -77,6 +80,7 @@ const UserForm = () => {
   const [error, setError] = useState('');
   const [isEdit, setIsEdit] = useState(false);
   const [parents, setParents] = useState([]);
+  const [uploadLoading, setUploadLoading] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -174,6 +178,48 @@ const UserForm = () => {
     });
   };
 
+  const handleProfilePictureUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const formDataObj = new FormData();
+    formDataObj.append('profilePicture', file);
+    
+    // If we're editing an existing user, pass the ID to directly associate the image
+    const userId = isEdit ? id : null;
+
+    try {
+      setUploadLoading(true);
+      
+      // Try to upload via API
+      let imageUrl;
+      try {
+        const response = await uploadProfilePicture(formDataObj, userId);
+        imageUrl = response.imageUrl; // Assuming the API returns the image URL
+        
+        // For new users, the image URL will be included when the user is created
+        // For existing users, the server has already updated the user record with the new image
+        console.log('Image uploaded successfully with URL:', imageUrl);
+      } catch (apiError) {
+        console.warn('Could not upload via API, using local file URL as fallback', apiError);
+        // Create a temporary URL for the uploaded file
+        imageUrl = URL.createObjectURL(file);
+      }
+      
+      // Update form data with new image URL
+      setFormData({
+        ...formData,
+        profilePicture: imageUrl
+      });
+      
+      setUploadLoading(false);
+    } catch (err) {
+      console.error('Error uploading profile picture:', err);
+      setError('Failed to upload profile picture. Please try again.');
+      setUploadLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -181,6 +227,8 @@ const UserForm = () => {
 
     // Log what we're submitting
     console.log('Submitting form data:', formData);
+    // Explicitly log the profile picture to confirm it's included
+    console.log('Profile picture URL being submitted:', formData.profilePicture);
 
     try {
       if (isEdit) {
@@ -189,9 +237,13 @@ const UserForm = () => {
         if (!updateData.password) {
           delete updateData.password;
         }
+        // Ensure profilePicture is included in the update data
+        console.log('Sending profile picture in update:', updateData.profilePicture);
         const result = await updateUser(id, updateData);
         console.log('Update response:', result);
       } else {
+        // Ensure profilePicture is included in the create data
+        console.log('Sending profile picture in create:', formData.profilePicture);
         const result = await createUser(formData);
         console.log('Create response:', result);
       }
@@ -367,6 +419,50 @@ const UserForm = () => {
                 value={formData.phoneNumber}
                 onChange={handleChange}
               />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" gutterBottom sx={{ mt: 2 }}>
+                Profile Picture
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mt: 2 }}>
+                <Avatar 
+                  src={formData.profilePicture} 
+                  alt={`${formData.firstName} ${formData.lastName}`}
+                  sx={{ width: 100, height: 100 }}
+                >
+                  {formData.firstName?.charAt(0)}
+                </Avatar>
+                <Box>
+                  <input
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    id="profile-picture-upload"
+                    type="file"
+                    onChange={handleProfilePictureUpload}
+                  />
+                  <label htmlFor="profile-picture-upload">
+                    <Button
+                      component="span"
+                      variant="contained"
+                      startIcon={uploadLoading ? <CircularProgress size={20} /> : <PhotoCamera />}
+                      disabled={uploadLoading}
+                    >
+                      {uploadLoading ? 'Uploading...' : 'Upload Picture'}
+                    </Button>
+                  </label>
+                  {formData.profilePicture && (
+                    <Button 
+                      color="error" 
+                      sx={{ ml: 2 }}
+                      onClick={() => setFormData({...formData, profilePicture: ''})}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </Box>
+              </Box>
             </Grid>
 
             <Grid item xs={12}>

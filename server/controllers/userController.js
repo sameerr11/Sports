@@ -157,55 +157,10 @@ exports.getUserById = async (req, res) => {
 
 // @desc    Update user
 // @route   PUT /api/users/:id
-// @access  Admin
+// @access  Admin, Support (with restrictions)
 exports.updateUser = async (req, res) => {
   console.log('Update user request body:', req.body);
   const { firstName, lastName, email, role, phoneNumber, address, isActive, parentId, supervisorType, supervisorSportTypes } = req.body;
-
-  // Validate role if provided
-  if (role) {
-    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier', 'support', 'accounting'];
-    if (!validRoles.includes(role)) {
-      return res.status(400).json({ msg: 'Invalid role selected' });
-    }
-  }
-
-  // Build user object
-  const userFields = {};
-  if (firstName) userFields.firstName = firstName;
-  if (lastName) userFields.lastName = lastName;
-  if (email) userFields.email = email;
-  if (role) userFields.role = role;
-  if (phoneNumber) userFields.phoneNumber = phoneNumber;
-  if (address) userFields.address = address;
-  if (isActive !== undefined) userFields.isActive = isActive;
-  
-  // Handle parentId - Set it if provided as non-empty string, otherwise set to null if explicitly provided
-  if (parentId !== undefined) {
-    if (parentId && parentId.trim()) {
-      userFields.parentId = parentId;
-      console.log(`Setting parentId to: ${parentId}`);
-    } else {
-      userFields.parentId = null;
-      console.log('Setting parentId to null');
-    }
-  }
-  
-  // Handle supervisor specific fields
-  if (role === 'supervisor' || (req.body.supervisorType && !role)) {
-    if (supervisorType) {
-      userFields.supervisorType = supervisorType;
-    }
-    
-    if (supervisorType === 'sports' && Array.isArray(supervisorSportTypes)) {
-      userFields.supervisorSportTypes = supervisorSportTypes;
-    } else if (supervisorType !== 'sports') {
-      // Clear sport types if supervisor type is not sports
-      userFields.supervisorSportTypes = [];
-    }
-  }
-  
-  userFields.updatedAt = Date.now();
 
   try {
     let user = await User.findById(req.params.id);
@@ -214,16 +169,81 @@ exports.updateUser = async (req, res) => {
       return res.status(404).json({ msg: 'User not found' });
     }
 
+    // Check if support staff is trying to update non-player account
+    if (req.user.role === 'support' && user.role !== 'player') {
+      return res.status(403).json({ msg: 'Support staff can only update player accounts' });
+    }
+
+    // Build user object based on requester role
+    const userFields = {};
+    
+    // Support staff can only update contact details of players
+    if (req.user.role === 'support') {
+      if (firstName) userFields.firstName = firstName;
+      if (lastName) userFields.lastName = lastName;
+      if (phoneNumber) userFields.phoneNumber = phoneNumber;
+      if (address) userFields.address = address;
+      
+      // Support cannot change roles, status, email, or parent associations
+    } else {
+      // Admin can update everything
+      if (firstName) userFields.firstName = firstName;
+      if (lastName) userFields.lastName = lastName;
+      if (email) userFields.email = email;
+      
+      // Validate role if provided
+      if (role) {
+        const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier', 'support', 'accounting'];
+        if (!validRoles.includes(role)) {
+          return res.status(400).json({ msg: 'Invalid role selected' });
+        }
+        userFields.role = role;
+      }
+      
+      if (phoneNumber) userFields.phoneNumber = phoneNumber;
+      if (address) userFields.address = address;
+      if (isActive !== undefined) userFields.isActive = isActive;
+      
+      // Handle parentId - Set it if provided as non-empty string, otherwise set to null if explicitly provided
+      if (parentId !== undefined) {
+        if (parentId && parentId.trim()) {
+          userFields.parentId = parentId;
+          console.log(`Setting parentId to: ${parentId}`);
+        } else {
+          userFields.parentId = null;
+          console.log('Setting parentId to null');
+        }
+      }
+      
+      // Handle supervisor specific fields
+      if (role === 'supervisor' || (req.body.supervisorType && !role)) {
+        if (supervisorType) {
+          userFields.supervisorType = supervisorType;
+        }
+        
+        if (supervisorType === 'sports' && Array.isArray(supervisorSportTypes)) {
+          userFields.supervisorSportTypes = supervisorSportTypes;
+        } else if (supervisorType !== 'sports') {
+          // Clear sport types if supervisor type is not sports
+          userFields.supervisorSportTypes = [];
+        }
+      }
+    }
+    
+    userFields.updatedAt = Date.now();
+
     // Check if role is being changed
-    const roleChanged = role && user.role !== role;
+    const roleChanged = role && user.role !== role && req.user.role === 'admin';
     
     // Check if parent is being changed (compare as strings in case of ObjectId objects)
-    const parentChanged = parentId !== undefined && 
+    const parentChanged = parentId !== undefined && req.user.role === 'admin' && 
       ((!user.parentId && parentId && parentId.trim() !== '') || 
        (user.parentId && String(user.parentId) !== String(parentId)));
     
     console.log('Before update:', { 
       userId: user._id,
+      updatedBy: req.user.role,
+      fieldsToUpdate: Object.keys(userFields),
       currentParentId: user.parentId, 
       newParentId: parentId,
       parentChanged 
@@ -236,12 +256,16 @@ exports.updateUser = async (req, res) => {
       { new: true }
     ).select('-password');
     
-    console.log('After update:', { userId: user._id, parentId: user.parentId });
+    console.log('After update:', { 
+      userId: user._id, 
+      updatedBy: req.user.role,
+      fieldsUpdated: Object.keys(userFields)
+    });
 
     // Create notifications - this is now separated from the main user update
     // to prevent notification creation failures from breaking the update
     try {
-      // Create notification for role change
+      // Create notification for role change (admin only)
       if (roleChanged) {
         const notification = new Notification({
           recipient: user._id,
@@ -257,7 +281,7 @@ exports.updateUser = async (req, res) => {
         await notification.save();
       }
       
-      // Create notification for parent change if user is a player
+      // Create notification for parent change if user is a player (admin only)
       if (parentChanged && user.role === 'player' && userFields.parentId) {
         const parent = await User.findById(userFields.parentId);
         if (parent) {
@@ -274,6 +298,23 @@ exports.updateUser = async (req, res) => {
           
           await notification.save();
         }
+      }
+      
+      // Notification for profile update by support staff
+      if (req.user.role === 'support') {
+        // Notify the player that their profile was updated
+        const notification = new Notification({
+          recipient: user._id,
+          type: 'profile_updated',
+          title: 'Profile Updated',
+          message: 'Your contact information has been updated by support staff.',
+          relatedTo: {
+            model: 'User',
+            id: user._id
+          }
+        });
+        
+        await notification.save();
       }
     } catch (notificationError) {
       // Log notification error but don't fail the whole request
@@ -519,5 +560,79 @@ exports.deleteDocument = async (req, res) => {
   } catch (err) {
     console.error('Error deleting document:', err.message);
     res.status(500).send('Server Error');
+  }
+};
+
+// @desc    Upload profile picture for a user
+// @route   POST /api/users/:id/picture
+// @access  Admin only
+exports.uploadUserProfilePicture = async (req, res) => {
+  try {
+    console.log('Upload profile picture request for user ID:', req.params.id);
+    
+    // Check if the user exists
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    
+    // Check if file is present in the request
+    if (!req.file) {
+      return res.status(400).json({ msg: 'No image file provided' });
+    }
+    
+    // Convert the image buffer to a base64 data URL that can be displayed directly
+    const base64Image = req.file.buffer.toString('base64');
+    const mimeType = req.file.mimetype; // e.g., 'image/jpeg', 'image/png'
+    const imageUrl = `data:${mimeType};base64,${base64Image}`;
+    
+    console.log('Setting profile picture URL:', imageUrl.substring(0, 50) + '...');
+    
+    // Update the user with the new profile picture URL
+    user.profilePicture = imageUrl;
+    await user.save();
+    
+    // Return the updated image URL
+    res.json({ imageUrl });
+  } catch (err) {
+    console.error('Error uploading profile picture:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+// @desc    Upload profile picture for current user
+// @route   POST /api/users/profile/picture
+// @access  Private (any authenticated user)
+exports.uploadProfilePicture = async (req, res) => {
+  try {
+    console.log('Upload profile picture for current user ID:', req.user.id);
+    
+    // Get the current user
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    
+    // Check if file is present in the request
+    if (!req.file) {
+      return res.status(400).json({ msg: 'No image file provided' });
+    }
+    
+    // Convert the image buffer to a base64 data URL that can be displayed directly
+    const base64Image = req.file.buffer.toString('base64');
+    const mimeType = req.file.mimetype; // e.g., 'image/jpeg', 'image/png'
+    const imageUrl = `data:${mimeType};base64,${base64Image}`;
+    
+    console.log('Setting profile picture URL:', imageUrl.substring(0, 50) + '...');
+    
+    // Update the user with the new profile picture URL
+    user.profilePicture = imageUrl;
+    await user.save();
+    
+    // Return the updated image URL
+    res.json({ imageUrl });
+  } catch (err) {
+    console.error('Error uploading profile picture:', err);
+    res.status(500).json({ msg: 'Server error' });
   }
 }; 

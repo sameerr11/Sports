@@ -97,7 +97,7 @@ const SupportDashboard = () => {
       
       {/* Quick Actions Section */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -120,7 +120,7 @@ const SupportDashboard = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -143,7 +143,7 @@ const SupportDashboard = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -161,29 +161,6 @@ const SupportDashboard = () => {
                 color="secondary"
               >
                 Manage Stats
-              </Button>
-            </CardActions>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <SportsSoccer sx={{ mr: 1, color: 'success.main' }} />
-                <Typography variant="h6">Teams Overview</Typography>
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                View team information and player assignments.
-              </Typography>
-            </CardContent>
-            <CardActions>
-              <Button 
-                component={Link} 
-                to="/teams" 
-                color="success"
-              >
-                View Teams
               </Button>
             </CardActions>
           </Card>

@@ -140,6 +140,11 @@ const Sidebar = ({ open, toggleSidebar }) => {
             icon: <DashboardIcon />
         },
         {
+            text: 'Players',
+            path: '/users/role/player',
+            icon: <SportsSoccerIcon />
+        },
+        {
             text: 'Feedback Management',
             path: '/support/feedback',
             icon: <FeedbackIcon />

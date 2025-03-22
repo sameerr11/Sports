@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {
   Table,
   TableBody,
@@ -24,22 +24,34 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { getAllUsers, deleteUser } from '../../services/userService';
+import { getAllUsers, deleteUser, getUsersByRole } from '../../services/userService';
+import { isAdmin, isSupport } from '../../services/authService';
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteDialog, setDeleteDialog] = useState({ open: false, userId: null });
+  const { role } = useParams();
+  const admin = isAdmin();
+  const support = isSupport();
+  const pageTitle = role ? `${role.charAt(0).toUpperCase() + role.slice(1)}s` : 'User Management';
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [role]);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const data = await getAllUsers();
+      let data;
+      
+      if (role) {
+        data = await getUsersByRole(role);
+      } else {
+        data = await getAllUsers();
+      }
+      
       setUsers(data);
       setError('');
     } catch (err) {
@@ -104,17 +116,19 @@ const UserList = () => {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h5" component="h2">
-          User Management
+          {pageTitle}
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          component={Link}
-          to="/users/new"
-        >
-          Add User
-        </Button>
+        {admin && (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            component={Link}
+            to="/users/new"
+          >
+            Add User
+          </Button>
+        )}
       </Box>
 
       {error && (
@@ -167,19 +181,21 @@ const UserList = () => {
                   <TableCell align="right">
                     <IconButton 
                       component={Link} 
-                      to={`/users/edit/${user._id}`}
+                      to={`/users/edit/${user._id}`} 
                       color="primary"
-                      size="small"
+                      title="Edit user"
                     >
                       <EditIcon />
                     </IconButton>
-                    <IconButton 
-                      color="error"
-                      size="small"
-                      onClick={() => handleDeleteClick(user._id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                    {admin && (
+                      <IconButton 
+                        onClick={() => handleDeleteClick(user._id)} 
+                        color="error"
+                        title="Delete user"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

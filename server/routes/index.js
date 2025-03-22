@@ -1,6 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const { check } = require('express-validator');
+const multer = require('multer');
+const storage = multer.memoryStorage(); // Use memory storage for simplicity
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max file size
+  },
+  fileFilter: (req, file, cb) => {
+    // Only allow images
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 
 // Controllers
 const userController = require('../controllers/userController');
@@ -48,9 +64,15 @@ router.get('/users', [auth, adminSupportOrAccounting], userController.getUsers);
 router.get('/users/role/:role', [auth], userController.getUsersByRole);
 router.get('/users/parent/children', [auth, parent], userController.getParentChildren);
 router.get('/users/:id', [auth, adminOrSupport], userController.getUserById);
-router.put('/users/:id', [auth, admin], userController.updateUser);
+router.put('/users/:id', [auth, adminOrSupport], userController.updateUser);
 router.delete('/users/:id', [auth, admin], userController.deleteUser);
 router.put('/users/:id/password', [auth], userController.changePassword);
+
+// Add new profile picture upload routes
+// Admin or support uploading a profile picture for any user
+router.post('/users/:id/picture', [auth, adminOrSupport, upload.single('profilePicture')], userController.uploadUserProfilePicture);
+// Users uploading their own profile picture (only admins or support can do this after your restriction)
+router.post('/users/profile/picture', [auth, adminOrSupport, upload.single('profilePicture')], userController.uploadProfilePicture);
 
 // Document routes
 router.post(
