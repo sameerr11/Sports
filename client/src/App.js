@@ -18,7 +18,7 @@ import Profile from './components/profile/Profile';
 import { 
   isAuthenticated, isAdmin, isSupervisor, 
   isCoach, isPlayer, isParent, isCashier, isPlayerOnly, isAdminOrSupport, isCafeteriaSupervisor, isAccounting,
-  isSupport, hasRole, isSportsSupervisor, isBookingSupervisor
+  isSupport, hasRole, isSportsSupervisor, isBookingSupervisor, isRevenueManager
 } from './services/authService';
 import Cafeteria from './components/cafeteria/Cafeteria';
 import CafeteriaManagement from './components/cafeteria/CafeteriaManagement';
@@ -50,6 +50,8 @@ import UtilityBillForm from './components/utilities/UtilityBillForm';
 import RoleSalaryConfig from './components/admin/RoleSalaryConfig';
 // Import the RegistrationFeeConfig component
 import RegistrationFeeConfig from './components/admin/RegistrationFeeConfig';
+// Import the RevenueDashboard component
+import RevenueDashboard from './components/revenue/RevenueDashboard';
 
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
@@ -117,6 +119,11 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   if (isAccounting() && !isAdmin() && window.location.pathname === '/' && !requiredRole) {
     return <Navigate to="/registrations" />;
   }
+  
+  // Redirect revenue managers to revenue dashboard if they try to access the main dashboard
+  if (isRevenueManager() && !isAdmin() && window.location.pathname === '/' && !requiredRole) {
+    return <Navigate to="/revenue/dashboard" />;
+  }
 
   // If everything is ok, render the child component
   return children;
@@ -174,6 +181,10 @@ const PublicRoute = ({ children }) => {
     // Redirect booking supervisors directly to bookings page
     if (user.role === 'supervisor' && user.supervisorType === 'booking') {
       return <Navigate to="/bookings" />;
+    }
+    // Redirect revenue managers directly to revenue dashboard
+    if (user.role === 'revenue_manager') {
+      return <Navigate to="/revenue/dashboard" />;
     }
     // Default redirect for other users
     return <Navigate to="/" />;
@@ -562,6 +573,15 @@ function App() {
               <UtilityBillForm />
             </MainLayout>
           </EnhancedProtectedRoute>
+        } />
+        
+        {/* Revenue Manager Routes */}
+        <Route path="/revenue/dashboard" element={
+          <ProtectedRoute requiredRole={['revenue_manager', 'admin']}>
+            <MainLayout>
+              <RevenueDashboard />
+            </MainLayout>
+          </ProtectedRoute>
         } />
         
         {/* Catch all route */}

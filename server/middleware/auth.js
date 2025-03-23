@@ -123,4 +123,12 @@ exports.adminSupportOrAccounting = (req, res, next) => {
     return res.status(403).json({ msg: 'Access denied. Admin, Support, or Accounting privileges required.' });
   }
   next();
+};
+
+// Middleware to check if user has revenue manager role
+exports.revenueManager = (req, res, next) => {
+  if (req.user.role !== 'revenue_manager' && req.user.role !== 'admin') {
+    return res.status(403).json({ msg: 'Access denied. Revenue Manager privileges required.' });
+  }
+  next();
 }; 

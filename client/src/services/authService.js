@@ -190,16 +190,18 @@ export const isAdminOrSupport = () => {
 // Check if user is accounting
 export const isAccounting = () => {
   const user = getStoredUser();
-  return user && (user.role === 'admin' || user.role === 'accounting');
+  return user && user.role === 'accounting';
+};
+
+// Check if user is revenue manager
+export const isRevenueManager = () => {
+  const user = getStoredUser();
+  return user && user.role === 'revenue_manager';
 };
 
 export const getAuthHeader = () => {
-  const token = getToken();
-  return {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  };
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 // Response interceptor

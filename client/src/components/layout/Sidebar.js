@@ -42,7 +42,10 @@ import {
     Restaurant as RestaurantIcon,
     Support as SupportIcon,
     Receipt as ReceiptIcon,
-    Add
+    Add,
+    AttachMoney as AttachMoneyIcon,
+    BarChart as BarChartIcon,
+    MonetizationOn as MonetizationOnIcon
 } from '@mui/icons-material';
 import { 
     isAdmin, 
@@ -58,6 +61,7 @@ import {
     isAdminOrSupport,
     isAccounting,
     isBookingSupervisor,
+    isRevenueManager,
     getStoredUser
 } from '../../services/authService';
 import './Sidebar.css';
@@ -78,10 +82,11 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const parent = isParent();
     const support = isSupport();
     const accounting = isAccounting() && !admin;
+    const revenueManager = isRevenueManager() && !admin;
     const theme = useTheme();
     const user = getStoredUser();
 
-    // Regular menu items - not shown to cafeteria supervisors
+    // Regular menu items - not shown to cafeteria supervisors or revenue managers
     const menuItems = [
         { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
         ...(sportsSupervisor ? [] : [{ text: 'Courts', icon: <LocationOnIcon />, path: '/courts' }]),
@@ -178,6 +183,11 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'New Utility Bill', icon: <ReceiptIcon />, path: '/utilities/new' }
     ];
 
+    // Revenue Manager items
+    const revenueManagerItems = [
+        { text: 'Revenue Dashboard', icon: <BarChartIcon />, path: '/revenue/dashboard' },
+    ];
+
     // Function to determine which supervisor items to show
     const getSupervisorItems = () => {
         if (generalSupervisor) return generalSupervisorItems;
@@ -241,8 +251,8 @@ const Sidebar = ({ open, toggleSidebar }) => {
             </Box>
             <Divider />
             
-            {/* Show regular menu items if user is admin/supervisor OR not a cashier/parent/player/coach/support/accounting */}
-            {(admin || (supervisor && !cafeteriaSupervisor && !bookingSupervisor) || (!cashier && !parent && !player && !coach && !cafeteriaSupervisor && !support && !accounting)) && (
+            {/* Show regular menu items if user is admin/supervisor OR not a cashier/parent/player/coach/support/accounting/revenue_manager */}
+            {(admin || (supervisor && !cafeteriaSupervisor && !bookingSupervisor) || (!cashier && !parent && !player && !coach && !cafeteriaSupervisor && !support && !accounting && !revenueManager)) && (
                 <List component="nav" className="sidebar-nav">
                     {menuItems.map((item) => (
                         <ListItem 
@@ -834,6 +844,78 @@ const Sidebar = ({ open, toggleSidebar }) => {
                             />
                         </ListItem>
                         {supportItems.map((item) => (
+                            <ListItem 
+                                button 
+                                key={item.text} 
+                                component={Link} 
+                                to={item.path}
+                                selected={location.pathname === item.path}
+                                className={location.pathname === item.path ? 'active' : ''}
+                                sx={{
+                                    borderRadius: '0 20px 20px 0',
+                                    mx: 1,
+                                    mb: 0.5,
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    width: 'calc(100% - 16px)',
+                                    '&.active': {
+                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                        color: theme.palette.primary.main,
+                                        '&::before': {
+                                            content: '""',
+                                            position: 'absolute',
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: 4,
+                                            backgroundColor: theme.palette.primary.main,
+                                            borderRadius: '0 4px 4px 0'
+                                        }
+                                    },
+                                    '&:hover': {
+                                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                    }
+                                }}
+                            >
+                                <ListItemIcon sx={{ 
+                                    color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                    minWidth: 40,
+                                    flexShrink: 0
+                                }}>
+                                    {item.icon}
+                                </ListItemIcon>
+                                <ListItemText 
+                                    primary={item.text} 
+                                    primaryTypographyProps={{ 
+                                        fontSize: '0.95rem',
+                                        fontWeight: location.pathname === item.path ? 600 : 400,
+                                        noWrap: true
+                                    }}
+                                    sx={{ overflow: 'hidden' }}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                </>
+            )}
+            
+            {/* Revenue Manager Items */}
+            {revenueManager && (
+                <>
+                    <Divider sx={{ my: 1 }} />
+                    <List component="nav" className="sidebar-nav">
+                        <ListItem sx={{ px: 3 }}>
+                            <ListItemText 
+                                primary="Revenue Management" 
+                                primaryTypographyProps={{ 
+                                    variant: 'overline',
+                                    color: 'text.secondary',
+                                    fontWeight: 600,
+                                    noWrap: true
+                                }} 
+                            />
+                        </ListItem>
+                        {revenueManagerItems.map((item) => (
                             <ListItem 
                                 button 
                                 key={item.text} 

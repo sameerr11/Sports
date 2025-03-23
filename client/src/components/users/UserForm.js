@@ -30,7 +30,8 @@ const ROLES = [
   { value: 'player', label: 'Player' },
   { value: 'parent', label: 'Parent' },
   { value: 'support', label: 'Support' },
-  { value: 'accounting', label: 'Accounting' }
+  { value: 'accounting', label: 'Accounting' },
+  { value: 'revenue_manager', label: 'Revenue Manager' }
 ];
 
 const SUPERVISOR_TYPES = [

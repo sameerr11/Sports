@@ -39,6 +39,8 @@ const Login = () => {
       // Redirect to appropriate page based on user role
       if (userData.role === 'supervisor' && userData.supervisorType === 'booking') {
         navigate('/bookings');
+      } else if (userData.role === 'revenue_manager') {
+        navigate('/revenue/dashboard');
       } else {
         navigate('/');
       }

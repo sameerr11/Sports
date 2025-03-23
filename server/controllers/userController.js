@@ -25,7 +25,7 @@ exports.registerUser = async (req, res) => {
     }
     
     // Validate role
-    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier', 'support', 'accounting'];
+    const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier', 'support', 'accounting', 'revenue_manager'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ msg: 'Invalid role selected' });
     }
