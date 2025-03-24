@@ -9,7 +9,7 @@ const Booking = require('../models/Booking');
 const SalaryInvoice = require('../models/SalaryInvoice');
 const UtilityBill = require('../models/UtilityBill');
 const User = require('../models/User');
-const ApiResponse = require('../utils/apiResponse');
+const ApiResponse = require('../utils/ApiResponse');
 
 // Get or create a default admin user for transactions with missing creator
 const getDefaultAdminUser = async () => {
