@@ -33,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import { getSalaryInvoices, updateSalaryInvoiceStatus } from '../../services/registrationService';
 import { formatCurrency } from '../../utils/format';
+import ultrasLogo from '../../assets/images/ultras_logo.png';
 
 const SalaryInvoiceList = () => {
   const [invoices, setInvoices] = useState([]);
@@ -252,7 +253,7 @@ const SalaryInvoiceList = () => {
               <Card variant="outlined" sx={{ mt: 2, p: 2 }}>
                 <CardContent>
                   <Box sx={{ textAlign: 'center', mb: 3 }}>
-                    <img src="/logo192.png" alt="Company Logo" style={{ maxWidth: '80px', maxHeight: '80px', margin: '0 auto 10px', display: 'block' }} />
+                    <img src={ultrasLogo} alt="Ultras Logo" style={{ maxWidth: '80px', maxHeight: '80px', margin: '0 auto 10px', display: 'block' }} />
                     <Typography variant="h5" sx={{ fontWeight: 'bold', margin: '5px 0' }}>SPORTS MANAGEMENT</Typography>
                     <Typography variant="h6" sx={{ fontWeight: 'bold', margin: '8px 0' }}>SALARY INVOICE</Typography>
                     <Typography variant="body2" color="textSecondary" sx={{ margin: '4px 0' }}>
@@ -450,7 +451,7 @@ const SalaryInvoiceList = () => {
                     <div class="invoice-print">
                       <div class="invoice-container">
                         <div class="text-center mb-3">
-                          <img src="/logo192.png" alt="Company Logo" class="company-logo" />
+                          <img src="${ultrasLogo}" alt="Ultras Logo" class="company-logo" />
                           <h1 class="company-name">SPORTS MANAGEMENT</h1>
                           <h2 class="invoice-title">SALARY INVOICE</h2>
                           <p class="invoice-details">Invoice #: ${selectedInvoice.invoiceNumber}</p>

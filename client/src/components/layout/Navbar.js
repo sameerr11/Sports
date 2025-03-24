@@ -25,6 +25,7 @@ import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import NotificationBadge from '../notifications/NotificationBadge';
 import { logout, getStoredUser, isCashier } from '../../services/authService';
+import ultrasLogo from '../../assets/images/ultras_logo.png';
 import './Navbar.css';
 
 const Navbar = ({ toggleSidebar }) => {
@@ -57,7 +58,8 @@ const Navbar = ({ toggleSidebar }) => {
             className="navbar"
             elevation={0}
             sx={{
-                background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                backgroundColor: '#0c0056 !important',
+                background: '#0c0056 !important',
                 borderBottom: `1px solid ${alpha(theme.palette.common.white, 0.1)}`
             }}
         >
@@ -109,11 +111,16 @@ const Navbar = ({ toggleSidebar }) => {
                                 </>
                             ) : (
                                 <>
-                                    <SportsSoccerIcon sx={{ 
-                                        mr: 1.5, 
-                                        fontSize: 30,
-                                        color: alpha(theme.palette.common.white, 0.95)
-                                    }} />
+                                    <Box 
+                                        component="img"
+                                        src={ultrasLogo}
+                                        alt="Ultras North Lebanon"
+                                        sx={{
+                                            height: 55,
+                                            mr: 1.5,
+                                            objectFit: 'contain'
+                                        }}
+                                    />
                                     <Typography 
                                         variant="h6" 
                                         component="div" 

@@ -13,6 +13,7 @@ import {
 import { Print as PrintIcon } from '@mui/icons-material';
 import { formatCurrency } from '../../utils/format';
 import { format } from 'date-fns';
+import ultrasLogo from '../../assets/images/ultras_logo.png';
 
 const ReceiptPrint = ({ receipt, open, onClose }) => {
   const handlePrint = () => {
@@ -133,7 +134,43 @@ const ReceiptPrint = ({ receipt, open, onClose }) => {
         </head>
         <body>
           <div class="receipt">
-            ${content.innerHTML}
+            <div class="header">
+              <img src="${ultrasLogo}" alt="Ultras Logo" class="logo">
+              <div class="company-name">SPORTS MANAGEMENT</div>
+              <div>Receipt #${receipt.orderNumber}</div>
+              <div>${format(new Date(receipt.date), 'MMM d, yyyy h:mm a')}</div>
+            </div>
+            <div class="divider"></div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${receipt.items.map(item => `
+                <tr>
+                  <td>${item.name}</td>
+                  <td>${item.quantity}</td>
+                  <td>${formatCurrency(item.subtotal)}</td>
+                </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div class="total-row">
+              <div>Total</div>
+              <div>${formatCurrency(receipt.total)}</div>
+            </div>
+            <div style="margin-top: 10px;">
+              <div>Payment Method: ${receipt.paymentMethod}</div>
+              <div>Cashier: ${receipt.cashier}</div>
+              <div>Customer: ${receipt.customer}</div>
+            </div>
+            <div class="footer">
+              <div>Thank you for your purchase!</div>
+            </div>
           </div>
         </body>
       </html>
@@ -170,7 +207,7 @@ const ReceiptPrint = ({ receipt, open, onClose }) => {
       <DialogContent>
         <div id="receipt-to-print" style={{ padding: '16px' }}>
           <div className="header">
-            <img src="/logo192.png" alt="Logo" className="logo" style={{ maxWidth: '60px', maxHeight: '60px', margin: '0 auto 8px', display: 'block' }} />
+            <img src={ultrasLogo} alt="Ultras Logo" className="logo" style={{ maxWidth: '60px', maxHeight: '60px', margin: '0 auto 8px', display: 'block' }} />
             <h2 style={{ margin: '5px 0', fontSize: '18px' }}>SPORTS MANAGEMENT</h2>
             <p style={{ margin: '4px 0', textAlign: 'center' }}>Receipt #{receipt.orderNumber}</p>
             <p style={{ margin: '4px 0', textAlign: 'center' }}>

@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { Print as PrintIcon } from '@mui/icons-material';
 import { format } from 'date-fns';
+import ultrasLogo from '../../assets/images/ultras_logo.png';
 
 const RegistrationReceipt = ({ registration, open, onClose }) => {
   const handlePrint = () => {
@@ -127,7 +128,7 @@ const RegistrationReceipt = ({ registration, open, onClose }) => {
           <div class="invoice-print">
             <div class="invoice-container">
               <div class="text-center mb-3">
-                <img src="/logo192.png" alt="Company Logo" class="company-logo" />
+                <img src="${ultrasLogo}" alt="Ultras Logo" class="company-logo" />
                 <h1 class="company-name">SPORTS MANAGEMENT</h1>
                 <h2 class="receipt-title">REGISTRATION RECEIPT</h2>
                 <p class="receipt-details">Receipt #: ${fee.invoiceNumber || 'N/A'}</p>
@@ -228,7 +229,7 @@ const RegistrationReceipt = ({ registration, open, onClose }) => {
       <DialogContent>
         <div id="registration-receipt-to-print" style={{ padding: '16px' }}>
           <div className="header">
-            <img src="/logo192.png" alt="Logo" className="logo" style={{ maxWidth: '80px', maxHeight: '80px', margin: '0 auto 10px', display: 'block' }} />
+            <img src={ultrasLogo} alt="Ultras Logo" className="logo" style={{ maxWidth: '80px', maxHeight: '80px', margin: '0 auto 10px', display: 'block' }} />
             <h1 style={{ margin: '5px 0', fontSize: '24px' }}>SPORTS MANAGEMENT</h1>
             <h2 style={{ margin: '10px 0', fontSize: '18px' }}>REGISTRATION RECEIPT</h2>
             <p style={{ margin: '4px 0', textAlign: 'center' }}>

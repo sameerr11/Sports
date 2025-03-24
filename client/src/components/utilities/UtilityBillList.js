@@ -37,6 +37,7 @@ import {
 import { getUtilityBills, updateUtilityBill, deleteUtilityBill } from '../../services/utilityService';
 import { formatCurrency } from '../../utils/format';
 import { isAdmin } from '../../services/authService';
+import ultrasLogo from '../../assets/images/ultras_logo.png';
 
 const UtilityBillList = () => {
   const navigate = useNavigate();
@@ -331,7 +332,7 @@ const UtilityBillList = () => {
               <Card variant="outlined" sx={{ mt: 2, p: 2 }}>
                 <CardContent>
                   <Box sx={{ textAlign: 'center', mb: 3 }}>
-                    <img src="/logo192.png" alt="Company Logo" style={{ maxWidth: '80px', maxHeight: '80px', margin: '0 auto 10px', display: 'block' }} />
+                    <img src={ultrasLogo} alt="Ultras Logo" style={{ maxWidth: '80px', maxHeight: '80px', margin: '0 auto 10px', display: 'block' }} />
                     <Typography variant="h5" sx={{ fontWeight: 'bold', margin: '5px 0' }}>SPORTS MANAGEMENT</Typography>
                     <Typography variant="h6" sx={{ fontWeight: 'bold', margin: '8px 0' }}>{selectedBill.billType} BILL</Typography>
                     <Typography variant="body2" color="textSecondary" sx={{ margin: '4px 0' }}>
@@ -561,9 +562,9 @@ const UtilityBillList = () => {
                     <div class="invoice-print">
                       <div class="invoice-container">
                         <div class="text-center mb-3">
-                          <img src="/logo192.png" alt="Company Logo" class="company-logo" />
+                          <img src="${ultrasLogo}" alt="Ultras Logo" class="company-logo" />
                           <h1 class="company-name">SPORTS MANAGEMENT</h1>
-                          <h2 class="invoice-title">${selectedBill.billType} BILL</h2>
+                          <h2 class="invoice-title">${selectedBill.billType.toUpperCase()} BILL</h2>
                           <p class="invoice-details">Bill #: ${selectedBill.billNumber}</p>
                           <p class="invoice-details">Date: ${formatDate(selectedBill.billDate)}</p>
                         </div>

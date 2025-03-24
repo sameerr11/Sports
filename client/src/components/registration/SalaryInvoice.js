@@ -30,6 +30,7 @@ import { createSalaryInvoice } from '../../services/registrationService';
 import { getRoleSalaryByRole } from '../../services/roleSalaryService';
 import { formatCurrency } from '../../utils/format';
 import { isAdmin } from '../../services/authService';
+import ultrasLogo from '../../assets/images/ultras_logo.png';
 
 const SalaryInvoice = () => {
   const [users, setUsers] = useState([]);
@@ -291,6 +292,13 @@ const SalaryInvoice = () => {
         </head>
         <body>
           <div class="invoice">
+            <div class="header">
+              <img src="${ultrasLogo}" alt="Ultras Logo" class="logo">
+              <div class="company-name">SPORTS MANAGEMENT</div>
+              <div class="invoice-title">SALARY INVOICE</div>
+              <div class="invoice-details">Invoice #: ${formData.invoiceNumber}</div>
+              <div class="invoice-details">Date: ${new Date().toLocaleDateString()}</div>
+            </div>
             ${content.innerHTML}
           </div>
         </body>
@@ -487,7 +495,7 @@ const SalaryInvoice = () => {
           <div id="invoice-to-print">
             <div style={{ padding: '16px' }}>
               <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                <img src="/logo192.png" alt="Company Logo" style={{ maxWidth: '80px', maxHeight: '80px', margin: '0 auto 10px', display: 'block' }} />
+                <img src={ultrasLogo} alt="Ultras Logo" style={{ maxWidth: '80px', maxHeight: '80px', margin: '0 auto 10px', display: 'block' }} />
                 <h1 style={{ margin: '5px 0', fontSize: '24px', fontWeight: 'bold' }}>SPORTS MANAGEMENT</h1>
                 <h2 style={{ margin: '8px 0', fontSize: '18px', fontWeight: 'bold' }}>SALARY INVOICE</h2>
                 <p style={{ margin: '4px 0' }}>Invoice #: {formData.invoiceNumber}</p>
