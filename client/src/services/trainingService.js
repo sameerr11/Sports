@@ -174,17 +174,49 @@ export const getCoachTrainingSchedules = async () => {
       }
     });
     
-    // Filter out any plans that have a scheduleId because those should only appear
-    // in the training plans section, not in the schedules section
-    const filteredPlans = allPlans.filter(plan => {
-      return !plan.scheduleId && 
-             !(plan.schedule && plan.schedule._id);
-    });
+    // Instead of filtering out plans with scheduleId, fetch the associated booking data to get court information
+    // Use API to get full booking information for plans with scheduleId
+    const plansWithScheduleIds = allPlans.filter(plan => 
+      (plan.scheduleId && typeof plan.scheduleId === 'string') || 
+      (plan.scheduleId && plan.scheduleId._id)
+    );
     
-    console.log('Filtered plans (removed plans with scheduleId):', filteredPlans);
+    // For plans with scheduleId, get the booking data
+    if (plansWithScheduleIds.length > 0) {
+      const bookingPromises = plansWithScheduleIds.map(plan => {
+        const bookingId = typeof plan.scheduleId === 'string' ? 
+          plan.scheduleId : plan.scheduleId._id;
+          
+        return api.get(`/bookings/${bookingId}`)
+          .then(res => {
+            // Attach the booking data to the plan
+            plan.scheduleId = res.data;
+            return plan;
+          })
+          .catch(err => {
+            console.error(`Error fetching booking for plan ${plan._id}:`, err);
+            return plan;
+          });
+      });
+      
+      await Promise.all(bookingPromises);
+    }
     
     // Sort by date
-    const sortedPlans = filteredPlans.sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sortedPlans = allPlans.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Ensure each plan has a court defined for display
+    sortedPlans.forEach(plan => {
+      // If plan doesn't have court info, add default court
+      if (!plan.court && (!plan.scheduleId || typeof plan.scheduleId === 'string')) {
+        // Add a default court 
+        plan.court = {
+          name: "Basketball Court",
+          location: "Main Arena"
+        };
+      }
+    });
+
     console.log('All sorted plans:', sortedPlans);
     return sortedPlans;
   } catch (error) {

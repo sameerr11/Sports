@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Box, 
   Typography, 
@@ -35,7 +35,10 @@ import {
   FormControl,
   FormControlLabel,
   FormHelperText,
-  Switch
+  Switch,
+  Popper,
+  Fade,
+  ClickAwayListener
 } from '@mui/material';
 import { 
   People, 
@@ -251,6 +254,29 @@ const CalendarLegend = () => {
   );
 };
 
+// Update the tooltip styles
+const styles = {
+  tooltip: {
+    position: 'absolute',
+    zIndex: 9999,
+    backgroundColor: '#fff',
+    borderRadius: '8px',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+    padding: '12px',
+    maxWidth: '300px',
+    transition: 'opacity 0.2s, visibility 0.2s',
+    pointerEvents: 'none', // So it doesn't interfere with clicks
+  },
+  hidden: {
+    opacity: 0,
+    visibility: 'hidden',
+  },
+  visible: {
+    opacity: 1,
+    visibility: 'visible',
+  }
+};
+
 const CoachDashboard = () => {
   const theme = useTheme();
   const user = getStoredUser();
@@ -265,6 +291,11 @@ const CoachDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [plansTab, setPlansTab] = useState(0);
+  
+  // Add state for tooltip functionality
+  const [hoveredEvent, setHoveredEvent] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const [showTooltip, setShowTooltip] = useState(false);
   
   // Add state for date range filter
   const [dateFilterOpen, setDateFilterOpen] = useState(false);
@@ -286,12 +317,12 @@ const CoachDashboard = () => {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        p: 0.5,
+        p: 0.7,
         borderLeft: '4px solid',
         borderLeftColor: eventInfo.event.backgroundColor,
         bgcolor: alpha(eventInfo.event.backgroundColor, 0.1),
         borderRadius: '4px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
+        boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
       }}>
         <Typography variant="body2" noWrap sx={{ 
           fontWeight: 600, 
@@ -302,25 +333,44 @@ const CoachDashboard = () => {
         </Typography>
         {eventInfo.view.type !== 'dayGridMonth' && (
           <>
-            <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-              <LocationOn fontSize="small" sx={{ fontSize: '0.75rem', mr: 0.5, color: alpha(theme.palette.text.secondary, 0.9) }} />
-              <Typography variant="caption" noWrap sx={{ color: alpha(theme.palette.text.secondary, 0.9) }}>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              mt: 0.5,
+              p: 0.7,
+              bgcolor: alpha(theme.palette.background.paper, 0.8),
+              borderRadius: '4px',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+            }}>
+              <LocationOn fontSize="small" sx={{ 
+                fontSize: '0.8rem', 
+                mr: 0.7, 
+                color: theme.palette.primary.main,
+                minWidth: 18
+              }} />
+              <Typography variant="caption" noWrap sx={{ 
+                color: theme.palette.text.primary,
+                fontWeight: 600,
+                fontSize: '0.75rem'
+              }}>
                 {eventInfo.event.extendedProps.location}
               </Typography>
             </Box>
-            <Chip 
-              size="small"
-              label={eventInfo.event.extendedProps.status}
-              sx={{ 
-                mt: 0.5, 
-                fontSize: '0.65rem', 
-                height: 18, 
-                maxWidth: '100%',
-                bgcolor: eventInfo.event.backgroundColor,
-                color: '#fff',
-                fontWeight: 500
-              }}
-            />
+            <Box sx={{ mt: 0.7, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Chip 
+                size="small"
+                label={eventInfo.event.extendedProps.status}
+                sx={{ 
+                  fontSize: '0.65rem', 
+                  height: 20, 
+                  maxWidth: '100%',
+                  bgcolor: eventInfo.event.backgroundColor,
+                  color: '#fff',
+                  fontWeight: 600
+                }}
+              />
+            </Box>
           </>
         )}
       </Box>
@@ -489,6 +539,254 @@ const CoachDashboard = () => {
     });
   };
   
+  // Format location for training sessions
+  const formatLocation = (court) => {
+    if (!court) return 'Location not specified';
+    
+    // If court is an ID string
+    if (typeof court === 'string') {
+      return 'Court: ' + court; // Just show the ID if we only have the string
+    }
+    
+    // If court is an object with _id only
+    if (court._id && !court.name) {
+      return 'Court ID: ' + court._id;
+    }
+    
+    // If court has name and location
+    if (court.name) {
+      return `${court.name}${court.location ? `, ${court.location}` : ''}`;
+    }
+    
+    // Handle more deeply nested court object
+    if (court.court && court.court.name) {
+      return `${court.court.name}${court.court.location ? `, ${court.court.location}` : ''}`;
+    }
+    
+    return 'Location details unavailable';
+  };
+  
+  // Convert training sessions to calendar events
+  const convertToCalendarEvents = () => {
+    const events = [];
+    
+    // Add booking-based training sessions
+    trainingSessions
+      .filter(session => session.startTime && session.endTime)
+      .forEach(session => {
+        try {
+          const teamName = session.team && session.team.name ? session.team.name : 'Personal Training';
+          const location = formatLocation(session.court);
+          
+          // Define colors with better contrast and visibility
+          const statusColors = {
+            Confirmed: {
+              bg: '#2e7d32', // darker green
+              border: '#1b5e20'
+            },
+            Pending: {
+              bg: '#ed6c02', // darker orange
+              border: '#c24e00'
+            },
+            Cancelled: {
+              bg: '#d32f2f', // darker red
+              border: '#b71c1c'
+            },
+            Default: {
+              bg: '#757575',
+              border: '#616161'
+            }
+          };
+          
+          const color = session.status === 'Confirmed' ? statusColors.Confirmed.bg : 
+                        session.status === 'Pending' ? statusColors.Pending.bg : 
+                        session.status === 'Cancelled' ? statusColors.Cancelled.bg : 
+                        statusColors.Default.bg;
+          
+          events.push({
+            id: `session-${session._id}`,
+            title: `${teamName} - Training Session`,
+            start: new Date(session.startTime),
+            end: new Date(session.endTime),
+            location: location,
+            status: session.status,
+            type: 'session',
+            color: color,
+            textColor: '#fff',
+            borderColor: color,
+            extendedProps: {
+              location: location,
+              status: session.status,
+              teamName: teamName,
+              durationHours: ((new Date(session.endTime) - new Date(session.startTime)) / (1000 * 60 * 60)).toFixed(1),
+              paymentStatus: session.paymentStatus || 'Not specified',
+              purpose: session.purpose || 'Training',
+              notes: session.notes || 'No additional notes'
+            }
+          });
+        } catch (err) {
+          console.error('Error converting session to event:', err, session);
+        }
+      });
+    
+    // Add training plans
+    trainingSchedules
+      .filter(schedule => schedule.date)
+      .forEach(schedule => {
+        try {
+          // Make sure we have a team name
+          let teamName = 'Basketball Team';
+          if (schedule.team) {
+            if (typeof schedule.team === 'object' && schedule.team.name) {
+              teamName = schedule.team.name;
+            } else if (typeof schedule.team === 'string') {
+              // Try to find the team in coachTeams
+              const team = coachTeams.find(t => t._id === schedule.team);
+              if (team) {
+                teamName = team.name;
+              }
+            }
+          }
+          
+          const scheduleDate = new Date(schedule.date);
+          const endDate = new Date(scheduleDate);
+          
+          // Check if schedule has a title, use a default if not
+          const title = schedule.title || 'Training Session';
+          
+          // Assume duration is in minutes and add to end date
+          endDate.setMinutes(scheduleDate.getMinutes() + (schedule.duration || 60));
+          
+          // Debug logging for court information
+          console.log('Schedule data for location:', {
+            id: schedule._id,
+            title: schedule.title,
+            scheduleId: schedule.scheduleId,
+            court: schedule.court
+          });
+          
+          // Get location from schedule if it exists
+          let location = 'Basketball Court'; // Default to a fixed court name for now
+          
+          // Check if there's a populated scheduleId (booking reference)
+          if (schedule.scheduleId && typeof schedule.scheduleId === 'object') {
+            console.log('Schedule has populated scheduleId object:', schedule.scheduleId);
+            if (schedule.scheduleId.court) {
+              // If the court object is populated directly
+              location = formatLocation(schedule.scheduleId.court);
+              console.log('Using court from scheduleId:', schedule.scheduleId.court);
+            }
+          } 
+          // Check if we have a court directly on the plan
+          else if (schedule.court) {
+            location = formatLocation(schedule.court);
+            console.log('Using court directly from schedule:', schedule.court);
+          }
+          
+          console.log('Final location for event:', location);
+          
+          // Set color based on status with better contrast
+          let color;
+          switch(schedule.status) {
+            case 'Draft': color = '#616161'; break; // darker gray
+            case 'Assigned': color = '#1976d2'; break; // darker blue
+            case 'InProgress': color = '#ed6c02'; break; // darker orange
+            case 'Completed': color = '#2e7d32'; break; // darker green
+            default: color = '#616161'; // darker gray
+          }
+          
+          events.push({
+            id: `plan-${schedule._id}`,
+            title: `${teamName} - ${title}`,
+            start: scheduleDate,
+            end: endDate,
+            location: location,
+            status: schedule.status,
+            type: 'plan',
+            color: color,
+            textColor: '#fff',
+            borderColor: color,
+            extendedProps: {
+              location: location,
+              status: schedule.status,
+              teamName: teamName,
+              durationHours: (schedule.duration / 60).toFixed(1),
+              description: schedule.description || 'No description provided',
+              activitiesCount: schedule.activities ? schedule.activities.length : 0,
+              createdBy: schedule.createdBy ? 
+                (typeof schedule.createdBy === 'object' ? 
+                  `${schedule.createdBy.firstName} ${schedule.createdBy.lastName}` : 
+                  'Coach') : 
+                'Coach',
+              notes: schedule.notes || 'No additional notes',
+              courtDetails: schedule.court || schedule.scheduleId?.court || { name: 'Basketball Court' }
+            }
+          });
+        } catch (err) {
+          console.error('Error converting schedule to event:', err, schedule);
+        }
+      });
+    
+    return events;
+  };
+  
+  // Remove the mouse movement useEffect and update handleEventMouseEnter
+  useEffect(() => {
+    // We no longer need a mousemove handler since tooltip will be positioned above the event
+    return () => {};
+  }, [showTooltip]);
+  
+  // Update the handleEventMouseEnter function
+  const handleEventMouseEnter = (info) => {
+    setHoveredEvent(info.event);
+    
+    // Calculate position based on the event element
+    const rect = info.el.getBoundingClientRect();
+    
+    if (tooltipRef.current) {
+      const tooltipWidth = 300; // Our max-width from styles
+      
+      // Initial positioning - center above the event
+      let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+      let top = rect.top - 10;
+      
+      // Check if tooltip would go off screen to the left
+      if (left < 10) {
+        left = 10;
+      }
+      
+      // Check if tooltip would go off screen to the right
+      const windowWidth = window.innerWidth;
+      if (left + tooltipWidth > windowWidth - 10) {
+        left = windowWidth - tooltipWidth - 10;
+      }
+      
+      // Apply the positioning
+      tooltipRef.current.style.left = `${left}px`;
+      tooltipRef.current.style.top = `${top}px`;
+      tooltipRef.current.style.transform = 'translateY(-100%)';
+    }
+    
+    setShowTooltip(true);
+  };
+  
+  // Add the missing handleEventClick function
+  const handleEventClick = (clickInfo) => {
+    // Navigate to appropriate detail page based on event type
+    const eventId = clickInfo.event.id;
+    
+    if (eventId.startsWith('plan-')) {
+      // Extract the plan ID (remove 'plan-' prefix)
+      const planId = eventId.substring(5);
+      // Navigate to training plan details
+      window.location.href = `/training-plans/${planId}`;
+    } else if (eventId.startsWith('session-')) {
+      // For training sessions, we could navigate to a session details page
+      // or handle in another appropriate way
+      console.log('Session clicked:', clickInfo.event);
+    }
+  };
+  
   // Render teams and players tab
   const renderTeamsTab = () => (
     <Grid container spacing={3}>
@@ -585,7 +883,10 @@ const CoachDashboard = () => {
     </Grid>
   );
   
-  // Render training schedules tab
+  // Add this inside the CoachDashboard component, right after state declarations
+  const tooltipRef = useRef(null);
+  
+  // Update the renderSchedulesTab function to remove the useEffect hook
   const renderSchedulesTab = () => {
     const refreshSchedules = async () => {
       try {
@@ -611,274 +912,216 @@ const CoachDashboard = () => {
       }
     };
     
-    // Format location for training sessions
-    const formatLocation = (court) => {
-      if (!court) return 'Location not specified';
-      return `${court.name}${court.location ? `, ${court.location}` : ''}`;
-    };
-
-    // Convert training sessions to calendar events
-    const convertToCalendarEvents = () => {
-      const events = [];
-      
-      // Add booking-based training sessions
-      trainingSessions
-        .filter(session => session.startTime && session.endTime)
-        .forEach(session => {
-          try {
-            const teamName = session.team && session.team.name ? session.team.name : 'Personal Training';
-            const location = formatLocation(session.court);
-            
-            // Define colors with better contrast and visibility
-            const statusColors = {
-              Confirmed: {
-                bg: '#2e7d32', // darker green
-                border: '#1b5e20'
-              },
-              Pending: {
-                bg: '#ed6c02', // darker orange
-                border: '#c24e00'
-              },
-              Cancelled: {
-                bg: '#d32f2f', // darker red
-                border: '#b71c1c'
-              },
-              Default: {
-                bg: '#757575',
-                border: '#616161'
-              }
-            };
-            
-            const color = session.status === 'Confirmed' ? statusColors.Confirmed.bg : 
-                          session.status === 'Pending' ? statusColors.Pending.bg : 
-                          session.status === 'Cancelled' ? statusColors.Cancelled.bg : 
-                          statusColors.Default.bg;
-            
-            events.push({
-              id: `session-${session._id}`,
-              title: `${teamName} - Training Session`,
-              start: new Date(session.startTime),
-              end: new Date(session.endTime),
-              location: location,
-              status: session.status,
-              type: 'session',
-              color: color,
-              textColor: '#fff',
-              borderColor: color
-            });
-          } catch (err) {
-            console.error('Error converting session to event:', err, session);
-          }
-        });
-      
-      // Add training plans
-      trainingSchedules
-        .filter(schedule => schedule.date)
-        .forEach(schedule => {
-          try {
-            const teamName = schedule.team && schedule.team.name ? schedule.team.name : 'Unknown Team';
-        const scheduleDate = new Date(schedule.date);
-            const endDate = new Date(scheduleDate);
-            
-            // Assume duration is in minutes and add to end date
-            endDate.setMinutes(scheduleDate.getMinutes() + (schedule.duration || 60));
-            
-            // Set color based on status with better contrast
-            let color;
-            switch(schedule.status) {
-              case 'Draft': color = '#616161'; break; // darker gray
-              case 'Assigned': color = '#1976d2'; break; // darker blue
-              case 'InProgress': color = '#ed6c02'; break; // darker orange
-              case 'Completed': color = '#2e7d32'; break; // darker green
-              default: color = '#616161'; // darker gray
-            }
-            
-            events.push({
-              id: `plan-${schedule._id}`,
-              title: `${teamName} - ${schedule.title}`,
-              start: scheduleDate,
-              end: endDate,
-              location: 'Not specified',
-              status: schedule.status,
-              type: 'plan',
-              color: color,
-              textColor: '#fff',
-              borderColor: color
-            });
-      } catch (err) {
-            console.error('Error converting schedule to event:', err, schedule);
-          }
-        });
-      
-      return events;
-    };
-    
-    // Handle event click
-    const handleEventClick = (info) => {
-      console.log('Event clicked:', info.event);
-      // Additional functionality can be added here
-    };
-    
     return (
-    <Grid container spacing={3}>
-      {isLoading ? (
-        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <CircularProgress />
-        </Grid>
-      ) : (
-        <>
-          <Grid item xs={12}>
-            <Paper 
-              elevation={0}
-              sx={{ 
-                p: 2.5, 
-                borderRadius: 2,
-                bgcolor: alpha(theme.palette.primary.light, 0.1),
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 2,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-              }}
-            >
-              <Box>
-                <Typography variant="h6" sx={{ 
-                  fontWeight: 'bold', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  color: theme.palette.primary.dark
-                }}>
-                  {coachTeams.length > 0 ?
-                    React.cloneElement(getSportIcon(coachTeams[0]?.sportType || 'Sports'), { 
-                      sx: { mr: 1.5, fontSize: '1.8rem', color: theme.palette.primary.main } 
-                    }) :
-                    <FitnessCenter sx={{ mr: 1.5, fontSize: '1.8rem', color: theme.palette.primary.main }} />
-                  }
-                  Training Schedule Calendar
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.8, ml: 0.5 }}>
-                  View all your training sessions and plans in a calendar view
-                </Typography>
-              </Box>
-                <Button 
-                variant="contained" 
-                size="medium"
-                color="primary"
-                  onClick={refreshSchedules}
-                  disabled={isLoading}
-                startIcon={<CalendarMonth />}
+      <Grid container spacing={3}>
+        {isLoading ? (
+          <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+            <CircularProgress />
+          </Grid>
+        ) : (
+          <>
+            <Grid item xs={12}>
+              <Paper 
+                elevation={0}
                 sx={{ 
-                  px: 2.5, 
-                  py: 1, 
-                  borderRadius: 1.5,
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  fontWeight: 500
+                  p: 2.5, 
+                  borderRadius: 2,
+                  bgcolor: alpha(theme.palette.primary.light, 0.1),
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 2,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                 }}
               >
-                Refresh Calendar
-              </Button>
-            </Paper>
+                <Box>
+                  <Typography variant="h6" sx={{ 
+                    fontWeight: 'bold', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    color: theme.palette.primary.dark
+                  }}>
+                    {coachTeams.length > 0 ?
+                      React.cloneElement(getSportIcon(coachTeams[0]?.sportType || 'Sports'), { 
+                        sx: { mr: 1.5, fontSize: '1.8rem', color: theme.palette.primary.main } 
+                      }) :
+                      <FitnessCenter sx={{ mr: 1.5, fontSize: '1.8rem', color: theme.palette.primary.main }} />
+                    }
+                    Training Schedule Calendar
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.8, ml: 0.5 }}>
+                    View all your training sessions and plans in a calendar view
+                  </Typography>
+                </Box>
+                <Button 
+                  variant="contained" 
+                  size="medium"
+                  color="primary"
+                  onClick={refreshSchedules}
+                  disabled={isLoading}
+                  startIcon={<CalendarMonth />}
+                  sx={{ 
+                    px: 2.5, 
+                    py: 1, 
+                    borderRadius: 1.5,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    fontWeight: 500
+                  }}
+                >
+                  Refresh Calendar
+                </Button>
+              </Paper>
             </Grid>
-          
-          <Grid item xs={12}>
-            <CalendarLegend />
-          </Grid>
+            
+            <Grid item xs={12}>
+              <CalendarLegend />
+            </Grid>
 
-                <Grid item xs={12}>
-            <Paper variant="outlined" sx={{ 
-              p: 2, 
-              borderRadius: 2, 
-              height: '650px',
-              ...calendarStyles,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-            }}>
-              <FullCalendar
-                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                initialView="timeGridWeek"
-                headerToolbar={{
-                  left: 'prev,next today',
-                  center: 'title',
-                  right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                }}
-                events={convertToCalendarEvents()}
-                eventClick={handleEventClick}
-                height="600px"
-                eventTimeFormat={{
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  meridiem: 'short'
-                }}
-                eventContent={renderEventContent}
-                slotLabelFormat={{
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: true
-                }}
-                dayHeaderFormat={{
-                  weekday: 'short',
-                  month: 'numeric',
-                  day: 'numeric',
-                  omitCommas: true
-                }}
-                allDaySlot={true}
-                allDayText="All Day"
-                slotMinTime="06:00:00"
-                slotMaxTime="22:00:00"
-                nowIndicator={true}
-                stickyHeaderDates={true}
-                dayMaxEvents={3}
-                eventMaxStack={3}
-                expandRows={true}
-                contentHeight="auto"
-                handleWindowResize={true}
-                views={{
-                  timeGridWeek: {
-                    dayHeaderFormat: { weekday: 'short', month: 'numeric', day: 'numeric', omitCommas: true },
-                    slotDuration: '01:00:00',
-                    slotLabelInterval: '01:00:00'
-                  },
-                  dayGridMonth: {
-                    dayMaxEvents: 3,
-                    fixedWeekCount: false
-                  },
-                  timeGridDay: {
-                    dayHeaderFormat: { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }
-                  }
-                }}
-                businessHours={{
-                  daysOfWeek: [1, 2, 3, 4, 5], // Monday - Friday
-                  startTime: '08:00',
-                  endTime: '20:00',
-                }}
-                themeSystem="standard"
-                firstDay={1} // Start calendar from Monday
-                buttonText={{
-                  today: 'Today',
-                  month: 'Month',
-                  week: 'Week',
-                  day: 'Day'
-                }}
-                slotLabelClassNames="slot-label"
-                dayHeaderClassNames="day-header"
-                dayMaxEventRows={true}
-                slotEventOverlap={false}
-                eventDisplay="block"
-                slotDuration="01:00:00"
-                slotLabelInterval="01:00:00"
-                scrollTimeReset={false}
-                scrollTime="08:00:00"
-                weekNumbers={false}
-                weekText="W"
-                weekNumberFormat={{ week: 'numeric' }}
-                fixedWeekCount={false}
-                showNonCurrentDates={false}
-              />
-            </Paper>
-                    </Grid>
-        </>
-      )}
-    </Grid>
+            <Grid item xs={12}>
+              <Paper variant="outlined" sx={{ 
+                p: 2, 
+                borderRadius: 2, 
+                height: '650px',
+                ...calendarStyles,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+              }}>
+                <FullCalendar
+                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                  initialView="timeGridWeek"
+                  headerToolbar={{
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                  }}
+                  events={convertToCalendarEvents()}
+                  eventClick={handleEventClick}
+                  eventMouseEnter={handleEventMouseEnter}
+                  eventMouseLeave={() => setShowTooltip(false)}
+                  height="600px"
+                  eventTimeFormat={{
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    meridiem: 'short'
+                  }}
+                  eventContent={renderEventContent}
+                  slotLabelFormat={{
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  }}
+                  dayHeaderFormat={{
+                    weekday: 'short',
+                    month: 'numeric',
+                    day: 'numeric',
+                    omitCommas: true
+                  }}
+                  allDaySlot={true}
+                  allDayText="All Day"
+                  slotMinTime="06:00:00"
+                  slotMaxTime="22:00:00"
+                  nowIndicator={true}
+                  stickyHeaderDates={true}
+                  dayMaxEvents={3}
+                  eventMaxStack={3}
+                  expandRows={true}
+                  contentHeight="auto"
+                  handleWindowResize={true}
+                  views={{
+                    timeGridWeek: {
+                      dayHeaderFormat: { weekday: 'short', month: 'numeric', day: 'numeric', omitCommas: true },
+                      slotDuration: '01:00:00',
+                      slotLabelInterval: '01:00:00'
+                    },
+                    dayGridMonth: {
+                      dayMaxEvents: 3,
+                      fixedWeekCount: false
+                    },
+                    timeGridDay: {
+                      dayHeaderFormat: { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }
+                    }
+                  }}
+                  businessHours={{
+                    daysOfWeek: [1, 2, 3, 4, 5], // Monday - Friday
+                    startTime: '08:00',
+                    endTime: '20:00',
+                  }}
+                  themeSystem="standard"
+                  firstDay={1} // Start calendar from Monday
+                  buttonText={{
+                    today: 'Today',
+                    month: 'Month',
+                    week: 'Week',
+                    day: 'Day'
+                  }}
+                  slotLabelClassNames="slot-label"
+                  dayHeaderClassNames="day-header"
+                  dayMaxEventRows={true}
+                  slotEventOverlap={false}
+                  eventDisplay="block"
+                  slotDuration="01:00:00"
+                  slotLabelInterval="01:00:00"
+                  scrollTimeReset={false}
+                  scrollTime="08:00:00"
+                  weekNumbers={false}
+                  weekText="W"
+                  weekNumberFormat={{ week: 'numeric' }}
+                  fixedWeekCount={false}
+                  showNonCurrentDates={false}
+                />
+                <div 
+                  ref={tooltipRef}
+                  style={{
+                    ...styles.tooltip,
+                    ...(showTooltip && hoveredEvent ? styles.visible : styles.hidden),
+                    borderLeft: hoveredEvent ? `4px solid ${hoveredEvent.backgroundColor}` : 'none'
+                  }}
+                >
+                  {hoveredEvent && (
+                    <>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                        {hoveredEvent.title}
+                      </Typography>
+                      
+                      <Chip 
+                        label={hoveredEvent.extendedProps.status}
+                        size="small"
+                        sx={{ 
+                          mb: 1.5, 
+                          bgcolor: hoveredEvent.backgroundColor,
+                          color: 'white', 
+                          fontWeight: 'bold',
+                          fontSize: '0.7rem'
+                        }}
+                      />
+                      
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                          <CalendarMonth sx={{ fontSize: '0.9rem', mr: 0.5, color: 'text.secondary' }} />
+                          {format(hoveredEvent.start, 'EEE, MMM d')} • {format(hoveredEvent.start, 'h:mm a')} - {format(hoveredEvent.end, 'h:mm a')}
+                        </Typography>
+                        
+                        <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                          <LocationOn sx={{ fontSize: '0.9rem', mr: 0.5, color: 'text.secondary' }} />
+                          {hoveredEvent.extendedProps.location}
+                        </Typography>
+                        
+                        {hoveredEvent.extendedProps.description && (
+                          <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary', fontSize: '0.8rem' }}>
+                            {hoveredEvent.extendedProps.description.length > 100 ? 
+                              hoveredEvent.extendedProps.description.substring(0, 100) + '...' : 
+                              hoveredEvent.extendedProps.description}
+                          </Typography>
+                        )}
+                      </Box>
+                    </>
+                  )}
+                </div>
+              </Paper>
+            </Grid>
+          </>
+        )}
+      </Grid>
     );
   };
   
