@@ -59,7 +59,20 @@ const CourtSelection = ({ selectedDate, setSelectedDate, selectedCourt, setSelec
             value={selectedDate}
             onChange={handleDateChange}
             minDate={new Date()}
-            renderInput={(params) => <TextField {...params} fullWidth />}
+            renderInput={(params) => 
+              <TextField 
+                {...params} 
+                fullWidth 
+                sx={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: 'rgba(0, 0, 0, 0.23)'
+                    }
+                  }
+                }} 
+              />
+            }
           />
         </Box>
       </LocalizationProvider>
@@ -86,7 +99,9 @@ const CourtSelection = ({ selectedDate, setSelectedDate, selectedCourt, setSelec
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    border: selectedCourt?.id === court.id ? '2px solid #1976d2' : 'none'
+                    border: selectedCourt?.id === court.id ? '2px solid #1976d2' : 'none',
+                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                    backdropFilter: 'blur(5px)'
                   }}
                 >
                   <CardActionArea onClick={() => handleCourtSelect(court)}>
@@ -131,4 +146,4 @@ const CourtSelection = ({ selectedDate, setSelectedDate, selectedCourt, setSelec
   );
 };
 
-export default CourtSelection; 
+export default CourtSelection;

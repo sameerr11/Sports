@@ -3,7 +3,7 @@ import {
   Box, Typography, Grid, Card, CardContent, 
   Button, CircularProgress, FormControl, FormLabel, 
   RadioGroup, Radio, FormControlLabel,
-  Checkbox, Paper, Divider, Alert
+  Checkbox, Paper, Divider, Alert, CardActionArea
 } from '@mui/material';
 import { getCourtAvailability } from '../../services/guestBookingService';
 
@@ -246,27 +246,25 @@ const TimeSelection = ({
           
           <Grid container spacing={2}>
             {timeSlots.map((slot, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
-                <Paper 
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    border: selectedSlots.some(s => s.display === slot.display) 
-                      ? '2px solid #1976d2' 
-                      : '1px solid #e0e0e0',
-                    bgcolor: selectedSlots.some(s => s.display === slot.display)
-                      ? 'rgba(25, 118, 210, 0.08)'
-                      : 'white'
+              <Grid item xs={6} sm={4} md={3} key={index}>
+                <Card 
+                  sx={{ 
+                    mb: 1, 
+                    backgroundColor: selectedSlots.some(s => s.display === slot.display) 
+                      ? 'rgba(25, 118, 210, 0.3)' 
+                      : 'rgba(255, 255, 255, 0.7)',
+                    backdropFilter: 'blur(5px)',
+                    border: selectedSlots.some(s => s.display === slot.display) ? '2px solid #1976d2' : 'none'
                   }}
                 >
-                  <Box display="flex" alignItems="center" justifyContent="space-between">
-                    <Typography>{slot.display}</Typography>
-                    <Checkbox
-                      checked={selectedSlots.some(s => s.display === slot.display)}
-                      onChange={() => handleSlotToggle(slot)}
-                    />
-                  </Box>
-                </Paper>
+                  <CardActionArea onClick={() => handleSlotToggle(slot)}>
+                    <CardContent>
+                      <Typography variant="body1" align="center">
+                        {slot.display}
+                      </Typography>
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
               </Grid>
             ))}
           </Grid>

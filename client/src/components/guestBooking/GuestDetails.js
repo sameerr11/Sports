@@ -133,40 +133,61 @@ const GuestDetails = ({
           <TextField
             required
             fullWidth
-            id="guestName"
-            label="Full Name"
             name="guestName"
+            label="Name"
             value={guestDetails.guestName}
             onChange={handleChange}
             error={!!localError.guestName}
             helperText={localError.guestName}
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: 'rgba(0, 0, 0, 0.23)'
+                }
+              }
+            }}
           />
         </Grid>
         <Grid item xs={12}>
           <TextField
             required
             fullWidth
-            id="guestEmail"
-            label="Email Address"
             name="guestEmail"
+            label="Email"
             type="email"
             value={guestDetails.guestEmail}
             onChange={handleChange}
             error={!!localError.guestEmail}
             helperText={localError.guestEmail}
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: 'rgba(0, 0, 0, 0.23)'
+                }
+              }
+            }}
           />
         </Grid>
         <Grid item xs={12}>
           <TextField
             required
             fullWidth
-            id="guestPhone"
-            label="Phone Number"
             name="guestPhone"
+            label="Phone Number"
             value={guestDetails.guestPhone}
             onChange={handleChange}
             error={!!localError.guestPhone}
             helperText={localError.guestPhone}
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: 'rgba(0, 0, 0, 0.23)'
+                }
+              }
+            }}
           />
         </Grid>
       </Grid>
