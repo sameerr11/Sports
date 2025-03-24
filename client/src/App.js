@@ -52,6 +52,7 @@ import RoleSalaryConfig from './components/admin/RoleSalaryConfig';
 import RegistrationFeeConfig from './components/admin/RegistrationFeeConfig';
 // Import the RevenueDashboard component
 import RevenueDashboard from './components/revenue/RevenueDashboard';
+import GuestBookingPage from './components/guestBooking/GuestBookingPage';
 
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
@@ -583,6 +584,9 @@ function App() {
             </MainLayout>
           </ProtectedRoute>
         } />
+        
+        {/* Guest Booking Route */}
+        <Route path="/guest-booking" element={<GuestBookingPage />} />
         
         {/* Catch all route */}
         <Route path="*" element={<Navigate to="/" />} />

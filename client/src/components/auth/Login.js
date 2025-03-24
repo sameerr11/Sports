@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TextField, Button, Paper, Typography, Container, Box, Alert } from '@mui/material';
+import { TextField, Button, Paper, Typography, Container, Box, Alert, Divider } from '@mui/material';
 import { login } from '../../services/authService';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -49,6 +49,10 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGuestBooking = () => {
+    navigate('/guest-booking');
   };
 
   return (
@@ -109,6 +113,22 @@ const Login = () => {
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
+          </Box>
+          
+          <Divider sx={{ my: 2 }}>OR</Divider>
+          
+          <Box sx={{ mt: 2 }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              color="primary"
+              onClick={handleGuestBooking}
+            >
+              Book a Court as Guest
+            </Button>
+            <Typography variant="caption" align="center" display="block" sx={{ mt: 1 }}>
+              No account needed. Book and pay instantly.
+            </Typography>
           </Box>
         </Paper>
       </Box>

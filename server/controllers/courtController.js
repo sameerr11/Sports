@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const Court = require('../models/Court');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
+const GuestBooking = require('../models/GuestBooking');
 
 // @desc    Create a new court
 // @route   POST /api/courts
@@ -257,6 +258,14 @@ exports.getCourtAvailability = async (req, res) => {
       status: { $ne: 'Cancelled' }
     }).sort({ startTime: 1 });
 
+    // Get all guest bookings for this court on the specified date
+    const guestBookings = await GuestBooking.find({
+      court: req.params.id,
+      startTime: { $gte: startOfDay },
+      endTime: { $lte: endOfDay },
+      status: { $ne: 'Cancelled' }
+    }).sort({ startTime: 1 });
+
     // Get day of week
     const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][date.getDay()];
     
@@ -268,12 +277,24 @@ exports.getCourtAvailability = async (req, res) => {
       date: date,
       dayOfWeek,
       courtAvailability,
-      bookings: bookings.map(booking => ({
-        id: booking._id,
-        startTime: booking.startTime,
-        endTime: booking.endTime,
-        status: booking.status
-      }))
+      bookings: [
+        ...bookings.map(booking => ({
+          id: booking._id,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          status: booking.status,
+          isGuestBooking: false
+        })),
+        ...guestBookings.map(booking => ({
+          id: booking._id,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          status: booking.status,
+          isGuestBooking: true,
+          bookingReference: booking.bookingReference,
+          guestName: booking.user ? `${booking.user.firstName}` : 'Guest'
+        }))
+      ].sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
     };
 
     res.json(response);

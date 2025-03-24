@@ -60,8 +60,15 @@ export const createBooking = async (bookingData) => {
 // Update booking status (admin/supervisor only)
 export const updateBookingStatus = async (id, status) => {
   try {
-    const response = await api.put(`/bookings/${id}/status`, { status });
-    return response.data;
+    // Check if it's a guest booking
+    if (id.startsWith && id.startsWith('guest-')) {
+      const guestId = id.replace('guest-', '');
+      const response = await api.put(`/bookings/guest/${guestId}/status`, { status });
+      return response.data;
+    } else {
+      const response = await api.put(`/bookings/${id}/status`, { status });
+      return response.data;
+    }
   } catch (error) {
     throw error.response?.data?.msg || 'Failed to update booking status';
   }
@@ -70,8 +77,15 @@ export const updateBookingStatus = async (id, status) => {
 // Cancel booking
 export const cancelBooking = async (id) => {
   try {
-    const response = await api.put(`/bookings/${id}/cancel`);
-    return response.data;
+    // Check if it's a guest booking
+    if (id.startsWith && id.startsWith('guest-')) {
+      const guestId = id.replace('guest-', '');
+      const response = await api.put(`/bookings/guest/${guestId}/cancel`);
+      return response.data;
+    } else {
+      const response = await api.put(`/bookings/${id}/cancel`);
+      return response.data;
+    }
   } catch (error) {
     throw error.response?.data?.msg || 'Failed to cancel booking';
   }

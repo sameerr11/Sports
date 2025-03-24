@@ -33,6 +33,7 @@ const registrationRoutes = require('./registrationRoutes');
 const utilityRoutes = require('./utilityRoutes');
 const roleSalaryRoutes = require('./roleSalaryRoutes');
 const revenueRoutes = require('./revenueRoutes');
+const guestBookingRoutes = require('./guestBookingRoutes');
 
 // Middleware
 const { auth, admin, supervisor, coach, player, parent, adminOrSupport, adminSupportOrAccounting, support, teamSupervisor } = require('../middleware/auth');
@@ -152,6 +153,22 @@ router.put(
 );
 router.put('/bookings/:id/cancel', auth, bookingController.cancelBooking);
 
+// Guest Booking management routes (admin/supervisor only)
+router.put(
+  '/bookings/guest/:id/status',
+  [
+    auth, 
+    check('status', 'Status is required').notEmpty()
+  ],
+  bookingController.updateGuestBookingStatus
+);
+
+router.put(
+  '/bookings/guest/:id/cancel',
+  auth,
+  bookingController.cancelGuestBooking
+);
+
 // Team routes
 router.post(
   '/teams',
@@ -258,5 +275,8 @@ router.use('/role-salaries', roleSalaryRoutes);
 
 // Revenue routes
 router.use('/revenue', revenueRoutes);
+
+// Guest Booking routes
+router.use('/guest-bookings', guestBookingRoutes);
 
 module.exports = router; 

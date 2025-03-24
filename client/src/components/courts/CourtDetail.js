@@ -252,6 +252,7 @@ const CourtDetail = () => {
                           <TableCell>Start Time</TableCell>
                           <TableCell>End Time</TableCell>
                           <TableCell>Status</TableCell>
+                          <TableCell>Type</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -273,6 +274,22 @@ const CourtDetail = () => {
                                 } 
                                 size="small"
                               />
+                            </TableCell>
+                            <TableCell>
+                              {booking.isGuestBooking ? (
+                                <Chip 
+                                  label={booking.guestName === 'Guest' ? 'Guest' : `Guest: ${booking.guestName}`}
+                                  color="secondary"
+                                  size="small"
+                                  title={booking.bookingReference ? `Ref: ${booking.bookingReference}` : ''}
+                                />
+                              ) : (
+                                <Chip 
+                                  label="Member"
+                                  color="primary"
+                                  size="small"
+                                />
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}

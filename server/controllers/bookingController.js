@@ -176,10 +176,11 @@ exports.getBookings = async (req, res) => {
       query.team = req.query.team;
     }
 
-    // Handle different types of supervisors
+    // Get supervisor details if the user is a supervisor
+    let supervisor = null;
     if (req.user.role === 'supervisor') {
       // Get the supervisor details
-      const supervisor = await User.findById(req.user.id);
+      supervisor = await User.findById(req.user.id);
       
       // Cafeteria supervisors shouldn't see bookings
       if (supervisor.supervisorType === 'cafeteria') {
@@ -252,13 +253,98 @@ exports.getBookings = async (req, res) => {
       return res.status(403).json({ msg: 'Access denied' });
     }
     
-    const bookings = await Booking.find(query)
+    // Fetch regular bookings
+    const regularBookings = await Booking.find(query)
       .populate('court', 'name location sportType hourlyRate')
       .populate('user', 'firstName lastName email')
       .populate('team', 'name sportType')
       .sort({ startTime: 1 });
     
-    res.json(bookings);
+    // Update status to Completed for past bookings that aren't cancelled
+    const currentTime = new Date();
+    const bookingsToUpdate = [];
+    
+    for (const booking of regularBookings) {
+      if (new Date(booking.endTime) < currentTime && 
+          booking.status !== 'Cancelled' && 
+          booking.status !== 'Completed') {
+        booking.status = 'Completed';
+        bookingsToUpdate.push(booking.save());
+      }
+    }
+    
+    // Process updates in parallel if any bookings need updating
+    if (bookingsToUpdate.length > 0) {
+      await Promise.all(bookingsToUpdate);
+    }
+    
+    // Determine if the user should see guest bookings
+    const canSeeGuestBookings = 
+      req.user.role === 'admin' || 
+      (req.user.role === 'supervisor' && 
+       supervisor && 
+       (supervisor.supervisorType === 'general' || supervisor.supervisorType === 'booking'));
+    
+    // Prepare empty array for guest bookings
+    let formattedGuestBookings = [];
+    
+    // Only fetch guest bookings if the user has permission
+    if (canSeeGuestBookings) {
+      // Fetch guest bookings
+      const GuestBooking = require('../models/GuestBooking');
+      const guestBookings = await GuestBooking.find({})
+        .populate('court', 'name location sportType hourlyRate')
+        .sort({ startTime: 1 });
+      
+      // Update guest bookings status to Completed if time has passed
+      const guestBookingsToUpdate = [];
+      
+      for (const booking of guestBookings) {
+        if (new Date(booking.endTime) < currentTime && 
+            booking.status !== 'Cancelled' && 
+            booking.status !== 'Completed') {
+          booking.status = 'Completed';
+          guestBookingsToUpdate.push(booking.save());
+        }
+      }
+      
+      // Process updates in parallel if any guest bookings need updating
+      if (guestBookingsToUpdate.length > 0) {
+        await Promise.all(guestBookingsToUpdate);
+      }
+      
+      // Transform guest bookings to match regular booking format
+      formattedGuestBookings = guestBookings.map(booking => {
+        return {
+          _id: booking._id,
+          court: booking.court,
+          user: {
+            _id: 'guest',
+            firstName: booking.guestName,
+            lastName: '',
+            email: booking.guestEmail
+          },
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          purpose: 'Rental',
+          status: booking.status,
+          totalPrice: booking.totalPrice,
+          paymentStatus: booking.paymentStatus,
+          notes: booking.notes,
+          createdAt: booking.createdAt,
+          updatedAt: booking.updatedAt,
+          isGuestBooking: true,
+          bookingReference: booking.bookingReference,
+          guestPhone: booking.guestPhone
+        };
+      });
+    }
+    
+    // Combine and sort all bookings by start time
+    const allBookings = [...regularBookings, ...formattedGuestBookings]
+      .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    
+    res.json(allBookings);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -292,6 +378,24 @@ exports.getUserBookings = async (req, res) => {
       .populate('user', 'firstName lastName email')
       .populate('team', 'name sportType')
       .sort({ startTime: 1 });
+    
+    // Update status to Completed for past bookings that aren't cancelled
+    const currentTime = new Date();
+    const bookingsToUpdate = [];
+    
+    for (const booking of bookings) {
+      if (new Date(booking.endTime) < currentTime && 
+          booking.status !== 'Cancelled' && 
+          booking.status !== 'Completed') {
+        booking.status = 'Completed';
+        bookingsToUpdate.push(booking.save());
+      }
+    }
+    
+    // Process updates in parallel if any bookings need updating
+    if (bookingsToUpdate.length > 0) {
+      await Promise.all(bookingsToUpdate);
+    }
     
     res.json(bookings);
   } catch (err) {
@@ -364,6 +468,15 @@ exports.getBookingById = async (req, res) => {
       return res.status(403).json({ msg: 'Not authorized to view this booking' });
     } else if (booking.user._id.toString() !== req.user.id && !['admin', 'accounting'].includes(req.user.role)) {
       return res.status(403).json({ msg: 'Not authorized to view this booking' });
+    }
+
+    // Update status to Completed if the booking time has passed and it's not cancelled or already completed
+    const currentTime = new Date();
+    if (new Date(booking.endTime) < currentTime && 
+        booking.status !== 'Cancelled' && 
+        booking.status !== 'Completed') {
+      booking.status = 'Completed';
+      await booking.save();
     }
 
     res.json(booking);
@@ -493,6 +606,140 @@ exports.cancelBooking = async (req, res) => {
     await booking.save();
 
     res.json(booking);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// @desc    Update guest booking status (admin/supervisor only)
+// @route   PUT /api/bookings/guest/:id/status
+// @access  Private (Admin, Supervisor)
+exports.updateGuestBookingStatus = async (req, res) => {
+  const { status } = req.body;
+
+  // Check if status is valid
+  if (!['Pending', 'Confirmed', 'Cancelled', 'Completed'].includes(status)) {
+    return res.status(400).json({ msg: 'Invalid status value' });
+  }
+
+  try {
+    // Check if user is authorized (admin or supervisor)
+    if (req.user.role !== 'admin' && req.user.role !== 'supervisor') {
+      return res.status(403).json({ msg: 'Access denied: Not authorized to update booking status' });
+    }
+
+    // If supervisor, check supervisor type
+    if (req.user.role === 'supervisor') {
+      const supervisor = await User.findById(req.user.id);
+      
+      // Cafeteria supervisors can't manage bookings
+      if (supervisor.supervisorType === 'cafeteria') {
+        return res.status(403).json({ msg: 'Access denied: Cafeteria supervisors cannot manage bookings' });
+      }
+      
+      // Sports supervisors need to check if they manage this sport type
+      if (supervisor.supervisorType === 'sports') {
+        const GuestBooking = require('../models/GuestBooking');
+        const booking = await GuestBooking.findById(req.params.id).populate('court');
+        
+        if (!booking) {
+          return res.status(404).json({ msg: 'Guest booking not found' });
+        }
+        
+        if (!Array.isArray(supervisor.supervisorSportTypes) || 
+            !supervisor.supervisorSportTypes.includes(booking.court.sportType)) {
+          return res.status(403).json({ 
+            msg: `Access denied: You are not authorized to manage ${booking.court.sportType} bookings` 
+          });
+        }
+      }
+    }
+
+    // Update the booking status
+    const GuestBooking = require('../models/GuestBooking');
+    const booking = await GuestBooking.findById(req.params.id);
+    
+    if (!booking) {
+      return res.status(404).json({ msg: 'Guest booking not found' });
+    }
+    
+    // If cancelling a booking that was previously confirmed or pending
+    if (status === 'Cancelled' && ['Confirmed', 'Pending'].includes(booking.status)) {
+      if (booking.paymentStatus === 'Paid') {
+        booking.paymentStatus = 'Refunded';
+      }
+    }
+    
+    booking.status = status;
+    await booking.save();
+    
+    res.json({ msg: 'Guest booking status updated successfully' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// @desc    Cancel guest booking (admin/supervisor only)
+// @route   PUT /api/bookings/guest/:id/cancel
+// @access  Private (Admin, Supervisor)
+exports.cancelGuestBooking = async (req, res) => {
+  try {
+    // Check if user is authorized (admin or supervisor)
+    if (req.user.role !== 'admin' && req.user.role !== 'supervisor') {
+      return res.status(403).json({ msg: 'Access denied: Not authorized to cancel booking' });
+    }
+
+    // If supervisor, check supervisor type
+    if (req.user.role === 'supervisor') {
+      const supervisor = await User.findById(req.user.id);
+      
+      // Cafeteria supervisors can't manage bookings
+      if (supervisor.supervisorType === 'cafeteria') {
+        return res.status(403).json({ msg: 'Access denied: Cafeteria supervisors cannot manage bookings' });
+      }
+      
+      // Sports supervisors need to check if they manage this sport type
+      if (supervisor.supervisorType === 'sports') {
+        const GuestBooking = require('../models/GuestBooking');
+        const booking = await GuestBooking.findById(req.params.id).populate('court');
+        
+        if (!booking) {
+          return res.status(404).json({ msg: 'Guest booking not found' });
+        }
+        
+        if (!Array.isArray(supervisor.supervisorSportTypes) || 
+            !supervisor.supervisorSportTypes.includes(booking.court.sportType)) {
+          return res.status(403).json({ 
+            msg: `Access denied: You are not authorized to manage ${booking.court.sportType} bookings` 
+          });
+        }
+      }
+    }
+
+    const GuestBooking = require('../models/GuestBooking');
+    const booking = await GuestBooking.findById(req.params.id);
+    
+    if (!booking) {
+      return res.status(404).json({ msg: 'Guest booking not found' });
+    }
+    
+    // Only allow cancelling confirmed or pending bookings
+    if (!['Confirmed', 'Pending'].includes(booking.status)) {
+      return res.status(400).json({ msg: 'This booking cannot be cancelled' });
+    }
+    
+    booking.status = 'Cancelled';
+    
+    // If payment was made, set to refunded
+    if (booking.paymentStatus === 'Paid') {
+      booking.paymentStatus = 'Refunded';
+    }
+    
+    await booking.save();
+    
+    res.json({ msg: 'Guest booking cancelled successfully' });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');

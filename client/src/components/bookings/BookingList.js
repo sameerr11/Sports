@@ -4,26 +4,36 @@ import {
   Container, Typography, Box, Button, Paper, Chip, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
-  FormControl, InputLabel, Select, MenuItem, Alert, useTheme, alpha
+  FormControl, InputLabel, Select, MenuItem, Alert, useTheme, alpha,
+  TextField, Grid, IconButton, Tooltip
 } from '@mui/material';
 import { 
   Event, Cancel, CheckCircle, Visibility, 
-  SportsTennis, AccessTime, CalendarMonth
+  SportsTennis, AccessTime, CalendarMonth, FilterAlt, Clear
 } from '@mui/icons-material';
 import { getBookings, getUserBookings, cancelBooking, updateBookingStatus } from '../../services/bookingService';
-import { isAdmin } from '../../services/authService';
+import { isAdmin, isBookingSupervisor } from '../../services/authService';
 import AlertMessage from '../common/AlertMessage';
 import { getSportIcon } from '../../utils/sportIcons';
 
 const BookingList = ({ userOnly = false }) => {
   const [bookings, setBookings] = useState([]);
+  const [filteredBookings, setFilteredBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [statusDialog, setStatusDialog] = useState({ open: false, bookingId: null, status: '' });
   const [cancelDialog, setCancelDialog] = useState({ open: false, bookingId: null });
   
-  const canManageBookings = isAdmin();
+  // Filter states
+  const [filters, setFilters] = useState({
+    startDate: '',
+    endDate: '',
+    status: ''
+  });
+  const [showFilters, setShowFilters] = useState(!userOnly);
+  
+  const canManageBookings = isAdmin() || isBookingSupervisor();
   const theme = useTheme();
 
   useEffect(() => {
@@ -36,6 +46,7 @@ const BookingList = ({ userOnly = false }) => {
           data = await getBookings();
         }
         setBookings(data);
+        setFilteredBookings(data);
         setLoading(false);
       } catch (err) {
         setError(err.toString());
@@ -45,17 +56,62 @@ const BookingList = ({ userOnly = false }) => {
 
     fetchBookings();
   }, [userOnly]);
+  
+  // Apply filters whenever filters change or bookings change
+  useEffect(() => {
+    if (bookings.length === 0) return;
+    
+    let result = [...bookings];
+    
+    // Apply date filters
+    if (filters.startDate) {
+      const startDate = new Date(filters.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      result = result.filter(booking => new Date(booking.startTime) >= startDate);
+    }
+    
+    if (filters.endDate) {
+      const endDate = new Date(filters.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      result = result.filter(booking => new Date(booking.startTime) <= endDate);
+    }
+    
+    // Apply status filter
+    if (filters.status) {
+      result = result.filter(booking => booking.status === filters.status);
+    }
+    
+    setFilteredBookings(result);
+  }, [filters, bookings]);
 
-  const handleStatusDialogOpen = (bookingId, currentStatus) => {
-    setStatusDialog({ open: true, bookingId, status: currentStatus });
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const handleClearFilters = () => {
+    setFilters({
+      startDate: '',
+      endDate: '',
+      status: ''
+    });
+  };
+
+  const handleStatusDialogOpen = (bookingId, currentStatus, isGuestBooking) => {
+    const id = isGuestBooking ? `guest-${bookingId}` : bookingId;
+    setStatusDialog({ open: true, bookingId: id, status: currentStatus });
   };
 
   const handleStatusDialogClose = () => {
     setStatusDialog({ open: false, bookingId: null, status: '' });
   };
 
-  const handleCancelDialogOpen = (bookingId) => {
-    setCancelDialog({ open: true, bookingId });
+  const handleCancelDialogOpen = (bookingId, isGuestBooking) => {
+    const id = isGuestBooking ? `guest-${bookingId}` : bookingId;
+    setCancelDialog({ open: true, bookingId: id });
   };
 
   const handleCancelDialogClose = () => {
@@ -185,6 +241,68 @@ const BookingList = ({ userOnly = false }) => {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {successMessage && <AlertMessage severity="success" message={successMessage} />}
 
+      {!userOnly && (
+        <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6">
+              Filters
+            </Typography>
+            <Box>
+              <Tooltip title="Clear filters">
+                <IconButton onClick={handleClearFilters} size="small">
+                  <Clear />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Box>
+          
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                label="From Date"
+                type="date"
+                name="startDate"
+                value={filters.startDate}
+                onChange={handleFilterChange}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+                size="small"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                label="To Date"
+                type="date"
+                name="endDate"
+                value={filters.endDate}
+                onChange={handleFilterChange}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+                size="small"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <FormControl fullWidth size="small">
+                <InputLabel id="status-filter-label">Status</InputLabel>
+                <Select
+                  labelId="status-filter-label"
+                  name="status"
+                  value={filters.status}
+                  onChange={handleFilterChange}
+                  label="Status"
+                >
+                  <MenuItem value="">All Statuses</MenuItem>
+                  <MenuItem value="Pending">Pending</MenuItem>
+                  <MenuItem value="Confirmed">Confirmed</MenuItem>
+                  <MenuItem value="Cancelled">Cancelled</MenuItem>
+                  <MenuItem value="Completed">Completed</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
+
       {bookings.length === 0 ? (
         <Box sx={{ 
           display: 'flex', 
@@ -214,13 +332,43 @@ const BookingList = ({ userOnly = false }) => {
               : 'No bookings found in the system.'}
           </Typography>
         </Box>
+      ) : filteredBookings.length === 0 ? (
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          py: 8,
+          animation: 'fadeInUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1)' 
+        }}>
+          <Box sx={{ 
+            width: 100, 
+            height: 100, 
+            mb: 3, 
+            bgcolor: alpha(theme.palette.primary.main, 0.1),
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <FilterAlt sx={{ fontSize: 50, color: theme.palette.grey[500] }} />
+          </Box>
+          <Typography variant="h5" sx={{ color: theme.palette.grey[800], fontWeight: 600, mb: 1 }}>
+            No matching bookings
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 3, textAlign: 'center', maxWidth: 500 }}>
+            No bookings match your current filter settings. Try adjusting your filters.
+          </Typography>
+          <Button variant="outlined" onClick={handleClearFilters}>
+            Clear Filters
+          </Button>
+        </Box>
       ) : (
         <TableContainer component={Paper} sx={{ 
           borderRadius: 2,
-          overflow: 'hidden',
+          overflow: 'auto',
           boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
         }}>
-          <Table sx={{ minWidth: 850 }}>
+          <Table sx={{ minWidth: 850, tableLayout: 'fixed' }}>
             <TableHead>
               <TableRow>
                 <TableCell width="15%">Court</TableCell>
@@ -233,72 +381,106 @@ const BookingList = ({ userOnly = false }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {bookings.map((booking) => {
+              {filteredBookings.map((booking) => {
                 const startTime = new Date(booking.startTime);
                 const endTime = new Date(booking.endTime);
                 const durationHours = ((endTime - startTime) / (1000 * 60 * 60)).toFixed(1);
                 
                 return (
                   <TableRow key={booking._id}>
-                    <TableCell>
+                    <TableCell width="15%">
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                         {booking.court ? 
                           React.cloneElement(getSportIcon(booking.court.sportType), { sx: { mr: 1 } }) : 
                           getSportIcon(null, { sx: { mr: 1 } })}
-                        <Typography variant="body2">
+                        <Typography variant="body2" noWrap>
                           {booking.court ? booking.court.name : 'Court not available'}
                         </Typography>
                       </Box>
+                      {booking.isGuestBooking ? (
+                        <Chip
+                          size="small"
+                          label="Guest Booking"
+                          color="secondary"
+                          sx={{ mt: 0.5, mr: 1 }}
+                        />
+                      ) : booking.team ? (
+                        <Chip
+                          size="small"
+                          label={`Team: ${booking.team.name}`}
+                          color="primary"
+                          variant="outlined"
+                          sx={{ mt: 0.5 }}
+                        />
+                      ) : null}
                     </TableCell>
-                    <TableCell>
+                    <TableCell width="18%">
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Event sx={{ mr: 1 }} />
-                        {formatDateTime(booking.startTime)}
+                        <Event sx={{ mr: 1, flexShrink: 0 }} />
+                        <Typography variant="body2" noWrap>
+                          {formatDateTime(booking.startTime)}
+                        </Typography>
+                      </Box>
+                      <Typography variant="caption" display="block" color="textSecondary" noWrap>
+                        to {formatDateTime(booking.endTime)}
+                      </Typography>
+                      
+                      {booking.isGuestBooking && (
+                        <Chip
+                          size="small"
+                          label={`Guest: ${booking.user.firstName}`}
+                          color="info"
+                          variant="outlined"
+                          sx={{ mt: 0.5 }}
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell width="12%">
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <AccessTime sx={{ mr: 1, flexShrink: 0 }} />
+                        <Typography noWrap>{durationHours} hours</Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <AccessTime sx={{ mr: 1 }} />
-                        {durationHours} hours
-                      </Box>
-                    </TableCell>
-                    <TableCell>{booking.purpose}</TableCell>
-                    <TableCell>
+                    <TableCell width="12%">{booking.purpose}</TableCell>
+                    <TableCell width="12%">
                       <Chip 
                         label={booking.status} 
                         color={getStatusColor(booking.status)} 
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell width="12%">
                       {booking.purpose === 'Rental' ? 
                         `$${booking.totalPrice.toFixed(2)}` : 
                         <Chip label="Free" color="success" size="small" />
                       }
                     </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', minWidth: '150px' }}>
+                    <TableCell width="19%">
+                      <Box>
+                        {booking.isGuestBooking && (
+                          <Typography variant="caption" display="block" color="textSecondary" sx={{ mb: 1 }} noWrap>
+                            Reference: {booking.bookingReference}
+                          </Typography>
+                        )}
+                        
                         {canManageBookings && booking.status !== 'Cancelled' && (
                           <Button
                             size="small"
-                            variant="outlined"
-                            color="primary"
-                            startIcon={<CheckCircle />}
-                            onClick={() => handleStatusDialogOpen(booking._id, booking.status)}
-                            sx={{ mb: 1, minWidth: '90px' }}
+                            startIcon={<Visibility />}
+                            onClick={() => handleStatusDialogOpen(booking._id, booking.status, booking.isGuestBooking)}
+                            sx={{ mr: 1, mb: 1 }}
                           >
-                            Status
+                            Update Status
                           </Button>
                         )}
                         
-                        {booking.status !== 'Cancelled' && booking.status !== 'Completed' && (
+                        {booking.status !== 'Cancelled' && (
                           <Button
                             size="small"
-                            variant="outlined"
                             color="error"
                             startIcon={<Cancel />}
-                            onClick={() => handleCancelDialogOpen(booking._id)}
-                            sx={{ minWidth: '90px' }}
+                            onClick={() => handleCancelDialogOpen(booking._id, booking.isGuestBooking)}
+                            sx={{ mb: 1 }}
                           >
                             Cancel
                           </Button>
