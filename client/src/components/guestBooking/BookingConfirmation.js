@@ -174,7 +174,7 @@ const BookingConfirmation = ({ booking }) => {
           {booking.paymentStatus === 'Unpaid' && (
             <Grid item xs={12}>
               <Alert severity="info" sx={{ mt: 2 }}>
-                Please arrive 15 minutes before your booking time and bring your booking reference number to complete payment at the court.
+                Your booking is pending until payment is received. Please arrive 15 minutes before your booking time and bring your booking reference number to complete payment at the court. Once payment is received, your booking will be confirmed.
               </Alert>
             </Grid>
           )}

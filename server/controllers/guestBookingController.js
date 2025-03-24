@@ -198,7 +198,7 @@ exports.updateGuestBookingPayment = async (req, res) => {
     // Handle pay later option
     if (payLater) {
       booking.paymentStatus = 'Unpaid';
-      booking.status = 'Confirmed'; // Still confirm the booking even if payment is pending
+      booking.status = 'Pending'; // Keep as pending until payment is received
     } else {
       booking.paymentStatus = 'Paid';
       booking.status = 'Confirmed';

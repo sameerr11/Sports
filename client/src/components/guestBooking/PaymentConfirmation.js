@@ -88,6 +88,10 @@ const PaymentConfirmation = ({ booking, onBack, onNext, setError }) => {
 
   const duration = calculateDuration();
 
+  const message = booking.payLater 
+    ? 'Booking created. Your booking will remain pending until payment is received at the court.'
+    : 'Payment completed. Your booking is now confirmed.';
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>

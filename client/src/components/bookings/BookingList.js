@@ -463,7 +463,7 @@ const BookingList = ({ userOnly = false }) => {
                           </Typography>
                         )}
                         
-                        {canManageBookings && booking.status !== 'Cancelled' && (
+                        {canManageBookings && booking.status !== 'Cancelled' && booking.status !== 'Completed' && (
                           <Button
                             size="small"
                             startIcon={<Visibility />}
@@ -474,7 +474,7 @@ const BookingList = ({ userOnly = false }) => {
                           </Button>
                         )}
                         
-                        {booking.status !== 'Cancelled' && (
+                        {booking.status !== 'Cancelled' && booking.status !== 'Completed' && (
                           <Button
                             size="small"
                             color="error"

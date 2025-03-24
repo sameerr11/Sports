@@ -671,6 +671,12 @@ exports.updateGuestBookingStatus = async (req, res) => {
       }
     }
     
+    // If confirming a booking that was previously pending and had unpaid status
+    // This handles the case when cash payment is received at the court
+    if (status === 'Confirmed' && booking.status === 'Pending' && booking.paymentStatus === 'Unpaid') {
+      booking.paymentStatus = 'Paid';
+    }
+    
     booking.status = status;
     await booking.save();
     
