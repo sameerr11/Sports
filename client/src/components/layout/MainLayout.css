@@ -31,7 +31,7 @@
     padding: 32px 32px 24px; /* Increase top and horizontal padding for better spacing */
     transition: all 0.3s ease-in-out;
     background-color: #f8f9fa;
-    min-height: calc(100vh - 64px);
+    min-height: calc(100vh - 64px - 50px); /* Adjusted to account for footer height */
     overflow-x: hidden;
     box-sizing: border-box;
 }
