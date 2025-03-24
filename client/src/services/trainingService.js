@@ -207,12 +207,32 @@ export const getCoachTrainingSchedules = async () => {
 
     // Ensure each plan has a court defined for display
     sortedPlans.forEach(plan => {
-      // If plan doesn't have court info, add default court
-      if (!plan.court && (!plan.scheduleId || typeof plan.scheduleId === 'string')) {
+      // Check if plan has a scheduleId that is populated
+      if (plan.scheduleId && typeof plan.scheduleId === 'object' && plan.scheduleId.court) {
+        // If scheduleId has a court object, make sure it's properly formatted
+        if (typeof plan.scheduleId.court === 'string') {
+          // If court is just an ID string, replace with a proper object
+          plan.scheduleId.court = {
+            name: "Court details pending",
+            location: "Loading..."
+          };
+        }
+        // Also set the main court property to the same court for consistency
+        plan.court = plan.scheduleId.court;
+      } 
+      // If plan doesn't have court info at all, add default court
+      else if (!plan.court && (!plan.scheduleId || typeof plan.scheduleId === 'string')) {
         // Add a default court 
         plan.court = {
           name: "Basketball Court",
           location: "Main Arena"
+        };
+      }
+      // If plan has a court that's just an ID string
+      else if (plan.court && typeof plan.court === 'string') {
+        plan.court = {
+          name: "Court details pending",
+          location: "Loading..."
         };
       }
     });

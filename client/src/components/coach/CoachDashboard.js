@@ -545,12 +545,12 @@ const CoachDashboard = () => {
     
     // If court is an ID string
     if (typeof court === 'string') {
-      return 'Court: ' + court; // Just show the ID if we only have the string
+      return 'Court not loaded'; // Don't show raw IDs to users
     }
     
     // If court is an object with _id only
     if (court._id && !court.name) {
-      return 'Court ID: ' + court._id;
+      return 'Court details pending';
     }
     
     // If court has name and location

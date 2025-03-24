@@ -19,12 +19,31 @@ exports.createTrainingPlan = async (req, res) => {
       description, 
       team, 
       date, 
-      duration, 
-      coach,
-      location,
-      exercises,
-      notes
+      duration,
+      activities,
+      notes,
+      scheduleId,
+      isRecurring,
+      assignedTo
     } = req.body;
+
+    // Find the team to get the coaches
+    let coach = assignedTo || null;
+    let status = 'Draft';
+    
+    // If team is provided, check for coaches
+    if (team) {
+      const teamDoc = await Team.findById(team).populate('coaches.coach');
+      if (teamDoc && teamDoc.coaches && teamDoc.coaches.length > 0) {
+        // Set coach to the first coach if not already set
+        coach = coach || teamDoc.coaches[0].coach._id;
+        
+        // If we have a coach, set status to Assigned
+        if (coach) {
+          status = 'Assigned';
+        }
+      }
+    }
 
     // Create the training plan
     const trainingPlan = new TrainingPlan({
@@ -33,14 +52,35 @@ exports.createTrainingPlan = async (req, res) => {
       team,
       date,
       duration,
-      coach: coach || req.user.id,
-      location,
-      exercises,
+      assignedTo: coach,
+      activities: activities || [],
       notes,
-      createdBy: req.user.id
+      createdBy: req.user.id,
+      status,
+      scheduleId: scheduleId || null,
+      isRecurring: isRecurring || false
     });
 
     await trainingPlan.save();
+
+    // Populate response
+    await trainingPlan.populate('team', 'name sportType');
+    await trainingPlan.populate('createdBy', 'firstName lastName');
+    
+    if (coach) {
+      await trainingPlan.populate('assignedTo', 'firstName lastName');
+    }
+    
+    // If a schedule is attached, include it in the response
+    if (trainingPlan.scheduleId) {
+      await trainingPlan.populate({
+        path: 'scheduleId',
+        populate: {
+          path: 'court',
+          select: 'name location'
+        }
+      });
+    }
 
     // Notify all coaches about the new training plan
     if (team) {
@@ -122,7 +162,13 @@ exports.getAllTrainingPlans = async (req, res) => {
       .populate('team', 'name sportType')
       .populate('createdBy', 'firstName lastName')
       .populate('assignedTo', 'firstName lastName')
-      .populate('scheduleId')
+      .populate({
+        path: 'scheduleId',
+        populate: {
+          path: 'court',
+          select: 'name location'
+        }
+      })
       .sort({ date: 1 });
     
     res.json(trainingPlans);
@@ -143,7 +189,13 @@ exports.getCoachTrainingPlans = async (req, res) => {
     })
       .populate('team', 'name sportType')
       .populate('createdBy', 'firstName lastName')
-      .populate('scheduleId')
+      .populate({
+        path: 'scheduleId',
+        populate: {
+          path: 'court',
+          select: 'name location'
+        }
+      })
       .sort({ date: 1 });
     
     res.json(trainingPlans);
@@ -216,7 +268,13 @@ exports.getTeamTrainingPlans = async (req, res) => {
       .populate('assignedTo', 'firstName lastName')
       .populate('createdBy', 'firstName lastName')
       .populate('team', 'name sportType')
-      .populate('scheduleId')
+      .populate({
+        path: 'scheduleId',
+        populate: {
+          path: 'court',
+          select: 'name location'
+        }
+      })
       .sort({ date: 1 });
     
     res.json(trainingPlans);
@@ -235,7 +293,13 @@ exports.getTrainingPlanById = async (req, res) => {
       .populate('team', 'name sportType')
       .populate('createdBy', 'firstName lastName')
       .populate('assignedTo', 'firstName lastName')
-      .populate('scheduleId');
+      .populate({
+        path: 'scheduleId',
+        populate: {
+          path: 'court',
+          select: 'name location'
+        }
+      });
     
     if (!trainingPlan) {
       return res.status(404).json({ msg: 'Training plan not found' });
@@ -435,7 +499,13 @@ exports.updateTrainingPlan = async (req, res) => {
     
     // If a schedule is attached, include it in the response
     if (plan.scheduleId) {
-      await plan.populate('scheduleId');
+      await plan.populate({
+        path: 'scheduleId',
+        populate: {
+          path: 'court',
+          select: 'name location'
+        }
+      });
     }
     
     res.json(plan);
