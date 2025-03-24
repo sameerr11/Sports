@@ -56,7 +56,8 @@ import {
   AccessTime,
   PeopleAlt,
   FilterAlt,
-  Clear
+  Clear,
+  Event
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router-dom';
@@ -71,6 +72,184 @@ import { getStoredUser, isCoach } from '../../services/authService';
 import { getSportIcon } from '../../utils/sportIcons';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+
+// Import FullCalendar components
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+
+// Update calendarStyles with more customizations
+const calendarStyles = {
+  '.fc': {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+  },
+  '.fc .fc-timegrid-slot-label': {
+    fontSize: '0.85rem',
+    fontWeight: 500,
+    color: alpha('#000', 0.75),
+    padding: '2px 8px',
+  },
+  '.fc .fc-col-header-cell-cushion': {
+    fontWeight: 600,
+    padding: '8px 4px',
+    color: alpha('#000', 0.85),
+  },
+  '.fc-theme-standard .fc-scrollgrid': {
+    border: `1px solid ${alpha('#000', 0.1)}`,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  },
+  '.fc .fc-timegrid-slot': {
+    height: '50px',
+    borderColor: alpha('#000', 0.07),
+  },
+  '.fc .fc-toolbar-title': {
+    fontSize: '1.3rem',
+    fontWeight: 600,
+    color: alpha('#000', 0.85),
+  },
+  '.fc .fc-button': {
+    padding: '6px 12px',
+    textTransform: 'capitalize',
+    fontWeight: 500,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    borderRadius: '4px',
+    margin: '0 3px',
+  },
+  '.fc .fc-button-primary': {
+    backgroundColor: '#1976d2',
+    borderColor: '#1976d2',
+  },
+  '.fc .fc-button-primary:not(:disabled):hover': {
+    backgroundColor: '#1565c0',
+    borderColor: '#1565c0',
+  },
+  '.fc .fc-today-button': {
+    textTransform: 'capitalize',
+  },
+  '.fc .fc-col-header': {
+    backgroundColor: alpha('#f5f5f5', 0.5),
+  },
+  '.fc-day-today': {
+    backgroundColor: alpha('#bbdefb', 0.3) + ' !important',
+  },
+  '.fc-theme-standard td, .fc-theme-standard th': {
+    borderColor: alpha('#000', 0.08),
+  },
+  '.fc-timegrid-now-indicator-line': {
+    borderColor: '#f44336',
+    borderWidth: '2px',
+  },
+  '.fc-timegrid-now-indicator-arrow': {
+    borderColor: '#f44336',
+  },
+  '.fc-event': {
+    borderRadius: '4px',
+    margin: '1px 2px',
+    border: 'none',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+  },
+  '.fc-h-event': {
+    backgroundColor: 'transparent',
+  },
+  '.fc-v-event': {
+    borderLeft: '4px solid',
+    backgroundColor: 'transparent',
+  },
+  '.fc-daygrid-event': {
+    borderRadius: '4px',
+    padding: '1px 3px',
+  },
+  '.fc-daygrid-day-number': {
+    fontSize: '0.9rem',
+    padding: '5px 10px',
+    fontWeight: 500,
+  },
+  '.fc-daygrid-day.fc-day-today': {
+    backgroundColor: alpha('#bbdefb', 0.3) + ' !important',
+  },
+  '.fc .fc-non-business': {
+    backgroundColor: alpha('#f5f5f5', 0.4),
+  },
+  '.fc-timegrid-axis': {
+    padding: '8px',
+    fontWeight: 500,
+  },
+  '.fc-day-header': {
+    padding: '8px 0',
+    fontWeight: 600,
+  },
+  '.fc-direction-ltr .fc-daygrid-event.fc-event-end': {
+    marginRight: '2px',
+  },
+  '.fc-direction-ltr .fc-daygrid-event.fc-event-start': {
+    marginLeft: '2px',
+  },
+  '.fc-timegrid-slot-lane:hover': {
+    backgroundColor: alpha('#f5f5f5', 0.5),
+  },
+  '.fc .fc-more-link': {
+    fontWeight: 500,
+    color: '#1976d2',
+  },
+};
+
+// Add this component to show a legend for different event types
+const CalendarLegend = () => {
+  const theme = useTheme();
+  
+  const legendItems = [
+    { label: 'Confirmed Session', color: '#2e7d32' },
+    { label: 'Pending Session', color: '#ed6c02' },
+    { label: 'Cancelled Session', color: '#d32f2f' },
+    { label: 'Draft Plan', color: '#616161' },
+    { label: 'Assigned Plan', color: '#1976d2' },
+    { label: 'In Progress Plan', color: '#ed6c02' },
+    { label: 'Completed Plan', color: '#2e7d32' },
+  ];
+  
+  return (
+    <Paper 
+      elevation={0} 
+      sx={{ 
+        p: 1.5, 
+        borderRadius: 2, 
+        display: 'flex', 
+        flexWrap: 'wrap',
+        gap: 1.5,
+        bgcolor: alpha(theme.palette.grey[100], 0.7),
+        border: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
+        mb: 2
+      }}
+    >
+      {legendItems.map((item) => (
+        <Box 
+          key={item.label} 
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            mr: 1 
+          }}
+        >
+          <Box 
+            sx={{ 
+              width: 12, 
+              height: 12, 
+              borderRadius: '50%', 
+              bgcolor: item.color, 
+              mr: 0.75,
+              border: `1px solid ${alpha(item.color, 0.5)}`
+            }} 
+          />
+          <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: 500 }}>
+            {item.label}
+          </Typography>
+        </Box>
+      ))}
+    </Paper>
+  );
+};
 
 const CoachDashboard = () => {
   const theme = useTheme();
@@ -97,6 +276,56 @@ const CoachDashboard = () => {
   
   // Check if user is a coach
   const coach = isCoach();
+  
+  // Custom event rendering for FullCalendar
+  const renderEventContent = (eventInfo) => {
+    return (
+      <Box sx={{ 
+        overflow: 'hidden', 
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        p: 0.5,
+        borderLeft: '4px solid',
+        borderLeftColor: eventInfo.event.backgroundColor,
+        bgcolor: alpha(eventInfo.event.backgroundColor, 0.1),
+        borderRadius: '4px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
+      }}>
+        <Typography variant="body2" noWrap sx={{ 
+          fontWeight: 600, 
+          color: alpha(theme.palette.text.primary, 0.9),
+          fontSize: eventInfo.view.type === 'dayGridMonth' ? '0.75rem' : '0.85rem'
+        }}>
+          {eventInfo.event.title}
+        </Typography>
+        {eventInfo.view.type !== 'dayGridMonth' && (
+          <>
+            <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+              <LocationOn fontSize="small" sx={{ fontSize: '0.75rem', mr: 0.5, color: alpha(theme.palette.text.secondary, 0.9) }} />
+              <Typography variant="caption" noWrap sx={{ color: alpha(theme.palette.text.secondary, 0.9) }}>
+                {eventInfo.event.extendedProps.location}
+              </Typography>
+            </Box>
+            <Chip 
+              size="small"
+              label={eventInfo.event.extendedProps.status}
+              sx={{ 
+                mt: 0.5, 
+                fontSize: '0.65rem', 
+                height: 18, 
+                maxWidth: '100%',
+                bgcolor: eventInfo.event.backgroundColor,
+                color: '#fff',
+                fontWeight: 500
+              }}
+            />
+          </>
+        )}
+      </Box>
+    );
+  };
   
   useEffect(() => {
     const fetchCoachData = async () => {
@@ -388,54 +617,106 @@ const CoachDashboard = () => {
       return `${court.name}${court.location ? `, ${court.location}` : ''}`;
     };
 
-    // Handle date filter dialog
-    const handleOpenDateFilter = () => {
-      setDateFilterOpen(true);
-    };
-
-    const handleCloseDateFilter = () => {
-      setDateFilterOpen(false);
-    };
-
-    const applyDateFilter = () => {
-      // Only set filter as active if at least one date is selected
-      const hasDateCriteria = 
-        (filterMode === 'single' && singleDateFilter) || 
-        (filterMode === 'range' && (dateRangeStart || dateRangeEnd));
-        
-      setIsFilterActive(hasDateCriteria);
-      setDateFilterOpen(false);
-    };
-
-    const clearDateFilter = () => {
-      setDateRangeStart(null);
-      setDateRangeEnd(null);
-      setSingleDateFilter(null);
-      setIsFilterActive(false);
-      setDateFilterOpen(false);
-    };
-
-    // Filter schedules based on date range if filter is active
-    const filterSchedulesByDate = (schedule) => {
-      try {
-        if (!isFilterActive) return true;
-        
+    // Convert training sessions to calendar events
+    const convertToCalendarEvents = () => {
+      const events = [];
+      
+      // Add booking-based training sessions
+      trainingSessions
+        .filter(session => session.startTime && session.endTime)
+        .forEach(session => {
+          try {
+            const teamName = session.team && session.team.name ? session.team.name : 'Personal Training';
+            const location = formatLocation(session.court);
+            
+            // Define colors with better contrast and visibility
+            const statusColors = {
+              Confirmed: {
+                bg: '#2e7d32', // darker green
+                border: '#1b5e20'
+              },
+              Pending: {
+                bg: '#ed6c02', // darker orange
+                border: '#c24e00'
+              },
+              Cancelled: {
+                bg: '#d32f2f', // darker red
+                border: '#b71c1c'
+              },
+              Default: {
+                bg: '#757575',
+                border: '#616161'
+              }
+            };
+            
+            const color = session.status === 'Confirmed' ? statusColors.Confirmed.bg : 
+                          session.status === 'Pending' ? statusColors.Pending.bg : 
+                          session.status === 'Cancelled' ? statusColors.Cancelled.bg : 
+                          statusColors.Default.bg;
+            
+            events.push({
+              id: `session-${session._id}`,
+              title: `${teamName} - Training Session`,
+              start: new Date(session.startTime),
+              end: new Date(session.endTime),
+              location: location,
+              status: session.status,
+              type: 'session',
+              color: color,
+              textColor: '#fff',
+              borderColor: color
+            });
+          } catch (err) {
+            console.error('Error converting session to event:', err, session);
+          }
+        });
+      
+      // Add training plans
+      trainingSchedules
+        .filter(schedule => schedule.date)
+        .forEach(schedule => {
+          try {
+            const teamName = schedule.team && schedule.team.name ? schedule.team.name : 'Unknown Team';
         const scheduleDate = new Date(schedule.date);
-        
-        if (dateRangeStart && dateRangeEnd) {
-          return scheduleDate >= new Date(dateRangeStart) && 
-                 scheduleDate <= new Date(dateRangeEnd);
-        } else if (dateRangeStart) {
-          return scheduleDate >= new Date(dateRangeStart);
-        } else if (dateRangeEnd) {
-          return scheduleDate <= new Date(dateRangeEnd);
-        }
-        
-        return true;
+            const endDate = new Date(scheduleDate);
+            
+            // Assume duration is in minutes and add to end date
+            endDate.setMinutes(scheduleDate.getMinutes() + (schedule.duration || 60));
+            
+            // Set color based on status with better contrast
+            let color;
+            switch(schedule.status) {
+              case 'Draft': color = '#616161'; break; // darker gray
+              case 'Assigned': color = '#1976d2'; break; // darker blue
+              case 'InProgress': color = '#ed6c02'; break; // darker orange
+              case 'Completed': color = '#2e7d32'; break; // darker green
+              default: color = '#616161'; // darker gray
+            }
+            
+            events.push({
+              id: `plan-${schedule._id}`,
+              title: `${teamName} - ${schedule.title}`,
+              start: scheduleDate,
+              end: endDate,
+              location: 'Not specified',
+              status: schedule.status,
+              type: 'plan',
+              color: color,
+              textColor: '#fff',
+              borderColor: color
+            });
       } catch (err) {
-        console.error('Error filtering schedule by date:', err, schedule);
-        return false;
-      }
+            console.error('Error converting schedule to event:', err, schedule);
+          }
+        });
+      
+      return events;
+    };
+    
+    // Handle event click
+    const handleEventClick = (info) => {
+      console.log('Event clicked:', info.event);
+      // Additional functionality can be added here
     };
     
     return (
@@ -450,296 +731,151 @@ const CoachDashboard = () => {
             <Paper 
               elevation={0}
               sx={{ 
-                p: 2, 
+                p: 2.5, 
                 borderRadius: 2,
-                bgcolor: alpha(theme.palette.info.light, 0.1),
-                border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                bgcolor: alpha(theme.palette.primary.light, 0.1),
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                mb: 2,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
               }}
             >
               <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 'bold', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  color: theme.palette.primary.dark
+                }}>
                   {coachTeams.length > 0 ?
-                    React.cloneElement(getSportIcon(coachTeams[0]?.sportType || 'Sports'), { sx: { mr: 1 } }) :
-                    <FitnessCenter sx={{ mr: 1 }} />
+                    React.cloneElement(getSportIcon(coachTeams[0]?.sportType || 'Sports'), { 
+                      sx: { mr: 1.5, fontSize: '1.8rem', color: theme.palette.primary.main } 
+                    }) :
+                    <FitnessCenter sx={{ mr: 1.5, fontSize: '1.8rem', color: theme.palette.primary.main }} />
                   }
-                  Upcoming Training Sessions (From Bookings)
+                  Training Schedule Calendar
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  This section shows only direct training bookings not assigned to any training plan
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.8, ml: 0.5 }}>
+                  View all your training sessions and plans in a calendar view
                 </Typography>
               </Box>
-              <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button 
-                  variant="outlined" 
-                  size="small"
-                  startIcon={<FilterAlt />}
-                  onClick={handleOpenDateFilter}
-                >
-                  {isFilterActive ? 'Change Date Filter' : 'Filter by Date'}
-                </Button>
-                <Button 
-                  variant="outlined" 
-                  size="small"
+                variant="contained" 
+                size="medium"
+                color="primary"
                   onClick={refreshSchedules}
                   disabled={isLoading}
-                >
-                  Refresh Schedules
-                </Button>
-              </Box>
-            </Paper>
-          </Grid>
-          
-          {isFilterActive && (
-            <Grid item xs={12}>
-              <Box 
+                startIcon={<CalendarMonth />}
                 sx={{ 
-                  px: 2, 
+                  px: 2.5, 
                   py: 1, 
-                  bgcolor: alpha(theme.palette.info.light, 0.1),
-                  borderRadius: 2,
-                  border: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  mb: 2
+                  borderRadius: 1.5,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  fontWeight: 500
                 }}
               >
-                <Typography variant="body2">
-                  <b>Date Filter Active:</b> {
-                    filterMode === 'single' 
-                      ? singleDateFilter ? format(new Date(singleDateFilter), 'MMM dd, yyyy') : 'Not set'
-                      : (dateRangeStart ? format(new Date(dateRangeStart), 'MMM dd, yyyy') : 'Any') + 
-                        ' to ' + 
-                        (dateRangeEnd ? format(new Date(dateRangeEnd), 'MMM dd, yyyy') : 'Any')
-                  }
-                </Typography>
-                <IconButton 
-                  size="small" 
-                  onClick={clearDateFilter}
-                  color="default"
-                >
-                  <Clear fontSize="small" />
-                </IconButton>
-              </Box>
+                Refresh Calendar
+              </Button>
+            </Paper>
             </Grid>
-          )}
           
           <Grid item xs={12}>
-            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-              <Table>
-                <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
-                  <TableRow>
-                    <TableCell>Date & Time</TableCell>
-                    <TableCell>Team</TableCell>
-                    <TableCell>Title/Purpose</TableCell>
-                    <TableCell>Location</TableCell>
-                    <TableCell>Duration</TableCell>
-                    <TableCell>Status</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {console.log('Rendering sessions:', trainingSessions)}
-                  {console.log('Rendering schedules:', trainingSchedules)}
-                  
-                  {(trainingSessions.some(filterSessionsByDate) || 
-                     (trainingSchedules && trainingSchedules.some(filterSchedulesByDate))) ? (
-                    <>
-                      {/* Display booking-based training sessions */}
-                      {trainingSessions
-                        .filter(session => new Date(session.startTime) >= new Date())
-                        .filter(filterSessionsByDate)
-                        .map(session => {
-                          try {
-                            const startTime = new Date(session.startTime);
-                            const endTime = new Date(session.endTime);
-                            const durationHours = (endTime - startTime) / (1000 * 60 * 60);
-                            const teamName = session.team && session.team.name ? session.team.name : 'Personal Training';
-                            
-                            return (
-                              <TableRow key={`session-${session._id}`} hover>
-                                <TableCell>
-                                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                    <Typography variant="body2" fontWeight={500}>
-                                      {format(startTime, 'EEEE, MMMM d, yyyy')}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                      {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
-                                    </Typography>
-                                  </Box>
-                                </TableCell>
-                                <TableCell>{teamName}</TableCell>
-                                <TableCell>Training Session</TableCell>
-                                <TableCell>
-                                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <LocationOn fontSize="small" sx={{ mr: 0.5, color: 'text.secondary' }} />
-                                    {formatLocation(session.court)}
-                                  </Box>
-                                </TableCell>
-                                <TableCell>{Math.round(durationHours * 10) / 10} hours</TableCell>
-                                <TableCell>
-                                  <Chip 
-                                    label={session.status}
-                                    color={
-                                      session.status === 'Confirmed' ? 'success' :
-                                      session.status === 'Pending' ? 'warning' :
-                                      session.status === 'Cancelled' ? 'error' : 'default'
-                                    }
-                                    size="small"
-                                  />
-                                </TableCell>
-                              </TableRow>
-                            );
-                          } catch (err) {
-                            console.error('Error rendering session row:', err, session);
-                            return null;
-                          }
-                        })}
-                      
-                      {/* Display training plans */}
-                      {trainingSchedules && trainingSchedules
-                        .filter(schedule => {
-                          try {
-                            const scheduleDate = new Date(schedule.date);
-                            return scheduleDate >= new Date();
-                          } catch (err) {
-                            console.error('Error filtering schedule:', err, schedule);
-                            return false;
-                          }
-                        })
-                        .filter(filterSchedulesByDate)
-                        .map(schedule => {
-                          try {
-                            const teamName = schedule.team && schedule.team.name ? schedule.team.name : 'Unknown Team';
-                            // Calculate duration in hours for consistency with sessions
-                            const durationHours = schedule.duration / 60;
-                            
-                            return (
-                              <TableRow key={`plan-${schedule._id}`} hover>
-                                <TableCell>
-                                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                    <Typography variant="body2" fontWeight={500}>
-                                      {format(new Date(schedule.date), 'EEEE, MMMM d, yyyy')}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                      {format(new Date(schedule.date), 'h:mm a')}
-                                    </Typography>
-                                  </Box>
-                                </TableCell>
-                                <TableCell>{teamName}</TableCell>
-                                <TableCell>{schedule.title}</TableCell>
-                                <TableCell>Not specified</TableCell>
-                                <TableCell>{Math.round(durationHours * 10) / 10} hours</TableCell>
-                                <TableCell>
-                                  <Chip 
-                                    icon={getStatusIcon(schedule.status)}
-                                    label={schedule.status}
-                                    color={getStatusColor(schedule.status)}
-                                    size="small"
-                                  />
-                                </TableCell>
-                              </TableRow>
-                            );
-                          } catch (err) {
-                            console.error('Error rendering schedule row:', err, schedule);
-                            return null;
-                          }
-                        })}
-                    </>
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center">
-                        {isFilterActive 
-                          ? 'No sessions found within the selected date range' 
-                          : 'No upcoming training sessions found'}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <CalendarLegend />
           </Grid>
 
-          {/* Date Range Filter Dialog */}
-          <Dialog open={dateFilterOpen} onClose={handleCloseDateFilter}>
-            <DialogTitle>Filter Schedules by Date</DialogTitle>
-            <DialogContent>
-              <Grid container spacing={2} sx={{ mt: 0.5, mb: 2 }}>
                 <Grid item xs={12}>
-                  <FormControl component="fieldset">
-                    <Box sx={{ mb: 2 }}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={filterMode === 'single'}
-                            onChange={() => setFilterMode(filterMode === 'single' ? 'range' : 'single')}
-                            color="primary"
-                          />
-                        }
-                        label="Single day filter"
-                      />
-                      <FormHelperText>
-                        {filterMode === 'single' 
-                          ? 'Show sessions for a specific day only' 
-                          : 'Show sessions within a date range'}
-                      </FormHelperText>
-                    </Box>
-                  </FormControl>
-                </Grid>
-
-                {filterMode === 'single' ? (
-                  <Grid item xs={12}>
-                    <LocalizationProvider dateAdapter={AdapterDateFns}>
-                      <DatePicker
-                        label="Select Date"
-                        value={singleDateFilter}
-                        onChange={(newDate) => setSingleDateFilter(newDate)}
-                        renderInput={(params) => <TextField {...params} fullWidth />}
-                      />
-                    </LocalizationProvider>
-                  </Grid>
-                ) : (
-                  <>
-                    <Grid item xs={12} sm={6}>
-                      <LocalizationProvider dateAdapter={AdapterDateFns}>
-                        <DatePicker
-                          label="Start Date"
-                          value={dateRangeStart}
-                          onChange={(newDate) => setDateRangeStart(newDate)}
-                          renderInput={(params) => <TextField {...params} fullWidth />}
-                          maxDate={dateRangeEnd}
-                        />
-                      </LocalizationProvider>
+            <Paper variant="outlined" sx={{ 
+              p: 2, 
+              borderRadius: 2, 
+              height: '650px',
+              ...calendarStyles,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+            }}>
+              <FullCalendar
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                initialView="timeGridWeek"
+                headerToolbar={{
+                  left: 'prev,next today',
+                  center: 'title',
+                  right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                }}
+                events={convertToCalendarEvents()}
+                eventClick={handleEventClick}
+                height="600px"
+                eventTimeFormat={{
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  meridiem: 'short'
+                }}
+                eventContent={renderEventContent}
+                slotLabelFormat={{
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true
+                }}
+                dayHeaderFormat={{
+                  weekday: 'short',
+                  month: 'numeric',
+                  day: 'numeric',
+                  omitCommas: true
+                }}
+                allDaySlot={true}
+                allDayText="All Day"
+                slotMinTime="06:00:00"
+                slotMaxTime="22:00:00"
+                nowIndicator={true}
+                stickyHeaderDates={true}
+                dayMaxEvents={3}
+                eventMaxStack={3}
+                expandRows={true}
+                contentHeight="auto"
+                handleWindowResize={true}
+                views={{
+                  timeGridWeek: {
+                    dayHeaderFormat: { weekday: 'short', month: 'numeric', day: 'numeric', omitCommas: true },
+                    slotDuration: '01:00:00',
+                    slotLabelInterval: '01:00:00'
+                  },
+                  dayGridMonth: {
+                    dayMaxEvents: 3,
+                    fixedWeekCount: false
+                  },
+                  timeGridDay: {
+                    dayHeaderFormat: { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }
+                  }
+                }}
+                businessHours={{
+                  daysOfWeek: [1, 2, 3, 4, 5], // Monday - Friday
+                  startTime: '08:00',
+                  endTime: '20:00',
+                }}
+                themeSystem="standard"
+                firstDay={1} // Start calendar from Monday
+                buttonText={{
+                  today: 'Today',
+                  month: 'Month',
+                  week: 'Week',
+                  day: 'Day'
+                }}
+                slotLabelClassNames="slot-label"
+                dayHeaderClassNames="day-header"
+                dayMaxEventRows={true}
+                slotEventOverlap={false}
+                eventDisplay="block"
+                slotDuration="01:00:00"
+                slotLabelInterval="01:00:00"
+                scrollTimeReset={false}
+                scrollTime="08:00:00"
+                weekNumbers={false}
+                weekText="W"
+                weekNumberFormat={{ week: 'numeric' }}
+                fixedWeekCount={false}
+                showNonCurrentDates={false}
+              />
+            </Paper>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <LocalizationProvider dateAdapter={AdapterDateFns}>
-                        <DatePicker
-                          label="End Date"
-                          value={dateRangeEnd}
-                          onChange={(newDate) => setDateRangeEnd(newDate)}
-                          renderInput={(params) => <TextField {...params} fullWidth />}
-                          minDate={dateRangeStart}
-                        />
-                      </LocalizationProvider>
-                    </Grid>
-                  </>
-                )}
-              </Grid>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={clearDateFilter} color="inherit">
-                Clear Filter
-              </Button>
-              <Button onClick={handleCloseDateFilter} color="inherit">
-                Cancel
-              </Button>
-              <Button onClick={applyDateFilter} color="primary" variant="contained">
-                Apply Filter
-              </Button>
-            </DialogActions>
-          </Dialog>
         </>
       )}
     </Grid>
