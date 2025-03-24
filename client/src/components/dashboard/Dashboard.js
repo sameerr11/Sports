@@ -349,13 +349,9 @@ const Dashboard = () => {
                           px: 3,
                           transition: 'all 0.2s ease',
                           '&:hover': { 
-                            bgcolor: alpha(theme.palette.primary.main, 0.04),
-                            transform: 'translateX(4px)'
+                            bgcolor: alpha(theme.palette.primary.main, 0.04)
                           }
                         }}
-                        button
-                        component={Link}
-                        to={`/bookings/${booking._id}`}
                       >
                         <ListItemAvatar>
                           <Avatar 

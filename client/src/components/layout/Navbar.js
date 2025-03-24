@@ -116,7 +116,7 @@ const Navbar = ({ toggleSidebar }) => {
                                         src={ultrasLogo}
                                         alt="Ultras North Lebanon"
                                         sx={{
-                                            height: 55,
+                                            height: 63,
                                             mr: 1.5,
                                             objectFit: 'contain'
                                         }}

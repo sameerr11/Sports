@@ -208,7 +208,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                 '& .MuiDrawer-paper': {
                     width: drawerWidth,
                     boxSizing: 'border-box',
-                    backgroundColor: '#ffffff',
+                    backgroundColor: '#0c0056',
                     boxShadow: '2px 0 10px rgba(0, 0, 0, 0.05)',
                     borderRight: '1px solid rgba(0, 0, 0, 0.05)',
                     transition: 'all 0.3s ease-in-out',
@@ -227,29 +227,29 @@ const Sidebar = ({ open, toggleSidebar }) => {
                     <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
                         <Avatar 
                             sx={{ 
-                                bgcolor: theme.palette.primary.main,
+                                bgcolor: alpha(theme.palette.common.white, 0.2),
                                 width: 40,
                                 height: 40,
                                 flexShrink: 0
                             }}
                         >
-                            <Sports />
+                            <Sports sx={{ color: 'white' }} />
                         </Avatar>
                         <Box sx={{ ml: 1, overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2, color: 'white' }}>
                                 Sports App
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" sx={{ color: alpha(theme.palette.common.white, 0.7) }}>
                                 Management System
                             </Typography>
                         </Box>
                     </Box>
-                    <IconButton onClick={toggleSidebar} className="close-sidebar-btn" sx={{ flexShrink: 0 }}>
+                    <IconButton onClick={toggleSidebar} className="close-sidebar-btn" sx={{ flexShrink: 0, color: 'white' }}>
                         <ChevronLeftIcon />
                     </IconButton>
                 </Box>
             </Box>
-            <Divider />
+            <Divider sx={{ borderColor: alpha(theme.palette.common.white, 0.1) }} />
             
             {/* Show regular menu items if user is admin/supervisor OR not a cashier/parent/player/coach/support/accounting/revenue_manager */}
             {(admin || (supervisor && !cafeteriaSupervisor && !bookingSupervisor) || (!cashier && !parent && !player && !coach && !cafeteriaSupervisor && !support && !accounting && !revenueManager)) && (
@@ -269,9 +269,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 position: 'relative',
                                 overflow: 'hidden',
                                 width: 'calc(100% - 16px)',
+                                color: 'white',
                                 '&.active': {
-                                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                    color: theme.palette.primary.main,
+                                    backgroundColor: alpha(theme.palette.common.white, 0.15),
+                                    color: 'white',
                                     '&::before': {
                                         content: '""',
                                         position: 'absolute',
@@ -279,17 +280,17 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                         top: 0,
                                         bottom: 0,
                                         width: 4,
-                                        backgroundColor: theme.palette.primary.main,
+                                        backgroundColor: theme.palette.secondary.main,
                                         borderRadius: '0 4px 4px 0'
                                     }
                                 },
                                 '&:hover': {
-                                    backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                    backgroundColor: alpha(theme.palette.common.white, 0.1),
                                 }
                             }}
                         >
                             <ListItemIcon sx={{ 
-                                color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
                                 minWidth: 40,
                                 flexShrink: 0
                             }}>
@@ -299,8 +300,9 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 primary={item.text} 
                                 primaryTypographyProps={{ 
                                     fontSize: '0.95rem',
-                                    fontWeight: location.pathname === item.path ? 600 : 400,
-                                    noWrap: true
+                                    fontWeight: location.pathname === item.path ? 700 : 600,
+                                    noWrap: true,
+                                    color: '#ec8c14'
                                 }}
                                 sx={{ overflow: 'hidden' }}
                             />
@@ -327,9 +329,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 position: 'relative',
                                 overflow: 'hidden',
                                 width: 'calc(100% - 16px)',
+                                color: 'white',
                                 '&.active': {
-                                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                    color: theme.palette.primary.main,
+                                    backgroundColor: alpha(theme.palette.common.white, 0.15),
+                                    color: 'white',
                                     '&::before': {
                                         content: '""',
                                         position: 'absolute',
@@ -337,17 +340,17 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                         top: 0,
                                         bottom: 0,
                                         width: 4,
-                                        backgroundColor: theme.palette.primary.main,
+                                        backgroundColor: theme.palette.secondary.main,
                                         borderRadius: '0 4px 4px 0'
                                     }
                                 },
                                 '&:hover': {
-                                    backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                    backgroundColor: alpha(theme.palette.common.white, 0.1),
                                 }
                             }}
                         >
                             <ListItemIcon sx={{ 
-                                color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
                                 minWidth: 40,
                                 flexShrink: 0
                             }}>
@@ -357,8 +360,9 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 primary={item.text} 
                                 primaryTypographyProps={{ 
                                     fontSize: '0.95rem',
-                                    fontWeight: location.pathname === item.path ? 600 : 400,
-                                    noWrap: true
+                                    fontWeight: location.pathname === item.path ? 700 : 600,
+                                    noWrap: true,
+                                    color: '#ec8c14'
                                 }}
                                 sx={{ overflow: 'hidden' }}
                             />
@@ -385,9 +389,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 position: 'relative',
                                 overflow: 'hidden',
                                 width: 'calc(100% - 16px)',
+                                color: 'white',
                                 '&.active': {
-                                    backgroundColor: alpha(theme.palette.secondary.main, 0.1),
-                                    color: theme.palette.secondary.main,
+                                    backgroundColor: alpha(theme.palette.common.white, 0.15),
+                                    color: 'white',
                                     '&::before': {
                                         content: '""',
                                         position: 'absolute',
@@ -400,12 +405,12 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     }
                                 },
                                 '&:hover': {
-                                    backgroundColor: alpha(theme.palette.secondary.main, 0.05),
+                                    backgroundColor: alpha(theme.palette.common.white, 0.1),
                                 }
                             }}
                         >
                             <ListItemIcon sx={{ 
-                                color: location.pathname === item.path ? theme.palette.secondary.main : 'inherit',
+                                color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
                                 minWidth: 40,
                                 flexShrink: 0
                             }}>
@@ -415,8 +420,9 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 primary={item.text} 
                                 primaryTypographyProps={{ 
                                     fontSize: '0.95rem',
-                                    fontWeight: location.pathname === item.path ? 600 : 400,
-                                    noWrap: true
+                                    fontWeight: location.pathname === item.path ? 700 : 600,
+                                    noWrap: true,
+                                    color: '#ec8c14'
                                 }}
                                 sx={{ overflow: 'hidden' }}
                             />
@@ -443,9 +449,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     position: 'relative',
                                     overflow: 'hidden',
                                     width: 'calc(100% - 16px)',
+                                    color: 'white',
                                     '&.active': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                        color: theme.palette.primary.main,
+                                        backgroundColor: alpha(theme.palette.common.white, 0.15),
+                                        color: 'white',
                                         '&::before': {
                                             content: '""',
                                             position: 'absolute',
@@ -453,17 +460,17 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                             top: 0,
                                             bottom: 0,
                                             width: 4,
-                                            backgroundColor: theme.palette.primary.main,
+                                            backgroundColor: theme.palette.secondary.main,
                                             borderRadius: '0 4px 4px 0'
                                         }
                                     },
                                     '&:hover': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                        backgroundColor: alpha(theme.palette.common.white, 0.1),
                                     }
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -473,8 +480,9 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     primary={item.text} 
                                     primaryTypographyProps={{ 
                                         fontSize: '0.95rem',
-                                        fontWeight: location.pathname === item.path ? 600 : 400,
-                                        noWrap: true
+                                        fontWeight: location.pathname === item.path ? 700 : 600,
+                                        noWrap: true,
+                                        color: '#ec8c14'
                                     }}
                                     sx={{ overflow: 'hidden' }}
                                 />
@@ -489,13 +497,13 @@ const Sidebar = ({ open, toggleSidebar }) => {
                 <>
                     <Divider sx={{ my: 1 }} />
                     <List component="nav" className="sidebar-nav">
-                        <ListItem sx={{ px: 3 }}>
+                        <ListItem sx={{ px: 3, pointerEvents: 'none', '&:hover': { backgroundColor: 'transparent' } }}>
                             <ListItemText 
                                 primary="Management" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'text.secondary',
-                                    fontWeight: 600,
+                                    color: 'white',
+                                    fontWeight: 700,
                                     noWrap: true
                                 }} 
                             />
@@ -515,9 +523,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     position: 'relative',
                                     overflow: 'hidden',
                                     width: 'calc(100% - 16px)',
+                                    color: 'white',
                                     '&.active': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                        color: theme.palette.primary.main,
+                                        backgroundColor: alpha(theme.palette.common.white, 0.15),
+                                        color: 'white',
                                         '&::before': {
                                             content: '""',
                                             position: 'absolute',
@@ -525,17 +534,17 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                             top: 0,
                                             bottom: 0,
                                             width: 4,
-                                            backgroundColor: theme.palette.primary.main,
+                                            backgroundColor: theme.palette.secondary.main,
                                             borderRadius: '0 4px 4px 0'
                                         }
                                     },
                                     '&:hover': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                        backgroundColor: alpha(theme.palette.common.white, 0.1),
                                     }
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -545,8 +554,9 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     primary={item.text} 
                                     primaryTypographyProps={{ 
                                         fontSize: '0.95rem',
-                                        fontWeight: location.pathname === item.path ? 600 : 400,
-                                        noWrap: true
+                                        fontWeight: location.pathname === item.path ? 700 : 600,
+                                        noWrap: true,
+                                        color: '#ec8c14'
                                     }}
                                     sx={{ overflow: 'hidden' }}
                                 />
@@ -561,13 +571,13 @@ const Sidebar = ({ open, toggleSidebar }) => {
                 <>
                     <Divider sx={{ my: 1 }} />
                     <List component="nav" className="sidebar-nav">
-                        <ListItem sx={{ px: 3 }}>
+                        <ListItem sx={{ px: 3, pointerEvents: 'none', '&:hover': { backgroundColor: 'transparent' } }}>
                             <ListItemText 
                                 primary="Registration" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'text.secondary',
-                                    fontWeight: 600,
+                                    color: 'white',
+                                    fontWeight: 700,
                                     noWrap: true
                                 }} 
                             />
@@ -587,9 +597,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     position: 'relative',
                                     overflow: 'hidden',
                                     width: 'calc(100% - 16px)',
+                                    color: 'white',
                                     '&.active': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                        color: theme.palette.primary.main,
+                                        backgroundColor: alpha(theme.palette.common.white, 0.15),
+                                        color: 'white',
                                         '&::before': {
                                             content: '""',
                                             position: 'absolute',
@@ -597,17 +608,17 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                             top: 0,
                                             bottom: 0,
                                             width: 4,
-                                            backgroundColor: theme.palette.primary.main,
+                                            backgroundColor: theme.palette.secondary.main,
                                             borderRadius: '0 4px 4px 0'
                                         }
                                     },
                                     '&:hover': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                        backgroundColor: alpha(theme.palette.common.white, 0.1),
                                     }
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -617,8 +628,9 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     primary={item.text} 
                                     primaryTypographyProps={{ 
                                         fontSize: '0.95rem',
-                                        fontWeight: location.pathname === item.path ? 600 : 400,
-                                        noWrap: true
+                                        fontWeight: location.pathname === item.path ? 700 : 600,
+                                        noWrap: true,
+                                        color: '#ec8c14'
                                     }}
                                     sx={{ overflow: 'hidden' }}
                                 />
@@ -632,13 +644,13 @@ const Sidebar = ({ open, toggleSidebar }) => {
                 <>
                     <Divider sx={{ my: 1 }} />
                     <List component="nav" className="sidebar-nav">
-                        <ListItem sx={{ px: 3 }}>
+                        <ListItem sx={{ px: 3, pointerEvents: 'none', '&:hover': { backgroundColor: 'transparent' } }}>
                             <ListItemText 
                                 primary="Administration" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'text.secondary',
-                                    fontWeight: 600,
+                                    color: 'white',
+                                    fontWeight: 700,
                                     noWrap: true
                                 }} 
                             />
@@ -658,9 +670,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     position: 'relative',
                                     overflow: 'hidden',
                                     width: 'calc(100% - 16px)',
+                                    color: 'white',
                                     '&.active': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                        color: theme.palette.primary.main,
+                                        backgroundColor: alpha(theme.palette.common.white, 0.15),
+                                        color: 'white',
                                         '&::before': {
                                             content: '""',
                                             position: 'absolute',
@@ -668,17 +681,17 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                             top: 0,
                                             bottom: 0,
                                             width: 4,
-                                            backgroundColor: theme.palette.primary.main,
+                                            backgroundColor: theme.palette.secondary.main,
                                             borderRadius: '0 4px 4px 0'
                                         }
                                     },
                                     '&:hover': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                        backgroundColor: alpha(theme.palette.common.white, 0.1),
                                     }
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -688,8 +701,9 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     primary={item.text} 
                                     primaryTypographyProps={{ 
                                         fontSize: '0.95rem',
-                                        fontWeight: location.pathname === item.path ? 600 : 400,
-                                        noWrap: true
+                                        fontWeight: location.pathname === item.path ? 700 : 600,
+                                        noWrap: true,
+                                        color: '#ec8c14'
                                     }}
                                     sx={{ overflow: 'hidden' }}
                                 />
@@ -704,13 +718,13 @@ const Sidebar = ({ open, toggleSidebar }) => {
                 <>
                     <Divider sx={{ my: 1 }} />
                     <List component="nav" className="sidebar-nav">
-                        <ListItem sx={{ px: 3 }}>
+                        <ListItem sx={{ px: 3, pointerEvents: 'none', '&:hover': { backgroundColor: 'transparent' } }}>
                             <ListItemText 
                                 primary="Coach Tools" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'text.secondary',
-                                    fontWeight: 600,
+                                    color: 'white',
+                                    fontWeight: 700,
                                     noWrap: true
                                 }} 
                             />
@@ -760,13 +774,13 @@ const Sidebar = ({ open, toggleSidebar }) => {
                 <>
                     <Divider sx={{ my: 1 }} />
                     <List component="nav" className="sidebar-nav">
-                        <ListItem sx={{ px: 3 }}>
+                        <ListItem sx={{ px: 3, pointerEvents: 'none', '&:hover': { backgroundColor: 'transparent' } }}>
                             <ListItemText 
                                 primary="Parent Dashboard" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'text.secondary',
-                                    fontWeight: 600,
+                                    color: 'white',
+                                    fontWeight: 700,
                                     noWrap: true
                                 }} 
                             />
@@ -786,9 +800,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     position: 'relative',
                                     overflow: 'hidden',
                                     width: 'calc(100% - 16px)',
+                                    color: 'white',
                                     '&.active': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                        color: theme.palette.primary.main,
+                                        backgroundColor: alpha(theme.palette.common.white, 0.15),
+                                        color: 'white',
                                         '&::before': {
                                             content: '""',
                                             position: 'absolute',
@@ -796,17 +811,17 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                             top: 0,
                                             bottom: 0,
                                             width: 4,
-                                            backgroundColor: theme.palette.primary.main,
+                                            backgroundColor: theme.palette.secondary.main,
                                             borderRadius: '0 4px 4px 0'
                                         }
                                     },
                                     '&:hover': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                        backgroundColor: alpha(theme.palette.common.white, 0.1),
                                     }
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -816,8 +831,9 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     primary={item.text} 
                                     primaryTypographyProps={{ 
                                         fontSize: '0.95rem',
-                                        fontWeight: location.pathname === item.path ? 600 : 400,
-                                        noWrap: true
+                                        fontWeight: location.pathname === item.path ? 700 : 600,
+                                        noWrap: true,
+                                        color: '#ec8c14'
                                     }}
                                     sx={{ overflow: 'hidden' }}
                                 />
@@ -832,13 +848,13 @@ const Sidebar = ({ open, toggleSidebar }) => {
                 <>
                     <Divider sx={{ my: 1 }} />
                     <List component="nav" className="sidebar-nav">
-                        <ListItem sx={{ px: 3 }}>
+                        <ListItem sx={{ px: 3, pointerEvents: 'none', '&:hover': { backgroundColor: 'transparent' } }}>
                             <ListItemText 
                                 primary="Support Tools" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'text.secondary',
-                                    fontWeight: 600,
+                                    color: 'white',
+                                    fontWeight: 700,
                                     noWrap: true
                                 }} 
                             />
@@ -858,9 +874,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     position: 'relative',
                                     overflow: 'hidden',
                                     width: 'calc(100% - 16px)',
+                                    color: 'white',
                                     '&.active': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                        color: theme.palette.primary.main,
+                                        backgroundColor: alpha(theme.palette.common.white, 0.15),
+                                        color: 'white',
                                         '&::before': {
                                             content: '""',
                                             position: 'absolute',
@@ -868,17 +885,17 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                             top: 0,
                                             bottom: 0,
                                             width: 4,
-                                            backgroundColor: theme.palette.primary.main,
+                                            backgroundColor: theme.palette.secondary.main,
                                             borderRadius: '0 4px 4px 0'
                                         }
                                     },
                                     '&:hover': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                        backgroundColor: alpha(theme.palette.common.white, 0.1),
                                     }
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -888,8 +905,9 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     primary={item.text} 
                                     primaryTypographyProps={{ 
                                         fontSize: '0.95rem',
-                                        fontWeight: location.pathname === item.path ? 600 : 400,
-                                        noWrap: true
+                                        fontWeight: location.pathname === item.path ? 700 : 600,
+                                        noWrap: true,
+                                        color: '#ec8c14'
                                     }}
                                     sx={{ overflow: 'hidden' }}
                                 />
@@ -904,13 +922,13 @@ const Sidebar = ({ open, toggleSidebar }) => {
                 <>
                     <Divider sx={{ my: 1 }} />
                     <List component="nav" className="sidebar-nav">
-                        <ListItem sx={{ px: 3 }}>
+                        <ListItem sx={{ px: 3, pointerEvents: 'none', '&:hover': { backgroundColor: 'transparent' } }}>
                             <ListItemText 
                                 primary="Revenue Management" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'text.secondary',
-                                    fontWeight: 600,
+                                    color: 'white',
+                                    fontWeight: 700,
                                     noWrap: true
                                 }} 
                             />
@@ -930,9 +948,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     position: 'relative',
                                     overflow: 'hidden',
                                     width: 'calc(100% - 16px)',
+                                    color: 'white',
                                     '&.active': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                        color: theme.palette.primary.main,
+                                        backgroundColor: alpha(theme.palette.common.white, 0.15),
+                                        color: 'white',
                                         '&::before': {
                                             content: '""',
                                             position: 'absolute',
@@ -940,17 +959,17 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                             top: 0,
                                             bottom: 0,
                                             width: 4,
-                                            backgroundColor: theme.palette.primary.main,
+                                            backgroundColor: theme.palette.secondary.main,
                                             borderRadius: '0 4px 4px 0'
                                         }
                                     },
                                     '&:hover': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                        backgroundColor: alpha(theme.palette.common.white, 0.1),
                                     }
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -960,8 +979,9 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                     primary={item.text} 
                                     primaryTypographyProps={{ 
                                         fontSize: '0.95rem',
-                                        fontWeight: location.pathname === item.path ? 600 : 400,
-                                        noWrap: true
+                                        fontWeight: location.pathname === item.path ? 700 : 600,
+                                        noWrap: true,
+                                        color: '#ec8c14'
                                     }}
                                     sx={{ overflow: 'hidden' }}
                                 />
@@ -974,7 +994,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
             <Box sx={{ flexGrow: 1 }} />
             
             <Box sx={{ p: 2, textAlign: 'center' }}>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{ color: alpha(theme.palette.common.white, 0.5) }}>
                     © 2025 Sports Management
                 </Typography>
             </Box>

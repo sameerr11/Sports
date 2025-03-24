@@ -71,7 +71,7 @@ const Login = () => {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          background: 'linear-gradient(145deg, #f8f9ff 0%, #eef1ff 100%)',
+          background: 'linear-gradient(145deg,rgba(248, 249, 255, 0.6) 0%,rgba(9, 50, 234, 0.46) 100%)',
           borderRadius: { xs: 0, md: '0 20px 20px 0' },
           boxShadow: '0px 0px 25px rgba(0, 0, 0, 0.1)',
           padding: 3,
