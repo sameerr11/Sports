@@ -171,7 +171,7 @@ const BookingConfirmation = ({ booking }) => {
             )}
           </Grid>
           
-          {booking.paymentStatus === 'Unpaid' && (
+          {booking.paymentStatus === 'Unpaid' && booking.paymentMethod === 'Cash' && (
             <Grid item xs={12}>
               <Alert severity="info" sx={{ mt: 2 }}>
                 Your booking is pending until payment is received. Please arrive 15 minutes before your booking time and bring your booking reference number to complete payment at the court. Once payment is received, your booking will be confirmed.

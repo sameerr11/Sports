@@ -17,7 +17,7 @@ const RevenueTransactionSchema = new mongoose.Schema({
   },
   sourceModel: {
     type: String,
-    enum: ['PlayerRegistration', 'CafeteriaOrder', 'Booking', 'RevenueSourceType'],
+    enum: ['PlayerRegistration', 'CafeteriaOrder', 'Booking', 'GuestBooking', 'RevenueSourceType'],
     required: true
   },
   description: {

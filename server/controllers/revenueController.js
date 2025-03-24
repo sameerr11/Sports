@@ -134,6 +134,94 @@ const syncTransactionsFromSources = async () => {
       console.log(`Created revenue transaction for cafeteria order: ${order._id}`);
     }
     
+    // 3. Regular Bookings - Get all paid bookings
+    const bookings = await Booking.find({
+      paymentStatus: 'Paid',
+      // Only get bookings that don't have a corresponding revenue entry
+      $nor: [
+        { 
+          _id: { 
+            $in: await RevenueTransaction.find({
+              sourceModel: 'Booking'
+            }).distinct('sourceId')
+          } 
+        }
+      ]
+    }).populate('user', 'firstName lastName email').populate('court', 'name sportType');
+    
+    console.log(`Found ${bookings.length} new regular bookings to sync...`);
+    
+    // Create revenue transactions for each booking
+    for (const booking of bookings) {
+      // Skip free bookings (like training sessions)
+      if (booking.purpose !== 'Rental' || booking.totalPrice <= 0) {
+        continue;
+      }
+      
+      // Use default admin if user is missing
+      const creatorId = booking.user ? booking.user._id : defaultAdminId;
+      
+      // Skip if we can't find a valid creator ID
+      if (!creatorId) {
+        console.log(`Skipping booking ${booking._id} due to missing user and no default admin`);
+        continue;
+      }
+      
+      const revenueTransaction = new RevenueTransaction({
+        amount: booking.totalPrice,
+        sourceType: 'Rental',
+        sourceId: booking._id,
+        sourceModel: 'Booking',
+        description: `Court rental: ${booking.court ? booking.court.name : 'Unknown court'} - ${booking.user ? `${booking.user.firstName} ${booking.user.lastName}` : 'Unknown user'}`,
+        date: booking.createdAt,
+        createdBy: creatorId,
+        notes: `${new Date(booking.startTime).toLocaleString()} to ${new Date(booking.endTime).toLocaleString()}`
+      });
+      
+      await revenueTransaction.save();
+      console.log(`Created revenue transaction for booking: ${booking._id}`);
+    }
+    
+    // 4. Guest Bookings - Get all paid guest bookings
+    const GuestBooking = require('../models/GuestBooking');
+    const guestBookings = await GuestBooking.find({
+      paymentStatus: 'Paid',
+      // Only get bookings that don't have a corresponding revenue entry
+      $nor: [
+        { 
+          _id: { 
+            $in: await RevenueTransaction.find({
+              sourceModel: 'GuestBooking'
+            }).distinct('sourceId')
+          } 
+        }
+      ]
+    }).populate('court', 'name sportType hourlyRate');
+    
+    console.log(`Found ${guestBookings.length} new guest bookings to sync...`);
+    
+    // Create revenue transactions for each guest booking
+    for (const booking of guestBookings) {
+      // Skip if totalPrice is not positive
+      if (booking.totalPrice <= 0) {
+        continue;
+      }
+      
+      const revenueTransaction = new RevenueTransaction({
+        amount: booking.totalPrice,
+        sourceType: 'Rental',
+        sourceId: booking._id,
+        sourceModel: 'GuestBooking',
+        description: `Guest court rental: ${booking.court ? booking.court.name : 'Unknown court'} - ${booking.guestName}`,
+        date: booking.createdAt,
+        createdBy: defaultAdminId, // Use default admin for guest bookings
+        notes: `Reference: ${booking.bookingReference}, ${new Date(booking.startTime).toLocaleString()} to ${new Date(booking.endTime).toLocaleString()}`
+      });
+      
+      await revenueTransaction.save();
+      console.log(`Created revenue transaction for guest booking: ${booking._id}`);
+    }
+    
     // ======= EXPENSE SOURCES =======
     
     // 1. Salary Invoices - Get all paid salary invoices
@@ -244,6 +332,9 @@ exports.getDashboardData = async (req, res) => {
     // Sync transactions from other sources
     await syncTransactionsFromSources();
     
+    // Remove orphaned revenue entries (those without corresponding source records)
+    await cleanOrphanedTransactions();
+    
     const { startDate, endDate } = req.query;
     const start = startDate ? new Date(startDate) : new Date(new Date().setDate(new Date().getDate() - 30));
     const end = endDate ? new Date(endDate) : new Date();
@@ -284,7 +375,7 @@ exports.getDashboardData = async (req, res) => {
     ]);
 
     // Get revenue by source type
-    const revenueBySource = await RevenueTransaction.aggregate([
+    let revenueBySource = await RevenueTransaction.aggregate([
       { 
         $match: { 
           date: { $gte: start, $lte: end } 
@@ -302,8 +393,29 @@ exports.getDashboardData = async (req, res) => {
           total: 1,
           _id: 0
         }
+      },
+      {
+        // Sort by sourceType for consistent display
+        $sort: { sourceType: 1 }
       }
     ]);
+    
+    // Check if both "Court Rental" and "Rental" exist in the results
+    // If so, merge them into a single "Rental" category
+    const courtRentalIndex = revenueBySource.findIndex(item => item.sourceType === 'Court Rental');
+    if (courtRentalIndex !== -1) {
+      const rentalIndex = revenueBySource.findIndex(item => item.sourceType === 'Rental');
+      
+      if (rentalIndex !== -1) {
+        // Add Court Rental amount to Rental
+        revenueBySource[rentalIndex].total += revenueBySource[courtRentalIndex].total;
+        // Remove Court Rental entry
+        revenueBySource.splice(courtRentalIndex, 1);
+      } else {
+        // Just rename Court Rental to Rental
+        revenueBySource[courtRentalIndex].sourceType = 'Rental';
+      }
+    }
 
     // Get expenses by type
     const expensesByType = await ExpenseTransaction.aggregate([
@@ -723,5 +835,86 @@ exports.addExpenseTransaction = async (req, res) => {
   } catch (error) {
     console.error('Error adding expense transaction:', error);
     return ApiResponse.error(res, 'Error adding expense transaction', 500);
+  }
+};
+
+// Fix inconsistent revenue source types in the database
+const fixRevenueSourceTypes = async () => {
+  try {
+    console.log('Checking for inconsistent revenue source types...');
+    
+    // Update all "Court Rental" transactions to "Rental"
+    const updateResult = await RevenueTransaction.updateMany(
+      { sourceType: 'Court Rental' },
+      { $set: { sourceType: 'Rental' } }
+    );
+    
+    if (updateResult.modifiedCount > 0) {
+      console.log(`Fixed ${updateResult.modifiedCount} revenue transactions with incorrect sourceType`);
+    } else {
+      console.log('No inconsistent revenue source types found');
+    }
+  } catch (error) {
+    console.error('Error fixing revenue source types:', error);
+  }
+};
+
+// Run the fix during application startup to ensure data consistency
+fixRevenueSourceTypes();
+
+// Remove revenue transactions that don't have a corresponding source record
+const cleanOrphanedTransactions = async () => {
+  try {
+    console.log('Checking for orphaned revenue transactions...');
+    
+    // Use the models already imported at the top of the file
+    const GuestBooking = require('../models/GuestBooking');
+    
+    // Get all revenue transactions
+    const transactions = await RevenueTransaction.find();
+    let removedCount = 0;
+    
+    for (const transaction of transactions) {
+      let sourceExists = false;
+      
+      // Skip transactions with no sourceModel or sourceId
+      if (!transaction.sourceModel || !transaction.sourceId) {
+        continue;
+      }
+      
+      // Check if the source record exists based on sourceModel
+      switch (transaction.sourceModel) {
+        case 'Booking':
+          sourceExists = await Booking.exists({ _id: transaction.sourceId });
+          break;
+        case 'GuestBooking':
+          sourceExists = await GuestBooking.exists({ _id: transaction.sourceId });
+          break;
+        case 'PlayerRegistration':
+          sourceExists = await PlayerRegistration.exists({ _id: transaction.sourceId });
+          break;
+        case 'CafeteriaOrder':
+          sourceExists = await CafeteriaOrder.exists({ _id: transaction.sourceId });
+          break;
+        default:
+          // For unknown sourceModel, keep the transaction
+          sourceExists = true;
+      }
+      
+      // If source doesn't exist, remove the transaction
+      if (!sourceExists) {
+        console.log(`Removing orphaned transaction ${transaction._id} with sourceModel ${transaction.sourceModel} and sourceId ${transaction.sourceId}`);
+        await RevenueTransaction.deleteOne({ _id: transaction._id });
+        removedCount++;
+      }
+    }
+    
+    if (removedCount > 0) {
+      console.log(`Removed ${removedCount} orphaned revenue transactions`);
+    } else {
+      console.log('No orphaned revenue transactions found');
+    }
+  } catch (error) {
+    console.error('Error cleaning orphaned transactions:', error);
   }
 }; 
