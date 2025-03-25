@@ -235,6 +235,17 @@ const TeamScheduler = () => {
         return;
       }
       
+      // Validate schedule type
+      const validPurposes = ['Training', 'Match', 'Rental', 'Other'];
+      if (!validPurposes.includes(scheduleType)) {
+        setAlert({
+          open: true,
+          message: `Invalid schedule type: ${scheduleType}. Must be one of ${validPurposes.join(', ')}`,
+          severity: 'error'
+        });
+        return;
+      }
+      
       // Create date objects by combining the selected date with time strings
       const startDateTime = combineDateTime(selectedDate, startTime);
       const endDateTime = combineDateTime(selectedDate, endTime);
@@ -258,59 +269,77 @@ const TeamScheduler = () => {
       }
 
       if (isRecurring) {
-        // Create bookings for each selected day
-        const [startHours, startMinutes] = startTime.split(':').map(Number);
-        const [endHours, endMinutes] = endTime.split(':').map(Number);
-        
-        const bookingPromises = selectedDays.map(async (day) => {
-          // Get the next occurrence of this day
-          const nextDate = getNextDayOfWeek(day);
-          
-          const bookingStartTime = new Date(nextDate);
-          bookingStartTime.setHours(startHours, startMinutes);
-          
-          const bookingEndTime = new Date(nextDate);
-          bookingEndTime.setHours(endHours, endMinutes);
-
-          const newBooking = {
-            court: selectedCourt,
+        // Create a recurring schedule for each selected day
+        const recurringPromises = selectedDays.map(async (day) => {
+          const recurringSchedule = {
             team: selectedTeam,
-            startTime: bookingStartTime.toISOString(),
-            endTime: bookingEndTime.toISOString(),
+            court: selectedCourt,
+            dayOfWeek: day,
+            startTime: startTime,
+            endTime: endTime,
             purpose: scheduleType,
-            notes: notes,
-            isRecurring: true,
-            recurringDay: day
+            startDate: selectedDate.toISOString(),
+            notes: notes
           };
-
-          return api.post('/bookings', newBooking);
+          
+          return api.post('/recurring-schedules', recurringSchedule);
         });
 
-        const responses = await Promise.all(bookingPromises);
-        const newSchedules = responses.map(response => response.data);
+        const responses = await Promise.all(recurringPromises);
         
-        setSchedules(prev => [...prev, ...newSchedules]);
+        // Extract the generated bookings from each recurring schedule
+        const newBookings = responses.flatMap(response => 
+          response.data.bookings || []
+        );
+        
+        // If we received actual booking objects, add them to the schedule list
+        if (newBookings.length > 0) {
+          setSchedules(prev => [...prev, ...newBookings]);
+        } else {
+          // Otherwise, fetch bookings to update the list
+          fetchSchedules();
+        }
+        
+        setAlert({
+          open: true,
+          message: `Recurring ${scheduleType} scheduled successfully on ${selectedDays.length} day(s)!`,
+          severity: 'success'
+        });
       } else {
         // Create single booking
-      const newBooking = {
-        court: selectedCourt,
-        team: selectedTeam,
+        const newBooking = {
+          court: selectedCourt,
+          team: selectedTeam,
           startTime: startDateTime.toISOString(),
           endTime: endDateTime.toISOString(),
-        purpose: scheduleType,
-        notes: notes
-      };
-      
-      const response = await api.post('/bookings', newBooking);
-        setSchedules(prev => [...prev, response.data]);
+          purpose: scheduleType,  // Make sure this is one of: 'Training', 'Match', 'Rental', 'Other'
+          notes: notes
+        };
+        
+        console.log('Creating single booking:', newBooking);
+        
+        try {
+          const response = await api.post('/bookings', newBooking);
+          console.log('Booking response:', response.data);
+          setSchedules(prev => [...prev, response.data]);
+          
+          setAlert({
+            open: true,
+            message: `${scheduleType} scheduled successfully!`,
+            severity: 'success'
+          });
+        } catch (bookingError) {
+          console.error('Error in booking API call:', bookingError);
+          console.error('Response data:', bookingError.response?.data);
+          
+          setAlert({
+            open: true,
+            message: bookingError.response?.data?.msg || 'Error creating schedule',
+            severity: 'error'
+          });
+          return; // Don't close dialog on error
+        }
       }
-      
-      // Show success message
-      setAlert({
-        open: true,
-        message: `${scheduleType} scheduled successfully!`,
-        severity: 'success'
-      });
       
       // Close dialog and reset form
       handleCloseDialog();
@@ -489,6 +518,35 @@ const TeamScheduler = () => {
       </Typography>
     </Box>
   );
+  
+  // Add fetchSchedules function near other data fetching functions
+  const fetchSchedules = async () => {
+    try {
+      setIsLoading(true);
+      // Get current bookings
+      const response = await api.get('/bookings');
+      const bookings = response.data.filter(booking => booking.purpose === scheduleType);
+      
+      // Set to state
+      setSchedules(bookings);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching schedules:', error);
+      setAlert({
+        open: true,
+        message: 'Error loading schedules',
+        severity: 'error'
+      });
+      setIsLoading(false);
+    }
+  };
+  
+  // Add this near the other useEffect hooks
+  useEffect(() => {
+    if (isSupervisorUser) {
+      fetchSchedules();
+    }
+  }, [scheduleType, isSupervisorUser]);
   
   return (
     <Box sx={{ py: 3 }}>

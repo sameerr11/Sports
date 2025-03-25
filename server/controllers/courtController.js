@@ -4,6 +4,29 @@ const Booking = require('../models/Booking');
 const User = require('../models/User');
 const GuestBooking = require('../models/GuestBooking');
 
+// Helper function to ensure court has default availability
+const ensureCourtAvailability = (court) => {
+  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  
+  // Check if the court has availability settings
+  if (!court.availability) {
+    court.availability = {};
+  }
+  
+  // Set default availability for each day if not present
+  days.forEach(day => {
+    if (!court.availability[day] || court.availability[day].length === 0) {
+      // Default availability: 9 AM to 9 PM for both Academy and Rental
+      court.availability[day] = [
+        { start: '09:00', end: '21:00', type: 'Academy' },
+        { start: '09:00', end: '21:00', type: 'Rental' }
+      ];
+    }
+  });
+  
+  return court;
+};
+
 // @desc    Create a new court
 // @route   POST /api/courts
 // @access  Private (Supervisor only)
@@ -47,7 +70,10 @@ exports.createCourt = async (req, res) => {
       image,
       createdBy: req.user.id
     });
-
+    
+    // Ensure the court has default availability
+    ensureCourtAvailability(newCourt);
+    
     const court = await newCourt.save();
     res.status(201).json(court);
   } catch (err) {
@@ -164,6 +190,13 @@ exports.updateCourt = async (req, res) => {
     if (availability) courtFields.availability = availability;
     if (image) courtFields.image = image;
     if (isActive !== undefined) courtFields.isActive = isActive;
+
+    // If court has no availability settings after update, ensure defaults
+    if (!courtFields.availability || Object.keys(courtFields.availability).length === 0) {
+      court = ensureCourtAvailability(court);
+      await court.save();
+      return res.json(court);
+    }
 
     court = await Court.findByIdAndUpdate(
       req.params.id,
@@ -300,6 +333,36 @@ exports.getCourtAvailability = async (req, res) => {
     res.json(response);
   } catch (err) {
     console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// @desc    Fix court availability - admin utility
+// @route   POST /api/courts/fix-availability
+// @access  Private (Admin only)
+exports.fixCourtAvailability = async (req, res) => {
+  try {
+    const courts = await Court.find({});
+    let fixedCount = 0;
+    
+    for (const court of courts) {
+      const originalAvailabilityStr = JSON.stringify(court.availability || {});
+      ensureCourtAvailability(court);
+      const newAvailabilityStr = JSON.stringify(court.availability);
+      
+      // Only save if changes were made
+      if (originalAvailabilityStr !== newAvailabilityStr) {
+        await court.save();
+        fixedCount++;
+      }
+    }
+    
+    res.json({ 
+      message: `Court availability fixed for ${fixedCount} courts`,
+      totalCourts: courts.length
+    });
+  } catch (err) {
+    console.error('Error fixing court availability:', err.message);
     res.status(500).send('Server Error');
   }
 }; 

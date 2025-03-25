@@ -34,9 +34,10 @@ const utilityRoutes = require('./utilityRoutes');
 const roleSalaryRoutes = require('./roleSalaryRoutes');
 const revenueRoutes = require('./revenueRoutes');
 const guestBookingRoutes = require('./guestBookingRoutes');
+const recurringScheduleController = require('../controllers/recurringScheduleController');
 
 // Middleware
-const { auth, admin, supervisor, coach, player, parent, adminOrSupport, adminSupportOrAccounting, support, teamSupervisor } = require('../middleware/auth');
+const { auth, admin, supervisor, coach, player, parent, adminOrSupport, adminSupportOrAccounting, support, teamSupervisor, checkRole } = require('../middleware/auth');
 
 // Auth routes
 router.post(
@@ -107,7 +108,7 @@ router.post(
   '/courts',
   [
     auth,
-    supervisor,
+    admin,
     check('name', 'Name is required').not().isEmpty(),
     check('sportType', 'Sport type is required').not().isEmpty(),
     check('location', 'Location is required').not().isEmpty(),
@@ -116,16 +117,21 @@ router.post(
   courtController.createCourt
 );
 router.get('/courts', auth, courtController.getCourts);
-router.get('/courts/:id', courtController.getCourtById);
+router.get('/courts/:id', auth, courtController.getCourtById);
 router.put(
   '/courts/:id',
   [
     auth,
-    supervisor
+    admin,
+    check('name', 'Name is required').not().isEmpty(),
+    check('sportType', 'Sport type is required').not().isEmpty(),
+    check('location', 'Location is required').not().isEmpty(),
+    check('hourlyRate', 'Hourly rate is required').isNumeric()
   ],
   courtController.updateCourt
 );
-router.delete('/courts/:id', [auth, supervisor], courtController.deleteCourt);
+router.delete('/courts/:id', [auth, admin], courtController.deleteCourt);
+router.post('/courts/fix-availability', [auth, admin], courtController.fixCourtAvailability);
 router.get('/courts/:id/availability', courtController.getCourtAvailability);
 
 // Booking routes
@@ -278,5 +284,71 @@ router.use('/revenue', revenueRoutes);
 
 // Guest Booking routes
 router.use('/guest-bookings', guestBookingRoutes);
+
+// Recurring schedule routes
+router.post(
+  '/recurring-schedules',
+  [
+    auth,
+    [supervisor, admin],
+    check('team', 'Team is required').not().isEmpty(),
+    check('court', 'Court is required').not().isEmpty(),
+    check('dayOfWeek', 'Day of week is required').not().isEmpty(),
+    check('startTime', 'Start time is required').not().isEmpty(),
+    check('endTime', 'End time is required').not().isEmpty(),
+    check('startDate', 'Start date is required').not().isEmpty()
+  ],
+  recurringScheduleController.createRecurringSchedule
+);
+
+router.get('/recurring-schedules', auth, recurringScheduleController.getRecurringSchedules);
+
+router.get('/recurring-schedules/:id', auth, recurringScheduleController.getRecurringScheduleById);
+
+router.put(
+  '/recurring-schedules/:id',
+  [
+    auth,
+    [supervisor, admin]
+  ],
+  recurringScheduleController.updateRecurringSchedule
+);
+
+router.delete(
+  '/recurring-schedules/:id',
+  [
+    auth,
+    [supervisor, admin]
+  ],
+  recurringScheduleController.deleteRecurringSchedule
+);
+
+router.post(
+  '/recurring-schedules/:id/exceptions',
+  [
+    auth,
+    [supervisor, admin],
+    check('date', 'Date is required').not().isEmpty()
+  ],
+  recurringScheduleController.addException
+);
+
+router.delete(
+  '/recurring-schedules/:id/exceptions/:exceptionId',
+  [
+    auth,
+    [supervisor, admin]
+  ],
+  recurringScheduleController.removeException
+);
+
+router.post(
+  '/recurring-schedules/:id/generate',
+  [
+    auth,
+    [supervisor, admin]
+  ],
+  recurringScheduleController.generateBookings
+);
 
 module.exports = router; 

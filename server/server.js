@@ -4,12 +4,16 @@ const path = require('path');
 const connectDB = require('./db');
 const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
+const { initScheduler } = require('./utils/scheduler');
 require('dotenv').config();
 
 const app = express();
 
 // Connect to MongoDB
 connectDB();
+
+// Initialize scheduler for recurring bookings
+initScheduler();
 
 // Middleware
 app.use(cors());

@@ -42,6 +42,15 @@ const BookingSchema = new mongoose.Schema({
     enum: ['Unpaid', 'Paid', 'Refunded'],
     default: 'Unpaid'
   },
+  isRecurring: {
+    type: Boolean,
+    default: false
+  },
+  recurringDay: {
+    type: String,
+    enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', null],
+    default: null
+  },
   notes: {
     type: String,
     trim: true

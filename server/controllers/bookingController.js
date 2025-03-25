@@ -13,7 +13,8 @@ exports.createBooking = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { court, startTime, endTime, purpose, team, notes } = req.body;
+  const { court, startTime, endTime, purpose, team, notes, isRecurring, recurringDay } = req.body;
+  console.log('Creating booking with data:', { court, startTime, endTime, purpose, team, notes, isRecurring, recurringDay });
 
   try {
     const user = req.user.id;
@@ -22,15 +23,18 @@ exports.createBooking = async (req, res) => {
     const courtDoc = await Court.findById(court);
     
     if (!courtDoc) {
+      console.log('Court not found:', court);
       return res.status(404).json({ msg: 'Court not found' });
     }
     
     // Parse dates
     const startDate = new Date(startTime);
     const endDate = new Date(endTime);
+    console.log('Parsed dates:', { startDate, endDate });
     
     // Verify end time is after start time
     if (endDate <= startDate) {
+      console.log('Invalid time range:', { startDate, endDate });
       return res.status(400).json({ msg: 'End time must be after start time' });
     }
     
@@ -39,11 +43,17 @@ exports.createBooking = async (req, res) => {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayName = days[dayOfWeek];
     
+    // For recurring booking, use the specified recurringDay instead
+    const effectiveDayName = recurringDay || dayName;
+    console.log('Day information:', { dayOfWeek, dayName, effectiveDayName });
+    
     // Get court availability for this day
-    const dayAvailability = courtDoc.availability[dayName] || [];
+    const dayAvailability = courtDoc.availability[effectiveDayName] || [];
+    console.log('Court availability for day:', dayAvailability);
     
     if (dayAvailability.length === 0) {
-      return res.status(400).json({ msg: `Court is not available on ${dayName}` });
+      console.log('No availability for this day');
+      return res.status(400).json({ msg: `Court is not available on ${effectiveDayName}` });
     }
     
     // Convert booking time to HH:MM format for comparison
@@ -92,11 +102,18 @@ exports.createBooking = async (req, res) => {
       const bookingStartMinutes = startHour * 60 + startMinute;
       const bookingEndMinutes = endHour * 60 + endMinute;
       
+      console.log('Comparing times:', {
+        slot: { start: slot.start, end: slot.end, type: slot.type },
+        slotMinutes: { start: slotStartMinutes, end: slotEndMinutes },
+        bookingMinutes: { start: bookingStartMinutes, end: bookingEndMinutes }
+      });
+      
       // Check if booking falls completely within the slot
       return bookingStartMinutes >= slotStartMinutes && bookingEndMinutes <= slotEndMinutes;
     });
     
     if (!isWithinAvailableHours) {
+      console.log('Booking outside available hours');
       return res.status(400).json({ 
         msg: `Booking time is outside the court's available ${purpose === 'Training' || purpose === 'Match' ? 'Academy' : 'Rental'} hours for this day`,
         availableSlots: availableSlots 
@@ -138,8 +155,8 @@ exports.createBooking = async (req, res) => {
       purpose,
       totalPrice,
       notes,
-      isRecurring: false,
-      recurringDay: null
+      isRecurring: isRecurring || false,
+      recurringDay: isRecurring ? recurringDay : null
     });
 
     // If user is a guest, set status to pending
@@ -158,7 +175,8 @@ exports.createBooking = async (req, res) => {
       
     res.status(201).json(populatedBooking);
   } catch (err) {
-    console.error(err.message);
+    console.error('Server error creating booking:', err.message);
+    console.error(err.stack);
     res.status(500).send('Server Error');
   }
 };
