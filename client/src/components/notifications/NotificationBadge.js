@@ -117,10 +117,12 @@ const NotificationBadge = () => {
         return <CloudUploadIcon />;
       case 'child_account_linked':
         return <FamilyRestroomIcon />;
+      case 'new_training_plan':
+        return <SportsIcon />;
       case 'training_scheduled':
       case 'training_updated':
       case 'training_cancelled':
-        return <FitnessCenterIcon />;
+        return <SportsIcon />;
       case 'match_scheduled':
       case 'match_updated':
       case 'match_result':
@@ -146,7 +148,7 @@ const NotificationBadge = () => {
             return <SportsSoccerIcon />;
           case 'Training':
           case 'TrainingPlan':
-            return <FitnessCenterIcon />;
+            return <SportsIcon />;
           case 'Payment':
             return <PaymentIcon />;
           case 'PlayerStats':
@@ -222,7 +224,7 @@ const NotificationBadge = () => {
         PaperProps={{
           elevation: 3,
           sx: {
-            maxHeight: 400,
+            maxHeight: '400px',
             width: 360,
             overflow: 'visible',
             filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.15))',
@@ -244,12 +246,12 @@ const NotificationBadge = () => {
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
-        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600 }}>Notifications</Typography>
+        <Box sx={{ p: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" sx={{ fontSize: '0.9rem', fontWeight: 600 }}>Notifications</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ 
             fontSize: '0.75rem',
             fontWeight: 500,
-            padding: '4px 8px',
+            padding: '2px 6px',
             borderRadius: '12px',
             backgroundColor: unreadCount > 0 ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
           }}>
@@ -259,7 +261,7 @@ const NotificationBadge = () => {
         <Divider />
         {notifications.length === 0 ? (
           <MenuItem disabled>
-            <Typography variant="body2" sx={{ py: 2, textAlign: 'center', width: '100%' }}>No notifications</Typography>
+            <Typography variant="body2" sx={{ py: 1, textAlign: 'center', width: '100%' }}>No notifications</Typography>
           </MenuItem>
         ) : (
           <List sx={{ width: '100%', p: 0 }}>
@@ -270,15 +272,17 @@ const NotificationBadge = () => {
                 sx={{
                   bgcolor: notification.isRead ? 'inherit' : 'rgba(25, 118, 210, 0.08)',
                   whiteSpace: 'normal',
-                  py: 1.5,
-                  px: 2,
+                  py: 0.75,
+                  px: 1.5,
                   borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
                 }}
               >
                 <ListItemAvatar>
                   <Avatar sx={{ 
                     bgcolor: notification.isRead ? 'grey.200' : 'primary.main',
-                    color: notification.isRead ? 'grey.700' : 'white'
+                    color: notification.isRead ? 'grey.700' : 'white',
+                    width: 32,
+                    height: 32
                   }}>
                     {getNotificationIcon(
                       notification.type, 
@@ -292,7 +296,7 @@ const NotificationBadge = () => {
                       variant="subtitle2"
                       color="text.primary"
                       fontWeight={notification.isRead ? 500 : 600}
-                      sx={{ fontSize: '0.875rem', mb: 0.5 }}
+                      sx={{ fontSize: '0.8rem', mb: 0.25 }}
                     >
                       {notification.title}
                     </Typography>
@@ -308,9 +312,9 @@ const NotificationBadge = () => {
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           display: '-webkit-box',
-                          WebkitLineClamp: 2,
+                          WebkitLineClamp: 1,
                           WebkitBoxOrient: 'vertical',
-                          fontSize: '0.8125rem',
+                          fontSize: '0.75rem',
                           opacity: notification.isRead ? 0.7 : 0.9
                         }}
                       >
@@ -320,7 +324,7 @@ const NotificationBadge = () => {
                         variant="caption"
                         color="text.secondary"
                         component="div"
-                        sx={{ mt: 0.5, fontSize: '0.75rem' }}
+                        sx={{ mt: 0.25, fontSize: '0.7rem' }}
                       >
                         {formatDate(notification.createdAt)}
                       </Typography>
@@ -332,17 +336,19 @@ const NotificationBadge = () => {
           </List>
         )}
         <Divider />
-        <Box sx={{ p: 1.5 }}>
+        <Box sx={{ p: 1 }}>
           <Button
             component={Link}
             to="/notifications"
             fullWidth
             onClick={handleClose}
             variant="text"
+            size="small"
             sx={{ 
               textTransform: 'none', 
               fontWeight: 500,
-              borderRadius: '8px' 
+              borderRadius: '8px',
+              py: 0.5
             }}
           >
             View All Notifications

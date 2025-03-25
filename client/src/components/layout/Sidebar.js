@@ -739,31 +739,50 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                           (item.path.includes('?tab=') && 
                                            location.pathname === '/coach')}
                                 className={location.pathname === item.path ? 'active' : ''}
-                                sx={{ 
-                                    pl: 3,
-                                    py: 1,
-                                    '&.active, &.Mui-selected': {
-                                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                        borderRight: `3px solid ${theme.palette.primary.main}`,
-                                        '& .MuiListItemIcon-root': {
-                                            color: theme.palette.primary.main
-                                        },
-                                        '& .MuiListItemText-root': {
-                                            '& .MuiTypography-root': {
-                                                fontWeight: 600,
-                                                color: theme.palette.primary.main
-                                            }
+                                sx={{
+                                    borderRadius: '0 20px 20px 0',
+                                    mx: 1,
+                                    mb: 0.5,
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    width: 'calc(100% - 16px)',
+                                    color: 'white',
+                                    '&.active': {
+                                        backgroundColor: alpha(theme.palette.common.white, 0.15),
+                                        color: 'white',
+                                        '&::before': {
+                                            content: '""',
+                                            position: 'absolute',
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: 4,
+                                            backgroundColor: theme.palette.secondary.main,
+                                            borderRadius: '0 4px 4px 0'
                                         }
                                     },
                                     '&:hover': {
-                                        bgcolor: alpha(theme.palette.primary.main, 0.05)
+                                        backgroundColor: alpha(theme.palette.common.white, 0.1),
                                     }
                                 }}
                             >
-                                <ListItemIcon sx={{ minWidth: 40 }}>
+                                <ListItemIcon sx={{ 
+                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
+                                    minWidth: 40,
+                                    flexShrink: 0
+                                }}>
                                     {item.icon}
                                 </ListItemIcon>
-                                <ListItemText primary={item.text} />
+                                <ListItemText 
+                                    primary={item.text} 
+                                    primaryTypographyProps={{ 
+                                        fontSize: '0.95rem',
+                                        fontWeight: location.pathname === item.path ? 700 : 600,
+                                        noWrap: true,
+                                        color: '#ec8c14'
+                                    }}
+                                    sx={{ overflow: 'hidden' }}
+                                />
                             </ListItem>
                         ))}
                     </List>
