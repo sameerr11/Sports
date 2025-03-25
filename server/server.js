@@ -10,10 +10,7 @@ require('dotenv').config();
 const app = express();
 
 // Connect to MongoDB
-connectDB().catch(err => {
-    console.error('Failed to connect to MongoDB:', err);
-    process.exit(1);
-});
+connectDB();
 
 // Initialize scheduler for recurring bookings
 initScheduler();
@@ -28,7 +25,7 @@ app.use('/api', routes);
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
     const buildPath = path.join(__dirname, '../client/build');
-    console.log('Serving static files from:', buildPath);
+    console.log('Production mode - Static files path:', buildPath);
     
     // Set static folder
     app.use(express.static(buildPath));
@@ -42,42 +39,13 @@ if (process.env.NODE_ENV === 'production') {
 // Error handling
 app.use(errorHandler);
 
-// Start server with port fallback
-const startServer = async (retries = 3) => {
-    const basePort = process.env.PORT || 5000;
-    
-    for (let i = 0; i < retries; i++) {
-        const port = basePort + i;
-        try {
-            await new Promise((resolve, reject) => {
-                const server = app.listen(port)
-                    .once('listening', () => {
-                        console.log(`Server is running on port ${port}`);
-                        resolve();
-                    })
-                    .once('error', (err) => {
-                        console.error(`Error starting server on port ${port}:`, err);
-                        if (err.code === 'EADDRINUSE') {
-                            console.log(`Port ${port} is busy, trying next port...`);
-                            server.close();
-                            reject(err);
-                        } else {
-                            console.error('Server error:', err);
-                            reject(err);
-                        }
-                    });
-            });
-            // If we reach here, the server started successfully
-            return;
-        } catch (err) {
-            console.error(`Attempt ${i + 1} failed:`, err);
-            if (i === retries - 1) {
-                console.error(`Failed to start server after ${retries} attempts`);
-                process.exit(1);
-            }
-            // Continue to next port
-        }
-    }
-};
+// Start server
+const PORT = process.env.PORT || 5000;
+console.log('Starting server on port:', PORT);
 
-startServer();
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+}).on('error', (err) => {
+    console.error('Server error:', err);
+    process.exit(1);
+});
