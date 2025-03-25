@@ -17,7 +17,7 @@ import {
   addCoachToTeam, removeCoachFromTeam, deleteTeam
 } from '../../services/teamService';
 import { getUsersByRole } from '../../services/userService';
-import { canManageTeams, isCoach, isPlayer, isParent } from '../../services/authService';
+import { canManageTeams, isCoach, isPlayer, isParent, isAdmin, isSupervisor, isBookingSupervisor, getStoredUser } from '../../services/authService';
 import AlertMessage from '../common/AlertMessage';
 import { getSportIcon } from '../../utils/sportIcons';
 
@@ -42,6 +42,8 @@ const TeamDetail = () => {
   const [playerFormData, setPlayerFormData] = useState({ playerId: '' });
   const [coachFormData, setCoachFormData] = useState({ coachId: '', role: 'Head Coach' });
   const userCanManageTeams = canManageTeams();
+  // Check if the user can actually modify team data (admin or supervisor)
+  const userCanModifyTeams = isAdmin() || (isSupervisor() && !isBookingSupervisor());
 
   useEffect(() => {
     const fetchTeamData = async () => {
@@ -285,7 +287,21 @@ const TeamDetail = () => {
     return <Alert severity="error">Team not found</Alert>;
   }
 
-  if (!userCanManageTeams) {
+  // Check if this user has permission to access this specific team
+  const userIsTeamCoach = team.coaches && team.coaches.some(c => 
+    c.coach && c.coach._id === getStoredUser()?._id
+  );
+  const userIsTeamPlayer = team.players && team.players.some(p => 
+    p.player && p.player._id === getStoredUser()?._id
+  );
+  
+  // Allow access if user is admin/supervisor or if they are a coach/player in this team
+  const hasTeamAccess = isAdmin() || 
+    isSupervisor() || 
+    userIsTeamCoach || 
+    userIsTeamPlayer;
+
+  if (!hasTeamAccess) {
     return <Alert severity="error">You don't have permission to view this team</Alert>;
   }
 
@@ -303,7 +319,7 @@ const TeamDetail = () => {
           <Typography variant="h4" component="h1" gutterBottom>
             {team.name}
           </Typography>
-          {userCanManageTeams && (
+          {userCanModifyTeams && (
             <Button
               variant="outlined"
               color="primary"
@@ -385,7 +401,7 @@ const TeamDetail = () => {
                   <Typography variant="h6">
                     Team Players
                   </Typography>
-                  {userCanManageTeams && (
+                  {userCanModifyTeams && (
                     <Button
                       variant="contained"
                       color="primary"
@@ -420,7 +436,7 @@ const TeamDetail = () => {
                             primary={`${firstName} ${lastName}`}
                             secondary={position ? `Position: ${position}` : 'No position specified'}
                           />
-                          {userCanManageTeams && (
+                          {userCanModifyTeams && (
                             <ListItemSecondaryAction>
                               <IconButton 
                                 edge="end" 
@@ -448,7 +464,7 @@ const TeamDetail = () => {
                   <Typography variant="h6">
                     Team Coaches
                   </Typography>
-                  {userCanManageTeams && (
+                  {userCanModifyTeams && (
                     <Button
                       variant="contained"
                       color="primary"
@@ -483,7 +499,7 @@ const TeamDetail = () => {
                             primary={`${firstName} ${lastName}`}
                             secondary={`Role: ${role}`}
                           />
-                          {userCanManageTeams && (
+                          {userCanModifyTeams && (
                             <ListItemSecondaryAction>
                               <IconButton 
                                 edge="end" 
@@ -616,37 +632,27 @@ const TeamDetail = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Delete Team Confirmation Dialog */}
+      {/* Delete Team Dialog */}
       <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog}>
         <DialogTitle>Delete Team</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            <Typography variant="body1">
-              Are you sure you want to delete this team? This action cannot be undone.
-            </Typography>
-            <Typography variant="body2" color="error" sx={{ mt: 2 }}>
-              All players and coaches will be removed from this team.
-            </Typography>
-          </Box>
+          <Typography>
+            Are you sure you want to delete this team? This action cannot be undone.
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
-          <Button 
-            onClick={handleDeleteTeam} 
-            color="error" 
-            variant="contained"
-          >
-            Delete Team
-          </Button>
+          <Button onClick={handleDeleteTeam} color="error">Delete</Button>
         </DialogActions>
       </Dialog>
 
-      {userCanManageTeams && (
+      {userCanModifyTeams && (
         <Button
           variant="outlined"
           color="error"
+          startIcon={<Delete />}
           onClick={handleOpenDeleteDialog}
-          sx={{ mt: 2, ml: 2 }}
+          sx={{ mt: 3 }}
         >
           Delete Team
         </Button>

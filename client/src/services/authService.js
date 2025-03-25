@@ -129,6 +129,11 @@ export const canManageTeams = () => {
     return user.supervisorType !== 'booking';
   }
   
+  // Coaches and players can view teams but not manage them
+  if (user.role === 'coach' || user.role === 'player') {
+    return true;
+  }
+  
   return false;
 };
 
