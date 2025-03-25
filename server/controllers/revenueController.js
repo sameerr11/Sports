@@ -255,11 +255,11 @@ const syncTransactionsFromSources = async () => {
       const userName = invoice.userId ? `${invoice.userId.firstName} ${invoice.userId.lastName}` : 'Unknown';
       
       const expenseTransaction = new ExpenseTransaction({
-        amount: invoice.amount,
+        amount: (invoice.amount || 0) + (invoice.bonus || 0), // Include bonus in total amount
         expenseType: 'Salary',
         expenseId: invoice._id,
         expenseModel: 'SalaryInvoice',
-        description: `Salary payment to ${userName}`,
+        description: `Salary payment to ${userName}${invoice.bonus ? ' (includes bonus)' : ''}`,
         date: invoice.paidDate || invoice.updatedAt,
         paymentStatus: 'Paid',
         paidDate: invoice.paidDate || invoice.updatedAt,

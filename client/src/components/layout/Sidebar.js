@@ -137,6 +137,10 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'Utility Bills', icon: <ReceiptIcon />, path: '/utilities' }
     ];
 
+    const adminRevenueItems = [
+        { text: 'Revenue Dashboard', icon: <BarChartIcon />, path: '/revenue/dashboard' },
+    ];
+
     const coachItems = [
         { text: 'Coach Dashboard', icon: <Sports />, path: '/coach' }
     ];
@@ -656,6 +660,74 @@ const Sidebar = ({ open, toggleSidebar }) => {
                             />
                         </ListItem>
                         {adminItems.map((item) => (
+                            <ListItem 
+                                button 
+                                key={item.text} 
+                                component={Link} 
+                                to={item.path}
+                                selected={location.pathname === item.path}
+                                className={location.pathname === item.path ? 'active' : ''}
+                                sx={{
+                                    borderRadius: '0 20px 20px 0',
+                                    mx: 1,
+                                    mb: 0.5,
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    width: 'calc(100% - 16px)',
+                                    color: 'white',
+                                    '&.active': {
+                                        backgroundColor: alpha(theme.palette.common.white, 0.15),
+                                        color: 'white',
+                                        '&::before': {
+                                            content: '""',
+                                            position: 'absolute',
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: 4,
+                                            backgroundColor: theme.palette.secondary.main,
+                                            borderRadius: '0 4px 4px 0'
+                                        }
+                                    },
+                                    '&:hover': {
+                                        backgroundColor: alpha(theme.palette.common.white, 0.1),
+                                    }
+                                }}
+                            >
+                                <ListItemIcon sx={{ 
+                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
+                                    minWidth: 40,
+                                    flexShrink: 0
+                                }}>
+                                    {item.icon}
+                                </ListItemIcon>
+                                <ListItemText 
+                                    primary={item.text} 
+                                    primaryTypographyProps={{ 
+                                        fontSize: '0.95rem',
+                                        fontWeight: location.pathname === item.path ? 700 : 600,
+                                        noWrap: true,
+                                        color: '#ec8c14'
+                                    }}
+                                    sx={{ overflow: 'hidden' }}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+
+                    <List component="nav" className="sidebar-nav">
+                        <ListItem sx={{ px: 3, pointerEvents: 'none', '&:hover': { backgroundColor: 'transparent' } }}>
+                            <ListItemText 
+                                primary="Revenue Management" 
+                                primaryTypographyProps={{ 
+                                    variant: 'overline',
+                                    color: 'white',
+                                    fontWeight: 700,
+                                    noWrap: true
+                                }} 
+                            />
+                        </ListItem>
+                        {adminRevenueItems.map((item) => (
                             <ListItem 
                                 button 
                                 key={item.text} 

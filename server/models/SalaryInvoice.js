@@ -10,6 +10,10 @@ const SalaryInvoiceSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  bonus: {
+    type: Number,
+    default: 0
+  },
   description: {
     type: String,
     trim: true

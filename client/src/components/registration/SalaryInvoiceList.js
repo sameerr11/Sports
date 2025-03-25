@@ -176,7 +176,9 @@ const SalaryInvoiceList = () => {
                 <TableRow>
                   <TableCell>Invoice #</TableCell>
                   <TableCell>Staff Member</TableCell>
-                  <TableCell>Amount</TableCell>
+                  <TableCell>Base Amount</TableCell>
+                  <TableCell>Bonus</TableCell>
+                  <TableCell>Total Amount</TableCell>
                   <TableCell>Date</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align="right">Actions</TableCell>
@@ -194,6 +196,8 @@ const SalaryInvoiceList = () => {
                           'Unknown'}
                       </TableCell>
                       <TableCell>{formatCurrency(invoice.amount)}</TableCell>
+                      <TableCell>{invoice.bonus > 0 ? formatCurrency(invoice.bonus) : '-'}</TableCell>
+                      <TableCell>{formatCurrency(invoice.amount + (invoice.bonus || 0))}</TableCell>
                       <TableCell>{formatDate(invoice.issuedDate)}</TableCell>
                       <TableCell>
                         <Chip
@@ -249,82 +253,72 @@ const SalaryInvoiceList = () => {
         <DialogTitle>Salary Invoice Details</DialogTitle>
         {selectedInvoice && (
           <DialogContent>
-            <div id="invoice-to-print">
-              <Card variant="outlined" sx={{ mt: 2, p: 2 }}>
-                <CardContent>
-                  <Box sx={{ textAlign: 'center', mb: 3 }}>
-                    <img src={ultrasLogo} alt="Ultras Logo" style={{ maxWidth: '80px', maxHeight: '80px', margin: '0 auto 10px', display: 'block' }} />
-                    <Typography variant="h5" sx={{ fontWeight: 'bold', margin: '5px 0' }}>SPORTS MANAGEMENT</Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', margin: '8px 0' }}>SALARY INVOICE</Typography>
-                    <Typography variant="body2" color="textSecondary" sx={{ margin: '4px 0' }}>
-                      Invoice #: {selectedInvoice.invoiceNumber}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" sx={{ margin: '4px 0' }}>
-                      Date: {formatDate(selectedInvoice.issuedDate)}
-                    </Typography>
-                  </Box>
-                  
-                  <Box display="flex" justifyContent="space-between" mb={2}>
-                    <Box>
-                      <Typography variant="subtitle1" gutterBottom>Bill To:</Typography>
-                      <Typography variant="body1">
-                        {selectedInvoice.userId ? 
-                          `${selectedInvoice.userId.firstName} ${selectedInvoice.userId.lastName}` : 
-                          'Unknown'}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Position: {selectedInvoice.userId?.role}
-                      </Typography>
-                    </Box>
-                    <Box textAlign="right">
-                      <Typography variant="subtitle1" gutterBottom>Company Address:</Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        123 Sports Avenue
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        City, State, ZIP
-                      </Typography>
-                    </Box>
-                  </Box>
-                  
-                  <Box mb={4}>
-                    <Typography variant="subtitle1" gutterBottom>Payment Details:</Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <Typography variant="body2">Description:</Typography>
-                        <Typography variant="body1">
-                          {selectedInvoice.description || 'Salary Payment'}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={6} textAlign="right">
-                        <Typography variant="body2">Amount:</Typography>
-                        <Typography variant="h6">
-                          {formatCurrency(selectedInvoice.amount)}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </Box>
-                  
-                  <Box mt={4}>
-                    <Typography variant="body2" color="textSecondary">
-                      Payment Method: {selectedInvoice.paymentMethod}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Payment Status: {selectedInvoice.paymentStatus}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Issued By: {selectedInvoice.issuedBy ? 
-                        `${selectedInvoice.issuedBy.firstName} ${selectedInvoice.issuedBy.lastName}` : 
-                        'Unknown'}
-                    </Typography>
-                    {selectedInvoice.paidDate && (
-                      <Typography variant="body2" color="textSecondary">
-                        Paid Date: {formatDate(selectedInvoice.paidDate)}
-                      </Typography>
+            <div id="invoice-to-print" style={{ padding: '20px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <img src={ultrasLogo} alt="Ultras Logo" style={{ maxWidth: '80px', maxHeight: '80px', margin: '0 auto 10px', display: 'block' }} />
+                <h1 style={{ margin: '5px 0', fontSize: '24px', fontWeight: 'bold' }}>SPORTS MANAGEMENT</h1>
+                <h2 style={{ margin: '8px 0', fontSize: '18px', fontWeight: 'bold' }}>SALARY INVOICE</h2>
+                <p style={{ margin: '4px 0' }}>Invoice #: {selectedInvoice.invoiceNumber}</p>
+                <p style={{ margin: '4px 0' }}>Date: {new Date(selectedInvoice.issuedDate).toLocaleDateString()}</p>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 10px 0' }}>Bill To:</h3>
+                  <p style={{ margin: '5px 0' }}>
+                    {selectedInvoice.userId ? 
+                      `${selectedInvoice.userId.firstName} ${selectedInvoice.userId.lastName}` : 
+                      'Unknown'}
+                  </p>
+                  <p style={{ margin: '5px 0', color: '#666' }}>
+                    Position: {selectedInvoice.userId?.role || 'Unknown'}
+                  </p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <h3 style={{ margin: '0 0 10px 0' }}>Company Address:</h3>
+                  <p style={{ margin: '5px 0', color: '#666' }}>123 Sports Avenue</p>
+                  <p style={{ margin: '5px 0', color: '#666' }}>City, State, ZIP</p>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <h3 style={{ margin: '0 0 10px 0' }}>Payment Details:</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div>
+                    <p style={{ margin: '5px 0', color: '#666' }}>Description:</p>
+                    <p style={{ margin: '5px 0' }}>{selectedInvoice.description || 'Salary Payment'}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ margin: '5px 0', color: '#666' }}>Base Amount:</p>
+                    <p style={{ margin: '5px 0' }}>{formatCurrency(selectedInvoice.amount)}</p>
+                    {selectedInvoice.bonus > 0 && (
+                      <>
+                        <p style={{ margin: '5px 0', color: '#666' }}>Bonus Amount:</p>
+                        <p style={{ margin: '5px 0' }}>{formatCurrency(selectedInvoice.bonus)}</p>
+                      </>
                     )}
-                  </Box>
-                </CardContent>
-              </Card>
+                    <p style={{ margin: '10px 0 5px 0', color: '#666', borderTop: '1px solid #ddd', paddingTop: '10px' }}>Total Amount:</p>
+                    <p style={{ margin: '5px 0', fontSize: '18px', fontWeight: 'bold' }}>
+                      {formatCurrency((Number(selectedInvoice.amount) || 0) + (Number(selectedInvoice.bonus) || 0))}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '30px' }}>
+                <p style={{ margin: '5px 0', color: '#666' }}>Payment Method: {selectedInvoice.paymentMethod}</p>
+                <p style={{ margin: '5px 0', color: '#666' }}>Payment Status: {selectedInvoice.paymentStatus}</p>
+                <p style={{ margin: '5px 0', color: '#666' }}>Issued By: {selectedInvoice.issuedBy ? 
+                  `${selectedInvoice.issuedBy.firstName} ${selectedInvoice.issuedBy.lastName}` : 
+                  'Unknown'}</p>
+                {selectedInvoice.paidDate && (
+                  <p style={{ margin: '5px 0', color: '#666' }}>Paid Date: {new Date(selectedInvoice.paidDate).toLocaleDateString()}</p>
+                )}
+              </div>
+
+              <div style={{ marginTop: '30px', textAlign: 'center' }}>
+                <p style={{ margin: '5px 0' }}>Thank you for your service!</p>
+              </div>
             </div>
           </DialogContent>
         )}
@@ -437,13 +431,22 @@ const SalaryInvoiceList = () => {
                       .payment-grid-item {
                         width: 48%;
                       }
-                      .payment-info {
-                        margin-top: 32px;
+                      .payment-grid-item p {
+                        margin: 5px 0;
+                      }
+                      .payment-grid-item .invoice-details {
                         color: #666;
                       }
-                      .amount {
-                        font-size: 20px;
-                        font-weight: 600;
+                      .total-amount {
+                        font-size: 22px;
+                        font-weight: bold;
+                        margin-top: 10px;
+                        padding-top: 10px;
+                        border-top: 1px solid #ddd;
+                      }
+                      .bonus-amount {
+                        margin-top: 10px;
+                        color: #2e7d32;
                       }
                     </style>
                   </head>
@@ -481,8 +484,14 @@ const SalaryInvoiceList = () => {
                               <p>${selectedInvoice.description || 'Salary Payment'}</p>
                             </div>
                             <div class="payment-grid-item text-right">
-                              <p class="invoice-details">Amount:</p>
+                              <p class="invoice-details">Base Amount:</p>
                               <p class="amount">${formatCurrency(selectedInvoice.amount)}</p>
+                              ${selectedInvoice.bonus > 0 ? `
+                                <p class="invoice-details bonus-amount">Bonus Amount:</p>
+                                <p class="amount bonus-amount">${formatCurrency(selectedInvoice.bonus)}</p>
+                              ` : ''}
+                              <p class="invoice-details total-amount">Total Amount:</p>
+                              <p class="amount total-amount">${formatCurrency((Number(selectedInvoice.amount) || 0) + (Number(selectedInvoice.bonus) || 0))}</p>
                             </div>
                           </div>
                         </div>

@@ -515,7 +515,7 @@ exports.createSalaryInvoice = async (req, res) => {
   }
 
   try {
-    const { userId, amount, description, paymentMethod, paymentStatus, invoiceNumber } = req.body;
+    const { userId, amount, bonus, description, paymentMethod, paymentStatus, invoiceNumber } = req.body;
 
     // Check if the user exists
     const user = await User.findById(userId);
@@ -533,6 +533,7 @@ exports.createSalaryInvoice = async (req, res) => {
     const salaryInvoice = new SalaryInvoice({
       userId,
       amount,
+      bonus: bonus || 0,
       description,
       invoiceNumber,
       paymentMethod,

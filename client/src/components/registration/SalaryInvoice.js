@@ -49,6 +49,7 @@ const SalaryInvoice = () => {
   const [formData, setFormData] = useState({
     userId: '',
     amount: '',
+    bonus: '0',
     description: '',
     paymentMethod: 'Bank Transfer',
     paymentStatus: 'Pending',
@@ -120,11 +121,18 @@ const SalaryInvoice = () => {
           }
           
           if (roleSalary) {
-            // Update the form with the predefined salary amount and description
+            // Update the form with the predefined salary amount
             setFormData(prevData => ({
               ...prevData,
               amount: roleSalary.amount,
-              description: roleSalary.description || prevData.description || `Monthly salary for ${selectedUser.firstName} ${selectedUser.lastName}`
+              // Set a new description based on the selected user
+              description: `Monthly salary for ${selectedUser.firstName} ${selectedUser.lastName}`
+            }));
+          } else {
+            // If no role salary is found, just update the description
+            setFormData(prevData => ({
+              ...prevData,
+              description: `Monthly salary for ${selectedUser.firstName} ${selectedUser.lastName}`
             }));
           }
         }
@@ -150,7 +158,16 @@ const SalaryInvoice = () => {
 
     try {
       setSubmitting(true);
-      await createSalaryInvoice(formData);
+      // Convert bonus to number and ensure it's not NaN
+      const bonusAmount = Number(formData.bonus) || 0;
+      
+      // Create a copy of formData with the bonus amount
+      const invoiceData = {
+        ...formData,
+        bonus: bonusAmount
+      };
+      
+      await createSalaryInvoice(invoiceData);
       setSuccess(true);
       setSnackbar({
         open: true,
@@ -162,6 +179,7 @@ const SalaryInvoice = () => {
       setFormData({
         userId: '',
         amount: '',
+        bonus: '0',
         description: '',
         paymentMethod: 'Bank Transfer',
         paymentStatus: 'Pending',
@@ -402,6 +420,32 @@ const SalaryInvoice = () => {
               />
             </Grid>
             
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Bonus Amount"
+                name="bonus"
+                type="number"
+                InputProps={{ 
+                  inputProps: { min: 0, step: "0.01" },
+                }}
+                value={formData.bonus}
+                onChange={handleChange}
+                helperText="Optional bonus amount"
+              />
+            </Grid>
+
+            <Grid item xs={12} md={12}>
+              <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default' }}>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  Total Amount
+                </Typography>
+                <Typography variant="h6">
+                  {formatCurrency((Number(formData.amount) || 0) + (Number(formData.bonus) || 0))}
+                </Typography>
+              </Paper>
+            </Grid>
+            
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -525,8 +569,18 @@ const SalaryInvoice = () => {
                     <p style={{ margin: '5px 0' }}>{formData.description || 'Salary Payment'}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ margin: '5px 0', color: '#666' }}>Amount:</p>
-                    <p style={{ margin: '5px 0', fontSize: '18px', fontWeight: 'bold' }}>{formatCurrency(formData.amount || 0)}</p>
+                    <p style={{ margin: '5px 0', color: '#666' }}>Base Amount:</p>
+                    <p style={{ margin: '5px 0' }}>{formatCurrency(formData.amount || 0)}</p>
+                    {Number(formData.bonus) > 0 && (
+                      <>
+                        <p style={{ margin: '5px 0', color: '#666' }}>Bonus Amount:</p>
+                        <p style={{ margin: '5px 0' }}>{formatCurrency(formData.bonus || 0)}</p>
+                      </>
+                    )}
+                    <p style={{ margin: '5px 0', color: '#666' }}>Total Amount:</p>
+                    <p style={{ margin: '5px 0', fontSize: '18px', fontWeight: 'bold' }}>
+                      {formatCurrency((Number(formData.amount) || 0) + (Number(formData.bonus) || 0))}
+                    </p>
                   </div>
                 </div>
               </div>
