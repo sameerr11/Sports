@@ -44,21 +44,31 @@ const PaymentConfirmation = ({ booking, onBack, onNext, setError }) => {
           payLater: true
         });
         
+        // Update the local booking state with server response
+        booking.paymentMethod = 'Cash';
+        booking.paymentStatus = 'Unpaid';
+        
         // Move to confirmation step
         onNext();
         return;
       }
       
-      // For online payment options
+      // For online payment options (Card or Mobile)
       // Simulate payment processing
       // In a real application, this would integrate with a payment gateway
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Update booking payment status
       const response = await updateGuestBookingPayment(booking._id, {
-        paymentMethod,
+        paymentMethod: paymentMethod,
+        paymentStatus: 'Paid',
         paymentId: `PAY-${Date.now()}`
       });
+      
+      // Update the local booking state with server response
+      booking.paymentMethod = paymentMethod;
+      booking.paymentStatus = 'Paid';
+      booking.paymentId = response.booking.paymentId;
 
       // Move to confirmation step
       onNext();

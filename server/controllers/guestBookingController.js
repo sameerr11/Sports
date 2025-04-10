@@ -234,7 +234,7 @@ exports.getGuestBookingByReference = async (req, res) => {
 // @route   PUT /api/guest-bookings/:id/payment
 // @access  Public
 exports.updateGuestBookingPayment = async (req, res) => {
-  const { paymentMethod, paymentId, payLater } = req.body;
+  const { paymentMethod, paymentId, payLater, paymentStatus } = req.body;
 
   try {
     let booking = await GuestBooking.findById(req.params.id);
@@ -252,12 +252,21 @@ exports.updateGuestBookingPayment = async (req, res) => {
     booking.paymentMethod = paymentMethod;
     booking.paymentId = paymentId || '';
     
-    // Handle pay later option
-    if (payLater) {
+    // Set payment status explicitly if provided
+    if (paymentStatus) {
+      booking.paymentStatus = paymentStatus;
+    } else if (payLater) {
+      // Handle pay later option as a fallback
       booking.paymentStatus = 'Unpaid';
       booking.status = 'Pending'; // Keep as pending until payment is received
     } else {
+      // Default for online payments
       booking.paymentStatus = 'Paid';
+      booking.status = 'Confirmed';
+    }
+    
+    // Set booking status based on payment status
+    if (booking.paymentStatus === 'Paid') {
       booking.status = 'Confirmed';
     }
     
@@ -267,7 +276,7 @@ exports.updateGuestBookingPayment = async (req, res) => {
     const updatedBooking = await GuestBooking.findById(booking._id)
       .populate('court', 'name location sportType hourlyRate');
     
-    const message = payLater 
+    const message = booking.paymentStatus === 'Unpaid'
       ? 'Booking confirmed. Please pay at the court before your scheduled time.'
       : 'Payment completed. Your booking is now confirmed.';
     

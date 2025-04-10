@@ -37,6 +37,20 @@ const GuestBookingPage = () => {
     navigate('/login');
   };
 
+  // Reset booking form to start from beginning
+  const resetBookingForm = () => {
+    setActiveStep(0);
+    setSelectedCourt(null);
+    setSelectedTimeSlot(null);
+    setGuestDetails({
+      guestName: '',
+      guestEmail: '',
+      guestPhone: ''
+    });
+    setBooking(null);
+    setError('');
+  };
+
   const getStepContent = (step) => {
     switch (step) {
       case 0:
@@ -87,6 +101,7 @@ const GuestBookingPage = () => {
         return (
           <BookingConfirmation
             booking={booking}
+            resetBookingForm={resetBookingForm}
           />
         );
       default:
@@ -109,22 +124,6 @@ const GuestBookingPage = () => {
         position: 'relative'
       }}
     >
-      <Button
-        variant="contained"
-        startIcon={<ArrowBackIcon />}
-        onClick={handleBackToLogin}
-        sx={{
-          position: 'absolute',
-          top: 20,
-          left: 20,
-          backgroundColor: 'rgba(25, 118, 210, 0.8)',
-          '&:hover': {
-            backgroundColor: 'rgba(25, 118, 210, 0.9)',
-          }
-        }}
-      >
-        Back to Login
-      </Button>
       <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
         <Paper 
           elevation={3} 
