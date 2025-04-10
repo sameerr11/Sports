@@ -3,9 +3,10 @@ import {
   Box, Typography, Grid, Card, CardContent, 
   Button, CircularProgress, FormControl, FormLabel, 
   RadioGroup, Radio, FormControlLabel,
-  Checkbox, Paper, Divider, Alert, CardActionArea
+  Checkbox, Paper, Divider, Alert, CardActionArea, Tooltip
 } from '@mui/material';
 import { getCourtAvailability } from '../../services/guestBookingService';
+import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
 
 const TimeSelection = ({ 
   selectedCourt, 
@@ -20,6 +21,7 @@ const TimeSelection = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedSlots, setSelectedSlots] = useState([]);
+  const [isBasketballCourt, setIsBasketballCourt] = useState(false);
 
   const formatDate = (date) => {
     return date.toISOString().split('T')[0];
@@ -41,6 +43,7 @@ const TimeSelection = ({
         const response = await getCourtAvailability(selectedCourt.id, formattedDate);
         setAvailableSlots(response.availableSlots || []);
         setBookedSlots(response.bookedSlots || []);
+        setIsBasketballCourt(response.isBasketballCourt || false);
       } catch (err) {
         setError(err.toString());
         setAvailableSlots([]);
@@ -62,14 +65,56 @@ const TimeSelection = ({
     return bookedSlots.some(bookedSlot => {
       const bookedStart = new Date(bookedSlot.startTime);
       const bookedEnd = new Date(bookedSlot.endTime);
+      const courtType = bookedSlot.courtType || 'Full Court';
       
-      // Check if there's an overlap
+      // For basketball courts, half-court bookings don't fully block the time slot
+      if (isBasketballCourt && courtType === 'Half Court') {
+        // Count how many half-court bookings are in this time slot
+        const halfCourtBookingsCount = bookedSlots.filter(slot => {
+          const slotStart = new Date(slot.startTime);
+          const slotEnd = new Date(slot.endTime);
+          return (
+            slot.courtType === 'Half Court' &&
+            ((start >= slotStart && start < slotEnd) || 
+            (end > slotStart && end <= slotEnd) ||
+            (start <= slotStart && end >= slotEnd))
+          );
+        }).length;
+        
+        // If there are already 2 half-court bookings, the slot is fully booked
+        return halfCourtBookingsCount >= 2;
+      }
+      
+      // For regular full-court bookings or non-basketball courts
       return (
-        (start >= bookedStart && start < bookedEnd) || 
+        courtType === 'Full Court' && 
+        ((start >= bookedStart && start < bookedEnd) || 
         (end > bookedStart && end <= bookedEnd) ||
-        (start <= bookedStart && end >= bookedEnd)
+        (start <= bookedStart && end >= bookedEnd))
       );
     });
+  };
+
+  // Check if a time slot has a half court already booked
+  const hasHalfCourtBooked = (start, end) => {
+    if (!isBasketballCourt) return false;
+    
+    // Count half-court bookings for this time slot
+    const halfCourtBookingsCount = bookedSlots.filter(bookedSlot => {
+      const bookedStart = new Date(bookedSlot.startTime);
+      const bookedEnd = new Date(bookedSlot.endTime);
+      const courtType = bookedSlot.courtType || 'Full Court';
+      
+      // Check if there's a half-court booking that overlaps with this slot
+      return (
+        courtType === 'Half Court' &&
+        ((start >= bookedStart && start < bookedEnd) || 
+        (end > bookedStart && end <= bookedEnd) ||
+        (start <= bookedStart && end >= bookedEnd))
+      );
+    }).length;
+    
+    return halfCourtBookingsCount === 1; // Return true only if exactly 1 half court is booked
   };
 
   // Generate one-hour time slots from available slots
@@ -91,12 +136,15 @@ const TimeSelection = ({
           break;
         }
         
-        // Only add if not booked
+        // Only add if not fully booked
         if (!isTimeSlotBooked(currentStart, currentEnd)) {
+          const hasHalfBooked = hasHalfCourtBooked(currentStart, currentEnd);
+          
           hourlySlots.push({
             start: new Date(currentStart),
             end: new Date(currentEnd),
-            display: `${formatTime(currentStart)} - ${formatTime(currentEnd)}`
+            display: `${formatTime(currentStart)} - ${formatTime(currentEnd)}`,
+            hasHalfCourtBooked: hasHalfBooked
           });
         }
         
@@ -242,29 +290,48 @@ const TimeSelection = ({
           <Typography variant="body2" color="text.secondary" mb={2}>
             Select one or more consecutive hourly slots for your booking. 
             Multiple slots must be adjacent to each other.
+            {isBasketballCourt && (
+              <Box component="span" sx={{ display: 'block', mt: 1 }}>
+                <SportsBasketballIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
+                Slots with a basketball icon have one half-court already booked. You can still book the other half.
+              </Box>
+            )}
           </Typography>
           
           <Grid container spacing={2}>
             {timeSlots.map((slot, index) => (
               <Grid item xs={6} sm={4} md={3} key={index}>
-                <Card 
-                  sx={{ 
-                    mb: 1, 
-                    backgroundColor: selectedSlots.some(s => s.display === slot.display) 
-                      ? 'rgba(25, 118, 210, 0.3)' 
-                      : 'rgba(255, 255, 255, 0.7)',
-                    backdropFilter: 'blur(5px)',
-                    border: selectedSlots.some(s => s.display === slot.display) ? '2px solid #1976d2' : 'none'
-                  }}
+                <Tooltip 
+                  title={slot.hasHalfCourtBooked ? "One half-court already booked. You can book the other half." : ""}
+                  placement="top"
+                  arrow
                 >
-                  <CardActionArea onClick={() => handleSlotToggle(slot)}>
-                    <CardContent>
-                      <Typography variant="body1" align="center">
-                        {slot.display}
-                      </Typography>
-                    </CardContent>
-                  </CardActionArea>
-                </Card>
+                  <Card 
+                    sx={{ 
+                      mb: 1, 
+                      backgroundColor: selectedSlots.some(s => s.display === slot.display) 
+                        ? 'rgba(25, 118, 210, 0.3)' 
+                        : 'rgba(255, 255, 255, 0.7)',
+                      backdropFilter: 'blur(5px)',
+                      border: selectedSlots.some(s => s.display === slot.display) ? '2px solid #1976d2' : 'none',
+                      position: 'relative'
+                    }}
+                  >
+                    <CardActionArea onClick={() => handleSlotToggle(slot)}>
+                      <CardContent>
+                        <Typography variant="body1" align="center">
+                          {slot.display}
+                        </Typography>
+                        
+                        {isBasketballCourt && slot.hasHalfCourtBooked && (
+                          <Box sx={{ position: 'absolute', top: 5, right: 5 }}>
+                            <SportsBasketballIcon fontSize="small" color="primary" />
+                          </Box>
+                        )}
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                </Tooltip>
               </Grid>
             ))}
           </Grid>

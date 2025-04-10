@@ -13,7 +13,7 @@ exports.createGuestBooking = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { court, startTime, endTime, guestName, guestEmail, guestPhone, notes } = req.body;
+  const { court, startTime, endTime, guestName, guestEmail, guestPhone, notes, courtType } = req.body;
 
   try {
     // Verify that the court exists
@@ -86,6 +86,13 @@ exports.createGuestBooking = async (req, res) => {
       });
     }
     
+    // Check if half-court booking is allowed for this sport type
+    if (courtType === 'Half Court' && courtDoc.sportType !== 'Basketball') {
+      return res.status(400).json({ 
+        msg: 'Half court booking is only available for basketball courts'
+      });
+    }
+    
     // Check if there's an overlap with existing bookings
     const overlappingRegularBookings = await Booking.find({
       court,
@@ -98,26 +105,75 @@ exports.createGuestBooking = async (req, res) => {
       ]
     });
 
-    const overlappingGuestBookings = await GuestBooking.find({
-      court,
-      status: { $ne: 'Cancelled' },
-      $or: [
-        { 
-          startTime: { $lt: endDate },
-          endTime: { $gt: startDate }
-        }
-      ]
-    });
+    if (overlappingRegularBookings.length > 0) {
+      return res.status(400).json({ msg: 'Court is already booked for a regular booking during this time' });
+    }
 
-    if (overlappingRegularBookings.length > 0 || overlappingGuestBookings.length > 0) {
-      return res.status(400).json({ msg: 'Court is already booked during this time' });
+    // Half-court booking logic
+    if (courtType === 'Half Court') {
+      // For half court bookings, check if there's already a full-court booking or two half-court bookings
+      
+      // 1. Check for overlapping full court bookings
+      const overlappingFullCourtBookings = await GuestBooking.find({
+        court,
+        status: { $ne: 'Cancelled' },
+        courtType: 'Full Court',
+        startTime: { $lt: endDate },
+        endTime: { $gt: startDate }
+      });
+
+      if (overlappingFullCourtBookings.length > 0) {
+        return res.status(400).json({ msg: 'There is already a full-court booking during this time' });
+      }
+
+      // 2. Count existing half-court bookings
+      const existingHalfCourtBookings = await GuestBooking.countDocuments({
+        court,
+        status: { $ne: 'Cancelled' },
+        courtType: 'Half Court',
+        startTime: { $lt: endDate },
+        endTime: { $gt: startDate }
+      });
+      
+      if (existingHalfCourtBookings >= 2) {
+        return res.status(400).json({ msg: 'Both half-courts are already booked during this time' });
+      }
+      
+      // If we reach here, the half-court booking is valid
+    } else {
+      // For full court bookings, check if there are any half-court bookings
+      const existingHalfCourtBookings = await GuestBooking.countDocuments({
+        court,
+        status: { $ne: 'Cancelled' },
+        courtType: 'Half Court',
+        startTime: { $lt: endDate },
+        endTime: { $gt: startDate }
+      });
+      
+      if (existingHalfCourtBookings > 0) {
+        return res.status(400).json({ msg: 'There are half-court bookings during this time. Full court is not available.' });
+      }
+      
+      // Check for overlapping full court bookings
+      const overlappingFullCourtBookings = await GuestBooking.find({
+        court,
+        status: { $ne: 'Cancelled' },
+        courtType: 'Full Court',
+        startTime: { $lt: endDate },
+        endTime: { $gt: startDate }
+      });
+
+      if (overlappingFullCourtBookings.length > 0) {
+        return res.status(400).json({ msg: 'Court is already booked during this time' });
+      }
     }
 
     // Calculate duration in hours
     const durationHours = (endDate - startDate) / (1000 * 60 * 60);
     
-    // Calculate total price
-    const totalPrice = durationHours * courtDoc.hourlyRate;
+    // Calculate total price - half price for half court
+    const priceMultiplier = courtType === 'Half Court' ? 0.5 : 1;
+    const totalPrice = durationHours * courtDoc.hourlyRate * priceMultiplier;
 
     // Generate a unique booking reference
     const bookingReference = 'GB-' + crypto.randomBytes(4).toString('hex').toUpperCase();
@@ -125,6 +181,7 @@ exports.createGuestBooking = async (req, res) => {
     // Create new guest booking
     const newBooking = new GuestBooking({
       court,
+      courtType: courtType || 'Full Court',
       guestName,
       guestEmail,
       guestPhone,
@@ -277,40 +334,38 @@ exports.getCourtAvailability = async (req, res) => {
       return res.status(404).json({ msg: 'Court not found' });
     }
     
-    // Parse the date
     const checkDate = new Date(date);
     
     if (isNaN(checkDate.getTime())) {
       return res.status(400).json({ msg: 'Invalid date format' });
     }
     
-    // Get day of week (0 = Sunday, 1 = Monday, etc.)
-    const dayOfWeek = checkDate.getDay();
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dayName = days[dayOfWeek];
-    
-    // Get court availability for this day
-    const dayAvailability = court.availability[dayName] || [];
-    
-    // Filter for rental slots only
-    const rentalSlots = dayAvailability.filter(slot => slot.type === 'Rental');
-    
-    if (rentalSlots.length === 0) {
-      return res.json({ 
-        availableSlots: [],
-        message: 'No rental slots available for this day'
-      });
-    }
-
-    // Set time to start of day
+    // Beginning and end of the requested date
     const startOfDay = new Date(checkDate);
     startOfDay.setHours(0, 0, 0, 0);
     
-    // Set time to end of day
     const endOfDay = new Date(checkDate);
     endOfDay.setHours(23, 59, 59, 999);
     
-    // Get bookings for this day
+    const dayOfWeek = checkDate.getDay(); // 0 = Sunday, 1 = Monday, ...
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = days[dayOfWeek];
+    
+    // Get the court's availability for the day
+    const dayAvailability = court.availability[dayName] || [];
+    
+    if (dayAvailability.length === 0) {
+      return res.status(400).json({ msg: `Court is not available on ${dayName}` });
+    }
+    
+    // Filter available slots for rentals only
+    const rentalSlots = dayAvailability.filter(slot => slot.type === 'Rental');
+    
+    if (rentalSlots.length === 0) {
+      return res.status(400).json({ msg: 'No Rental hours available for this court on the selected day' });
+    }
+    
+    // Get regular bookings for the day
     const regularBookings = await Booking.find({
       court: courtId,
       status: { $ne: 'Cancelled' },
@@ -318,18 +373,30 @@ exports.getCourtAvailability = async (req, res) => {
       endTime: { $gt: startOfDay }
     });
 
+    // Get guest bookings for the day with court type info
     const guestBookings = await GuestBooking.find({
       court: courtId,
       status: { $ne: 'Cancelled' },
       startTime: { $lt: endOfDay },
       endTime: { $gt: startOfDay }
-    });
+    }).select('startTime endTime courtType');
     
-    // Combine all bookings
-    const allBookings = [...regularBookings, ...guestBookings].map(booking => ({
+    // Process bookings with court type info
+    const processedBookings = guestBookings.map(booking => ({
       startTime: booking.startTime,
-      endTime: booking.endTime
+      endTime: booking.endTime,
+      courtType: booking.courtType || 'Full Court' // Default to Full Court if not specified
     }));
+
+    // Add regular bookings (always full court)
+    const allBookings = [
+      ...regularBookings.map(booking => ({
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        courtType: 'Full Court'
+      })), 
+      ...processedBookings
+    ];
     
     // Transform rental slots into available time slots
     const availableTimes = rentalSlots.map(slot => {
@@ -358,7 +425,8 @@ exports.getCourtAvailability = async (req, res) => {
       },
       date: checkDate,
       availableSlots: availableTimes,
-      bookedSlots: allBookings
+      bookedSlots: allBookings,
+      isBasketballCourt: court.sportType === 'Basketball'
     });
   } catch (err) {
     console.error(err.message);

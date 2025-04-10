@@ -6,6 +6,11 @@ const GuestBookingSchema = new mongoose.Schema({
     ref: 'Court',
     required: true
   },
+  courtType: {
+    type: String,
+    enum: ['Full Court', 'Half Court'],
+    default: 'Full Court'
+  },
   guestName: {
     type: String,
     required: true,

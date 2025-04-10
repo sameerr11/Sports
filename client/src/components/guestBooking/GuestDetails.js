@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   Box, Typography, TextField, Button, Grid, 
-  CircularProgress, Paper, Divider
+  CircularProgress, Paper, Divider, FormControl,
+  FormLabel, RadioGroup, FormControlLabel, Radio
 } from '@mui/material';
 import { createGuestBooking } from '../../services/guestBookingService';
 
@@ -17,6 +18,7 @@ const GuestDetails = ({
   setError
 }) => {
   const [loading, setLoading] = useState(false);
+  const [courtType, setCourtType] = useState('Full Court');
   const [localError, setLocalError] = useState({
     guestName: '',
     guestEmail: '',
@@ -35,6 +37,10 @@ const GuestDetails = ({
       ...prev,
       [name]: ''
     }));
+  };
+
+  const handleCourtTypeChange = (e) => {
+    setCourtType(e.target.value);
   };
 
   const validateForm = () => {
@@ -84,7 +90,8 @@ const GuestDetails = ({
         startTime: selectedTimeSlot.start,
         endTime: selectedTimeSlot.end,
         ...guestDetails,
-        notes: ''
+        notes: '',
+        courtType: isBasketballCourt ? courtType : 'Full Court'
       };
 
       // Create booking
@@ -106,8 +113,13 @@ const GuestDetails = ({
     const end = new Date(selectedTimeSlot.end);
     const durationHours = (end - start) / (1000 * 60 * 60);
     
-    return durationHours * selectedCourt.hourlyRate;
+    // Apply half-price for half court bookings (basketball only)
+    const priceMultiplier = (isBasketballCourt && courtType === 'Half Court') ? 0.5 : 1;
+    return durationHours * selectedCourt.hourlyRate * priceMultiplier;
   };
+
+  // Check if selected court is a basketball court
+  const isBasketballCourt = selectedCourt && selectedCourt.sportType === 'Basketball';
 
   const totalPrice = calculateTotalPrice();
   
@@ -190,6 +202,30 @@ const GuestDetails = ({
             }}
           />
         </Grid>
+        
+        {isBasketballCourt && (
+          <Grid item xs={12}>
+            <Paper sx={{ p: 2, backgroundColor: 'rgba(255, 255, 255, 0.7)' }}>
+              <FormControl component="fieldset">
+                <FormLabel component="legend">Court Type</FormLabel>
+                <RadioGroup
+                  name="courtType"
+                  value={courtType}
+                  onChange={handleCourtTypeChange}
+                  row
+                >
+                  <FormControlLabel value="Full Court" control={<Radio />} label="Full Court" />
+                  <FormControlLabel value="Half Court" control={<Radio />} label="Half Court (50% off)" />
+                </RadioGroup>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  {courtType === 'Half Court' 
+                    ? "Half court booking allows you to use half of the basketball court at half the price. Another guest may book or might have already booked the other half during the same time." 
+                    : "Full court booking gives you exclusive access to the entire basketball court."}
+                </Typography>
+              </FormControl>
+            </Paper>
+          </Grid>
+        )}
       </Grid>
 
       <Box mt={4}>
@@ -198,43 +234,48 @@ const GuestDetails = ({
         </Typography>
         <Paper sx={{ p: 2, mb: 3 }}>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={6}>
               <Typography variant="body2" color="text.secondary">
                 Court
               </Typography>
-              <Typography variant="body1" gutterBottom>
-                {selectedCourt.name}
+              <Typography variant="body1">
+                {selectedCourt?.name}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={6}>
+              <Typography variant="body2" color="text.secondary">
+                Sport
+              </Typography>
+              <Typography variant="body1">
+                {selectedCourt?.sportType} {isBasketballCourt && `(${courtType})`}
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
               <Typography variant="body2" color="text.secondary">
                 Date
               </Typography>
-              <Typography variant="body1" gutterBottom>
-                {selectedDate.toLocaleDateString()}
+              <Typography variant="body1">
+                {formatDateTime(selectedTimeSlot?.start).split(',')[0]}
               </Typography>
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={6}>
               <Typography variant="body2" color="text.secondary">
-                Booking Time
+                Time
               </Typography>
-              <Typography variant="body1" gutterBottom>
-                {formatDateTime(selectedTimeSlot.start)} to {formatDateTime(selectedTimeSlot.end)}
+              <Typography variant="body1">
+                {formatDateTime(selectedTimeSlot?.start).split(',')[1]} - {formatDateTime(selectedTimeSlot?.end).split(',')[1]}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="body2" color="text.secondary">
-                Duration
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                {(new Date(selectedTimeSlot.end) - new Date(selectedTimeSlot.start)) / (1000 * 60 * 60)} hours
+          </Grid>
+          <Divider sx={{ my: 2 }} />
+          <Grid container justifyContent="space-between">
+            <Grid item>
+              <Typography variant="subtitle1">
+                Total Amount
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="body2" color="text.secondary">
-                Total Price
-              </Typography>
-              <Typography variant="body1" fontWeight="bold" gutterBottom>
+            <Grid item>
+              <Typography variant="h6" color="primary">
                 ${totalPrice.toFixed(2)}
               </Typography>
             </Grid>
