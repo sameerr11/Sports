@@ -40,16 +40,17 @@ if (process.env.NODE_ENV === 'production') {
     const buildPath = path.join(__dirname, '../client/build');
     console.log('Production mode - Static files path:', buildPath);
     
-    // Set static folder
+    // Set static folder - it's important this comes BEFORE the catchall route
     app.use(express.static(buildPath));
 
     // Handle subdomain routing for booking
     app.get('*', (req, res) => {
-        // If it's the booking subdomain, always serve the index.html
-        // but add a query parameter or header that your React app can use
-        if (req.isBookingSubdomain) {
-            // You can also attach a special header or query parameter here if needed
-            console.log('Booking subdomain detected, serving guest booking page');
+        // Log the request for debugging
+        console.log(`Request: ${req.method} ${req.url}, Hostname: ${req.hostname}`);
+        
+        // If it's the booking subdomain or the guest-booking path
+        if (req.isBookingSubdomain || req.path === '/guest-booking') {
+            console.log('Booking subdomain or path detected, serving index.html');
             return res.sendFile(path.resolve(buildPath, 'index.html'));
         }
 

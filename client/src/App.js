@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import Login from './components/auth/Login';
@@ -58,9 +58,17 @@ import GuestBookingPage from './components/guestBooking/GuestBookingPage';
 const Tournaments = () => <div>Tournaments Page</div>;
 const Payments = () => <div>Payments Page</div>;
 
-// Detect if we're on booking subdomain
+// Detect if we're on booking subdomain - improved with error handling
 const isBookingSubdomain = () => {
-  return window.location.hostname.startsWith('booking.');
+  try {
+    const hostname = window.location.hostname || '';
+    const isBooking = hostname.startsWith('booking.');
+    console.log('Hostname:', hostname, 'Is booking subdomain:', isBooking);
+    return isBooking;
+  } catch (err) {
+    console.error('Error detecting subdomain:', err);
+    return false;
+  }
 };
 
 // Protected route component
@@ -201,19 +209,57 @@ const PublicRoute = ({ children }) => {
 };
 
 function App() {
+  // State to handle potential errors in subdomain routing
+  const [hasError, setHasError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    // If we're on the booking subdomain, set a class on the body element
-    // This could be used for subdomain-specific styling
-    if (isBookingSubdomain()) {
-      document.body.classList.add('booking-subdomain');
+    try {
+      // If we're on the booking subdomain, set a class on the body element
+      if (isBookingSubdomain()) {
+        console.log('Booking subdomain detected, adding class to body');
+        document.body.classList.add('booking-subdomain');
+      }
+      
+      // Add a small delay to ensure components are ready
+      setTimeout(() => {
+        setLoading(false);
+      }, 200);
+    } catch (err) {
+      console.error('Error in subdomain detection:', err);
+      setHasError(true);
+      setLoading(false);
     }
   }, []);
 
+  // Display loading state
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Display error message if something went wrong
+  if (hasError) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <h1>Something went wrong</h1>
+        <p>We're having trouble loading the application. Please try again later.</p>
+      </div>
+    );
+  }
+
   // If we're on the booking subdomain, only show the GuestBookingPage
   if (isBookingSubdomain()) {
+    console.log('Rendering GuestBookingPage for booking subdomain');
+    
+    // Direct rendering without router for subdomain - simpler approach
     return <GuestBookingPage />;
   }
 
+  // Regular app with full routing for main domain
   return (
     <Router>
       <Routes>
