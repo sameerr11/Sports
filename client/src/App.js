@@ -80,6 +80,11 @@ function StandaloneBookingApp() {
       // Add a class to the body element for styling
       document.body.classList.add('booking-subdomain');
       
+      // Update the URL to /guest-booking without triggering a page reload
+      if (window.location.pathname === '/login' || window.location.pathname === '/') {
+        window.history.replaceState(null, 'Guest Booking', '/guest-booking');
+      }
+      
       // Add a small delay to ensure components are ready
       setTimeout(() => {
         setLoading(false);
