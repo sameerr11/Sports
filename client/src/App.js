@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import Login from './components/auth/Login';
@@ -57,6 +57,11 @@ import GuestBookingPage from './components/guestBooking/GuestBookingPage';
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
 const Payments = () => <div>Payments Page</div>;
+
+// Detect if we're on booking subdomain
+const isBookingSubdomain = () => {
+  return window.location.hostname.startsWith('booking.');
+};
 
 // Protected route component
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -196,6 +201,19 @@ const PublicRoute = ({ children }) => {
 };
 
 function App() {
+  useEffect(() => {
+    // If we're on the booking subdomain, set a class on the body element
+    // This could be used for subdomain-specific styling
+    if (isBookingSubdomain()) {
+      document.body.classList.add('booking-subdomain');
+    }
+  }, []);
+
+  // If we're on the booking subdomain, only show the GuestBookingPage
+  if (isBookingSubdomain()) {
+    return <GuestBookingPage />;
+  }
+
   return (
     <Router>
       <Routes>

@@ -19,6 +19,19 @@ initScheduler();
 app.use(cors());
 app.use(express.json());
 
+// Subdomain detection middleware
+app.use((req, res, next) => {
+  const host = req.hostname;
+  
+  // Check if the request is coming from the booking subdomain
+  if (host.startsWith('booking.')) {
+    // Store the subdomain information in the request for use in routes
+    req.isBookingSubdomain = true;
+  }
+  
+  next();
+});
+
 // Routes
 app.use('/api', routes);
 
@@ -30,8 +43,17 @@ if (process.env.NODE_ENV === 'production') {
     // Set static folder
     app.use(express.static(buildPath));
 
-    // Any route that is not /api will be redirected to the React app
+    // Handle subdomain routing for booking
     app.get('*', (req, res) => {
+        // If it's the booking subdomain, always serve the index.html
+        // but add a query parameter or header that your React app can use
+        if (req.isBookingSubdomain) {
+            // You can also attach a special header or query parameter here if needed
+            console.log('Booking subdomain detected, serving guest booking page');
+            return res.sendFile(path.resolve(buildPath, 'index.html'));
+        }
+
+        // Normal routing for the main domain
         res.sendFile(path.resolve(buildPath, 'index.html'));
     });
 }
