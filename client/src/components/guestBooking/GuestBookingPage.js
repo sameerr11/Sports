@@ -11,11 +11,13 @@ import { format } from 'date-fns';
 import ultrasLogo from '../../assets/images/ultras_logo.png';
 import * as guestBookingService from '../../services/guestBookingService';
 
-// Detect if we're on booking subdomain
+// Detect if we're on booking subdomain with improved error handling
 const isBookingSubdomain = () => {
   try {
     const hostname = window.location.hostname || '';
-    return hostname.startsWith('booking.');
+    const isBooking = hostname.startsWith('booking.');
+    console.log('Hostname:', hostname, 'Is booking subdomain:', isBooking);
+    return isBooking;
   } catch (err) {
     console.error('Error detecting subdomain:', err);
     return false;
@@ -139,7 +141,9 @@ const TimeSelection = ({ selectedCourt, selectedDate, selectedTimeSlot, setSelec
       }
     };
     
-    fetchTimeSlots();
+    if (selectedCourt) {
+      fetchTimeSlots();
+    }
   }, [selectedCourt, selectedDate]);
 
   const formatTime = (dateString) => {
@@ -225,9 +229,11 @@ const GuestDetails = ({
   useEffect(() => {
     const fetchCourtDetails = async () => {
       try {
-        const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-        const response = await guestBookingService.getCourtAvailability(selectedCourt, formattedDate);
-        setSelectedCourtDetails(response.court);
+        if (selectedCourt) {
+          const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+          const response = await guestBookingService.getCourtAvailability(selectedCourt, formattedDate);
+          setSelectedCourtDetails(response.court);
+        }
       } catch (err) {
         console.error('Error fetching court details:', err);
       }
@@ -574,6 +580,13 @@ const GuestBookingPage = () => {
   
   const isSubdomain = isBookingSubdomain();
 
+  // Set page title based on the domain
+  useEffect(() => {
+    document.title = isSubdomain 
+      ? 'Court Booking | Ultras North Lebanon Sports Center'
+      : 'Guest Booking | Sports Management System';
+  }, [isSubdomain]);
+
   const handleNext = () => {
     setActiveStep((prevStep) => prevStep + 1);
   };
@@ -584,9 +597,12 @@ const GuestBookingPage = () => {
 
   const handleBackToMain = () => {
     if (isSubdomain) {
+      // If on subdomain, go to main domain
       window.location.href = window.location.href.replace('booking.', '');
     } else {
-      window.location.href = '/login';
+      // If on main site, go to login or home based on URL
+      const targetPath = window.location.pathname === '/guest-booking' ? '/' : '/login';
+      window.location.href = targetPath;
     }
   };
 

@@ -80,12 +80,7 @@ function StandaloneBookingApp() {
       // Add a class to the body element for styling
       document.body.classList.add('booking-subdomain');
       
-      // Update the URL to /guest-booking without triggering a page reload
-      if (window.location.pathname === '/login' || window.location.pathname === '/') {
-        window.history.replaceState(null, 'Guest Booking', '/guest-booking');
-      }
-      
-      // Add a small delay to ensure components are ready
+      // Small delay to ensure components are ready
       setTimeout(() => {
         setLoading(false);
       }, 200);
@@ -103,7 +98,15 @@ function StandaloneBookingApp() {
     );
   }
 
-  return <GuestBookingPage />;
+  // For the booking subdomain, use a simplified router with only the guest booking page
+  return (
+    <Router>
+      <Routes>
+        {/* All paths should lead to the GuestBookingPage on the booking subdomain */}
+        <Route path="*" element={<GuestBookingPage />} />
+      </Routes>
+    </Router>
+  );
 }
 
 // Protected route component
@@ -243,29 +246,15 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
-// Main App component with conditional rendering based on subdomain
+// Main App component with regular routing for the main domain
 function AppContent() {
-  // State to handle potential errors in subdomain routing
-  const [hasError, setHasError] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      // If we're on the booking subdomain, set a class on the body element
-      if (isBookingSubdomain()) {
-        console.log('Booking subdomain detected, adding class to body');
-        document.body.classList.add('booking-subdomain');
-      }
-      
-      // Add a small delay to ensure components are ready
-      setTimeout(() => {
-        setLoading(false);
-      }, 200);
-    } catch (err) {
-      console.error('Error in subdomain detection:', err);
-      setHasError(true);
+    // Add a small delay to ensure components are ready
+    setTimeout(() => {
       setLoading(false);
-    }
+    }, 200);
   }, []);
 
   // Display loading state
@@ -274,16 +263,6 @@ function AppContent() {
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         <CircularProgress />
       </Box>
-    );
-  }
-
-  // Display error message if something went wrong
-  if (hasError) {
-    return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <h1>Something went wrong</h1>
-        <p>We're having trouble loading the application. Please try again later.</p>
-      </div>
     );
   }
 
@@ -677,7 +656,7 @@ function AppContent() {
           </ProtectedRoute>
         } />
         
-        {/* Guest Booking Route */}
+        {/* Guest Booking Route - keep this for direct access on main domain */}
         <Route path="/guest-booking" element={<GuestBookingPage />} />
         
         {/* Catch all route */}
