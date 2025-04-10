@@ -252,10 +252,9 @@ function App() {
   }
 
   // If we're on the booking subdomain, only show the GuestBookingPage
+  // Don't wrap it in a Router since the page has been updated to not use Router hooks
   if (isBookingSubdomain()) {
     console.log('Rendering GuestBookingPage for booking subdomain');
-    
-    // Direct rendering without router for subdomain - simpler approach
     return <GuestBookingPage />;
   }
 
@@ -329,334 +328,334 @@ function App() {
         {/* Court Routes */}
         <Route path="/courts" element={
           <ProtectedRoute>
-            <MainLayout>
-              <CourtList />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/courts/new" element={
-          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
-            <MainLayout>
-              {!isSportsSupervisor() ? <CourtForm /> : <Navigate to="/" />}
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/courts/edit/:id" element={
-          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
-            <MainLayout>
-              {!isSportsSupervisor() ? <CourtForm /> : <Navigate to="/" />}
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/courts/:id" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <CourtDetail />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        {/* Team Routes */}
-        <Route path="/teams" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <TeamList />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/teams/new" element={
-          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
-            <MainLayout>
-              <TeamForm />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/teams/edit/:id" element={
-          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
-            <MainLayout>
-              <TeamForm />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/teams/:id" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <TeamDetail />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/teams/schedule" element={
-          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
-            <MainLayout>
-              <TeamScheduler />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/training-plans" element={
-          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
-            <MainLayout>
-              <TrainingPlanManager />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/training-plans/:id" element={
-          <ProtectedRoute requiredRole="coach">
-            <MainLayout>
-              <TrainingPlanDetail />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        {/* Coach Routes */}
-        <Route path="/coach" element={
-          <ProtectedRoute requiredRole="coach">
-            <MainLayout>
-              <CoachDashboard />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        {/* Player Routes */}
-        <Route path="/player" element={
-          <ProtectedRoute requiredRole="player">
-            <MainLayout>
-              <PlayerDashboard />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        {/* Parent Routes */}
-        <Route path="/parent" element={
-          <ProtectedRoute requiredRole="parent">
-            <MainLayout>
-              <ParentDashboard />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/parent/feedback" element={
-          <ProtectedRoute requiredRole="parent">
-            <MainLayout>
-              <FeedbackPage />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/parent/match/:id" element={
-          <ProtectedRoute requiredRole="parent">
-            <MainLayout>
-              <MatchDetail />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        {/* Booking Routes */}
-        <Route path="/bookings" element={
-          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
-            <MainLayout>
-              <BookingList />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/bookings/me" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <BookingList userOnly={true} />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/tournaments" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Tournaments />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/payments" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Payments />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Profile />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/notifications" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <NotificationList />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        {/* Admin Routes */}
-        <Route path="/users" element={
-          <ProtectedRoute requiredRole="admin">
-            <MainLayout>
-              <UserList />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/users/new" element={
-          <ProtectedRoute requiredRole="admin">
-            <MainLayout>
-              <UserForm />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/users/edit/:id" element={
-          <ProtectedRoute requiredRole={["admin", "support"]}>
-            <MainLayout>
-              <UserForm />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        {/* Added a route to specifically view players */}
-        <Route path="/users/role/:role" element={
-          <ProtectedRoute requiredRole={["admin", "support"]}>
-            <MainLayout>
-              <UserList />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/admin/feedback" element={
-          <ProtectedRoute requiredRole="admin">
-            <MainLayout>
-              <AdminFeedbackList />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/admin/salary-config" element={
-          <ProtectedRoute requiredRole="admin">
-            <MainLayout>
-              <RoleSalaryConfig />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/admin/registration-fees" element={
-          <ProtectedRoute requiredRole="admin">
-            <MainLayout>
-              <RegistrationFeeConfig />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/support/dashboard" element={
-          <ProtectedRoute requiredRole={["admin", "support"]}>
-            <MainLayout>
-              <SupportDashboard />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/support/feedback" element={
-          <ProtectedRoute requiredRole={["admin", "support"]}>
-            <MainLayout>
-              <AdminFeedbackList />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/support/documents" element={
-          <ProtectedRoute requiredRole={["admin", "support"]}>
-            <MainLayout>
-              <DocumentManagement />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/player-stats" element={
-          <ProtectedRoute requiredRole={["admin", "support"]}>
-            <MainLayout>
-              <PlayerStats />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        {/* Cafeteria Routes */}
-        <Route path="/cafeteria" element={
-          <ProtectedRoute requiredRole="cashier">
-            <MainLayout>
-              <Cafeteria />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/cafeteria/manage" element={
-          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
-            <MainLayout>
-              <CafeteriaManagement />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/cafeteria/dashboard" element={
-          <ProtectedRoute requiredRole={["admin", "supervisor"]}>
-            <MainLayout>
-              <CafeDashboard />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        {/* Utility Routes */}
-        <Route path="/utilities" element={
-          <EnhancedProtectedRoute requiredRole={["admin", "accounting"]}>
-            <MainLayout>
-              <UtilityBillList />
-            </MainLayout>
-          </EnhancedProtectedRoute>
-        } />
-        
-        <Route path="/utilities/new" element={
-          <EnhancedProtectedRoute requiredRole={["admin", "accounting"]}>
-            <MainLayout>
-              <UtilityBillForm />
-            </MainLayout>
-          </EnhancedProtectedRoute>
-        } />
-        
-        {/* Revenue Manager Routes */}
-        <Route path="/revenue/dashboard" element={
-          <ProtectedRoute requiredRole={['revenue_manager', 'admin']}>
-            <MainLayout>
-              <RevenueDashboard />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        {/* Guest Booking Route */}
-        <Route path="/guest-booking" element={<GuestBookingPage />} />
-        
-        {/* Catch all route */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
-  );
+          <MainLayout>
+            <CourtList />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/courts/new" element={
+        <ProtectedRoute requiredRole={["admin", "supervisor"]}>
+          <MainLayout>
+            {!isSportsSupervisor() ? <CourtForm /> : <Navigate to="/" />}
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/courts/edit/:id" element={
+        <ProtectedRoute requiredRole={["admin", "supervisor"]}>
+          <MainLayout>
+            {!isSportsSupervisor() ? <CourtForm /> : <Navigate to="/" />}
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/courts/:id" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <CourtDetail />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      {/* Team Routes */}
+      <Route path="/teams" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <TeamList />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/teams/new" element={
+        <ProtectedRoute requiredRole={["admin", "supervisor"]}>
+          <MainLayout>
+            <TeamForm />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/teams/edit/:id" element={
+        <ProtectedRoute requiredRole={["admin", "supervisor"]}>
+          <MainLayout>
+            <TeamForm />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/teams/:id" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <TeamDetail />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/teams/schedule" element={
+        <ProtectedRoute requiredRole={["admin", "supervisor"]}>
+          <MainLayout>
+            <TeamScheduler />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/training-plans" element={
+        <ProtectedRoute requiredRole={["admin", "supervisor"]}>
+          <MainLayout>
+            <TrainingPlanManager />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/training-plans/:id" element={
+        <ProtectedRoute requiredRole="coach">
+          <MainLayout>
+            <TrainingPlanDetail />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      {/* Coach Routes */}
+      <Route path="/coach" element={
+        <ProtectedRoute requiredRole="coach">
+          <MainLayout>
+            <CoachDashboard />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      {/* Player Routes */}
+      <Route path="/player" element={
+        <ProtectedRoute requiredRole="player">
+          <MainLayout>
+            <PlayerDashboard />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      {/* Parent Routes */}
+      <Route path="/parent" element={
+        <ProtectedRoute requiredRole="parent">
+          <MainLayout>
+            <ParentDashboard />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/parent/feedback" element={
+        <ProtectedRoute requiredRole="parent">
+          <MainLayout>
+            <FeedbackPage />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/parent/match/:id" element={
+        <ProtectedRoute requiredRole="parent">
+          <MainLayout>
+            <MatchDetail />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      {/* Booking Routes */}
+      <Route path="/bookings" element={
+        <ProtectedRoute requiredRole={["admin", "supervisor"]}>
+          <MainLayout>
+            <BookingList />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/bookings/me" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <BookingList userOnly={true} />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/tournaments" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <Tournaments />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/payments" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <Payments />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <Profile />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/notifications" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <NotificationList />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      {/* Admin Routes */}
+      <Route path="/users" element={
+        <ProtectedRoute requiredRole="admin">
+          <MainLayout>
+            <UserList />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/users/new" element={
+        <ProtectedRoute requiredRole="admin">
+          <MainLayout>
+            <UserForm />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/users/edit/:id" element={
+        <ProtectedRoute requiredRole={["admin", "support"]}>
+          <MainLayout>
+            <UserForm />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      {/* Added a route to specifically view players */}
+      <Route path="/users/role/:role" element={
+        <ProtectedRoute requiredRole={["admin", "support"]}>
+          <MainLayout>
+            <UserList />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/admin/feedback" element={
+        <ProtectedRoute requiredRole="admin">
+          <MainLayout>
+            <AdminFeedbackList />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/admin/salary-config" element={
+        <ProtectedRoute requiredRole="admin">
+          <MainLayout>
+            <RoleSalaryConfig />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/admin/registration-fees" element={
+        <ProtectedRoute requiredRole="admin">
+          <MainLayout>
+            <RegistrationFeeConfig />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/support/dashboard" element={
+        <ProtectedRoute requiredRole={["admin", "support"]}>
+          <MainLayout>
+            <SupportDashboard />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/support/feedback" element={
+        <ProtectedRoute requiredRole={["admin", "support"]}>
+          <MainLayout>
+            <AdminFeedbackList />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/support/documents" element={
+        <ProtectedRoute requiredRole={["admin", "support"]}>
+          <MainLayout>
+            <DocumentManagement />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/player-stats" element={
+        <ProtectedRoute requiredRole={["admin", "support"]}>
+          <MainLayout>
+            <PlayerStats />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      {/* Cafeteria Routes */}
+      <Route path="/cafeteria" element={
+        <ProtectedRoute requiredRole="cashier">
+          <MainLayout>
+            <Cafeteria />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/cafeteria/manage" element={
+        <ProtectedRoute requiredRole={["admin", "supervisor"]}>
+          <MainLayout>
+            <CafeteriaManagement />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/cafeteria/dashboard" element={
+        <ProtectedRoute requiredRole={["admin", "supervisor"]}>
+          <MainLayout>
+            <CafeDashboard />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      {/* Utility Routes */}
+      <Route path="/utilities" element={
+        <EnhancedProtectedRoute requiredRole={["admin", "accounting"]}>
+          <MainLayout>
+            <UtilityBillList />
+          </MainLayout>
+        </EnhancedProtectedRoute>
+      } />
+      
+      <Route path="/utilities/new" element={
+        <EnhancedProtectedRoute requiredRole={["admin", "accounting"]}>
+          <MainLayout>
+            <UtilityBillForm />
+          </MainLayout>
+        </EnhancedProtectedRoute>
+      } />
+      
+      {/* Revenue Manager Routes */}
+      <Route path="/revenue/dashboard" element={
+        <ProtectedRoute requiredRole={['revenue_manager', 'admin']}>
+          <MainLayout>
+            <RevenueDashboard />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      {/* Guest Booking Route */}
+      <Route path="/guest-booking" element={<GuestBookingPage />} />
+      
+      {/* Catch all route */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  </Router>
+);
 }
 
 export default App;
