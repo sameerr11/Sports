@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   Box, Typography, Paper, Grid, 
-  Divider, Button, Alert
+  Divider, Button, Alert,
+  useMediaQuery, useTheme
 } from '@mui/material';
 import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
 import { Print as PrintIcon, Download as DownloadIcon } from '@mui/icons-material';
@@ -11,6 +12,8 @@ import { format } from 'date-fns';
 import ultrasLogo from '../../assets/images/ultras_logo.png';
 
 const BookingConfirmation = ({ booking, resetBookingForm }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const [receiptOpen, setReceiptOpen] = useState(false);
 
@@ -23,7 +26,21 @@ const BookingConfirmation = ({ booking, resetBookingForm }) => {
         <Button 
           variant="contained" 
           onClick={resetBookingForm}
-          sx={{ mt: 2 }}
+          sx={{ 
+            mt: 2,
+            backgroundColor: '#f7931e',
+            color: 'white',
+            borderRadius: '25px',
+            padding: '10px 24px',
+            fontWeight: 'bold',
+            textTransform: 'none',
+            fontSize: '1rem',
+            boxShadow: '0 4px 10px rgba(247, 147, 30, 0.3)',
+            '&:hover': {
+              backgroundColor: '#e08016',
+              boxShadow: '0 6px 15px rgba(247, 147, 30, 0.4)',
+            }
+          }}
         >
           Start New Booking
         </Button>
@@ -245,21 +262,71 @@ const BookingConfirmation = ({ booking, resetBookingForm }) => {
   return (
     <Box sx={{ textAlign: 'center' }}>
       <CheckCircleOutline 
-        color="success" 
-        sx={{ fontSize: 60, mb: 2 }} 
+        sx={{ 
+          fontSize: { xs: 50, sm: 60, md: 70 }, 
+          mb: 2,
+          color: '#4CAF50'
+        }} 
       />
-      <Typography variant="h5" gutterBottom>
+      <Typography 
+        variant="h5" 
+        gutterBottom
+        sx={{ 
+          color: '#0e0051',
+          fontWeight: 'bold',
+          fontSize: { xs: '1.4rem', sm: '1.5rem', md: '1.75rem' }
+        }}
+      >
         Booking Confirmed!
       </Typography>
-      <Typography variant="body1" gutterBottom>
+      <Typography 
+        variant="body1" 
+        gutterBottom
+        sx={{ color: '#0e0051' }}
+      >
         Your booking reference is: <strong>{booking.bookingReference}</strong>
       </Typography>
-      <Typography variant="body2" color="text.secondary" gutterBottom>
+      <Typography 
+        variant="body2" 
+        color="text.secondary" 
+        gutterBottom
+        sx={{ mb: 3 }}
+      >
         Please save this reference for any future inquiries.
       </Typography>
       
-      <Paper sx={{ mt: 4, p: 3, maxWidth: 500, mx: 'auto' }}>
-        <Typography variant="h6" gutterBottom align="left">
+      <Paper 
+        sx={{ 
+          mt: 4, 
+          p: { xs: 2, sm: 3 }, 
+          maxWidth: 500, 
+          mx: 'auto',
+          backgroundColor: 'rgba(255, 255, 255, 0.85)',
+          borderRadius: '12px',
+          boxShadow: '0 8px 20px rgba(14, 0, 81, 0.1)',
+          position: 'relative',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            background: 'linear-gradient(90deg, #f7931e, #ff7f00)',
+            borderRadius: '12px 12px 0 0'
+          }
+        }}
+      >
+        <Typography 
+          variant="h6" 
+          gutterBottom 
+          align="left"
+          sx={{ 
+            color: '#0e0051',
+            fontWeight: 600,
+            fontSize: { xs: '1.1rem', sm: '1.25rem' }
+          }}
+        >
           Booking Details
         </Typography>
         <Grid container spacing={2}>
@@ -306,8 +373,8 @@ const BookingConfirmation = ({ booking, resetBookingForm }) => {
               {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
             </Typography>
           </Grid>
-        </Grid>
-        
+          </Grid>
+          
         <Divider sx={{ my: 2 }} />
         
         <Grid container spacing={2}>
@@ -339,7 +406,13 @@ const BookingConfirmation = ({ booking, resetBookingForm }) => {
             </Typography>
           </Grid>
           <Grid item xs={8} align="left">
-            <Typography variant="body1" fontWeight="bold">
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                fontWeight: "bold",
+                color: '#f7931e'
+              }}
+            >
               ${booking.totalPrice?.toFixed(2)}
             </Typography>
           </Grid>
@@ -363,21 +436,57 @@ const BookingConfirmation = ({ booking, resetBookingForm }) => {
           <Grid item xs={8} align="left">
             <Typography variant="body1">
               {displayPaymentStatus}
-            </Typography>
+              </Typography>
           </Grid>
         </Grid>
       </Paper>
       
-      <Alert severity="info" sx={{ mt: 3, textAlign: 'left' }}>
+      <Alert 
+        severity="info" 
+        sx={{ 
+          mt: 3, 
+          textAlign: 'left',
+          borderRadius: '8px',
+          maxWidth: 500,
+          mx: 'auto',
+          '& .MuiAlert-icon': {
+            color: '#f7931e'
+          }
+        }}
+      >
         A confirmation email has been sent to {booking.guestEmail}. Please make sure to check your spam folder if you don't see it in your inbox.
       </Alert>
       
-      <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'center' }}>
+      <Box 
+        sx={{ 
+          mt: 3, 
+          display: 'flex', 
+          gap: 2, 
+          justifyContent: 'center',
+          flexDirection: { xs: 'column', sm: 'row' },
+          maxWidth: { xs: '100%', sm: 500 },
+          mx: 'auto'
+        }}
+      >
         <Button 
           variant="outlined" 
           color="primary" 
           startIcon={<DownloadIcon />}
           onClick={handleDirectDownload}
+          sx={{
+            borderColor: '#0e0051',
+            color: '#0e0051',
+            borderRadius: '25px',
+            padding: '10px 16px',
+            textTransform: 'none',
+            fontSize: '0.9rem',
+            backgroundColor: 'rgba(14, 0, 81, 0.03)',
+            '&:hover': {
+              borderColor: '#f7931e',
+              color: '#f7931e',
+              backgroundColor: 'rgba(247, 147, 30, 0.05)'
+            }
+          }}
         >
           Download Receipt
         </Button>
@@ -387,6 +496,20 @@ const BookingConfirmation = ({ booking, resetBookingForm }) => {
           color="primary" 
           startIcon={<PrintIcon />}
           onClick={() => setReceiptOpen(true)}
+          sx={{
+            borderColor: '#0e0051',
+            color: '#0e0051',
+            borderRadius: '25px',
+            padding: '10px 16px',
+            textTransform: 'none',
+            fontSize: '0.9rem',
+            backgroundColor: 'rgba(14, 0, 81, 0.03)',
+            '&:hover': {
+              borderColor: '#f7931e',
+              color: '#f7931e',
+              backgroundColor: 'rgba(247, 147, 30, 0.05)'
+            }
+          }}
         >
           Print Receipt
         </Button>
@@ -394,6 +517,20 @@ const BookingConfirmation = ({ booking, resetBookingForm }) => {
         <Button 
           variant="contained" 
           onClick={handleStartNewBooking}
+          sx={{
+            backgroundColor: '#f7931e',
+            color: 'white',
+            borderRadius: '25px',
+            padding: '10px 16px',
+            fontWeight: 'bold',
+            textTransform: 'none',
+            fontSize: '0.9rem',
+            boxShadow: '0 4px 10px rgba(247, 147, 30, 0.3)',
+            '&:hover': {
+              backgroundColor: '#e08016',
+              boxShadow: '0 6px 15px rgba(247, 147, 30, 0.4)',
+            }
+          }}
         >
           Book Another Court
         </Button>

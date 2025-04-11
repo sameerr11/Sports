@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const RecurringSchedule = require('../models/RecurringSchedule');
 const { generateRecurringBookings } = require('../controllers/recurringScheduleController');
+const { checkRegistrationExpiry, checkExpiredRegistrations } = require('./registrationExpiryChecker');
 
 // Initialize the scheduler
 const initScheduler = () => {
@@ -22,21 +23,23 @@ const initScheduler = () => {
           console.log(`Generated ${newBookings.length} bookings for schedule ${schedule._id}`);
           
           // Update the schedule with the new booking IDs
-          if (newBookings.length > 0) {
+          try {
             schedule.bookings = [
               ...schedule.bookings,
               ...newBookings.map(booking => booking._id)
             ];
             await schedule.save();
+          } catch (err) {
+            console.error(`Error updating schedule ${schedule._id} with new bookings:`, err);
           }
         } catch (err) {
           console.error(`Error generating bookings for schedule ${schedule._id}:`, err);
         }
       }
       
-      console.log('Completed weekly booking generation job');
+      console.log('Weekly booking generation completed');
     } catch (err) {
-      console.error('Error running booking generation job:', err);
+      console.error('Error in weekly booking generation job:', err);
     }
   }, {
     scheduled: true,
@@ -44,15 +47,13 @@ const initScheduler = () => {
   });
   
   // Run daily at 2:00 AM to check for recurring schedules with no upcoming bookings
-  // This handles situations where the weekly job might have been missed
+  // and generate new bookings if needed
   cron.schedule('0 2 * * *', async () => {
-    console.log('Running daily check for upcoming bookings...');
+    console.log('Running daily job to check for schedules with no upcoming bookings...');
     
     try {
       const activeSchedules = await RecurringSchedule.find({ isActive: true });
-      const now = new Date();
-      const twoWeeksFromNow = new Date(now);
-      twoWeeksFromNow.setDate(twoWeeksFromNow.getDate() + 14);
+      console.log(`Found ${activeSchedules.length} active recurring schedules`);
       
       for (const schedule of activeSchedules) {
         try {
@@ -63,20 +64,51 @@ const initScheduler = () => {
             console.log(`Schedule ${schedule._id} has no upcoming bookings. Generating...`);
             const newBookings = await generateRecurringBookings(schedule, 4);
             
-            if (newBookings.length > 0) {
-              schedule.bookings = newBookings.map(booking => booking._id);
-              await schedule.save();
-              console.log(`Generated ${newBookings.length} bookings for schedule ${schedule._id}`);
-            }
+            // Update schedule with new bookings
+            schedule.bookings = newBookings.map(booking => booking._id);
+            await schedule.save();
+            console.log(`Generated ${newBookings.length} bookings for schedule ${schedule._id}`);
           }
         } catch (err) {
           console.error(`Error checking bookings for schedule ${schedule._id}:`, err);
         }
       }
       
-      console.log('Completed daily booking check');
+      console.log('Daily booking check completed');
     } catch (err) {
-      console.error('Error running daily booking check:', err);
+      console.error('Error in daily booking check job:', err);
+    }
+  }, {
+    scheduled: true,
+    timezone: "UTC"
+  });
+  
+  // Run daily at 9:00 AM to check for player registrations that are about to expire
+  // and send notifications to players and parents
+  cron.schedule('0 9 * * *', async () => {
+    console.log('Running daily job to check for player registrations about to expire...');
+    
+    try {
+      const notificationStats = await checkRegistrationExpiry();
+      console.log(`Expiry check completed: Sent ${notificationStats.oneWeekNotifications} one-week notifications and ${notificationStats.oneDayNotifications} one-day notifications`);
+    } catch (err) {
+      console.error('Error in registration expiry check job:', err);
+    }
+  }, {
+    scheduled: true,
+    timezone: "UTC"
+  });
+  
+  // Run daily at 10:00 AM to check for player registrations that have expired yesterday
+  // and send notifications to admins
+  cron.schedule('0 10 * * *', async () => {
+    console.log('Running daily job to check for expired player registrations...');
+    
+    try {
+      const notificationStats = await checkExpiredRegistrations();
+      console.log(`Expired registration check completed: Sent ${notificationStats.expiredNotifications} notifications to admins`);
+    } catch (err) {
+      console.error('Error in expired registration check job:', err);
     }
   }, {
     scheduled: true,

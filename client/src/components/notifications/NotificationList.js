@@ -92,10 +92,13 @@ const NotificationList = () => {
 
   const getNotificationIcon = (type, model) => {
     if (type === 'new_registration') return <PersonIcon />;
+    if (type === 'registration_expiry') return <PaymentIcon />;
     
     switch (model) {
       case 'User':
         return <PersonIcon />;
+      case 'PlayerRegistration':
+        return <PaymentIcon />;
       case 'Team':
       case 'Match':
       case 'Training':

@@ -82,6 +82,36 @@ The system supports various notification types:
 14. `team_announcement`: Announcement for team
 15. `payment_reminder`: Payment due reminder
 16. `attendance_update`: Attendance status update
+17. `registration_expiry`: Player registration expiry notification
+
+## Registration Expiry Notifications
+
+The system automatically checks for player registrations that are about to expire and sends notifications to:
+1. The player themselves
+2. The player's parent (if applicable)
+
+Notifications are sent at two intervals:
+- 7 days (one week) before expiry
+- 1 day before expiry
+
+Additionally, when a registration has expired (the day after expiry), the system:
+- Sends notifications to all admin users
+- Provides details about the expired registration (player name, email, and sports)
+
+The notification process is handled by:
+1. A daily scheduled job that runs at 9:00 AM to check for upcoming expirations (server/utils/scheduler.js)
+2. A daily scheduled job that runs at 10:00 AM to check for expired registrations (server/utils/scheduler.js)
+3. A dedicated checker function that identifies upcoming expirations and expired registrations (server/utils/registrationExpiryChecker.js)
+4. A notification service that creates the actual notifications (server/utils/notificationService.js)
+
+For manual testing, a script is available at `server/scripts/checkRegistrationExpiry.js` that can be run with:
+```
+node scripts/checkRegistrationExpiry.js
+```
+
+This script will check for both upcoming expirations and already expired registrations.
+
+This feature helps ensure players and parents are reminded to renew their registrations before they expire, and admins are notified about expired registrations that need attention.
 
 ## Integration Examples
 

@@ -134,6 +134,7 @@ const NotificationBadge = () => {
       case 'team_announcement':
         return <CampaignIcon />;
       case 'payment_reminder':
+      case 'registration_expiry':
         return <PaymentIcon />;
       case 'attendance_update':
         return <EventAvailableIcon />;

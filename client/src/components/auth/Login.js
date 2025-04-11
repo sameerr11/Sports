@@ -59,11 +59,34 @@ const Login = () => {
   return (
     <Box
       sx={{
-        height: '100vh',
+        minHeight: '100vh',
         display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
         backgroundColor: '#0e0051',
+        overflow: 'hidden',
       }}
     >
+      {/* Logo for Mobile View */}
+      <Box
+        sx={{
+          display: { xs: 'flex', md: 'none' },
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '2rem 1rem',
+          backgroundColor: '#0e0051',
+        }}
+      >
+        <img 
+          src={ultrasLogo} 
+          alt="Ultras North Lebanon" 
+          style={{ 
+            width: '60%', 
+            maxWidth: '250px', 
+            height: 'auto' 
+          }} 
+        />
+      </Box>
+
       {/* Form Section */}
       <Box
         sx={{
@@ -72,16 +95,17 @@ const Login = () => {
           justifyContent: 'center',
           alignItems: 'center',
           background: 'linear-gradient(145deg,rgba(248, 249, 255, 0.6) 0%,rgba(9, 50, 234, 0.46) 100%)',
-          borderRadius: { xs: 0, md: '0 20px 20px 0' },
+          borderRadius: { xs: '20px 20px 0 0', md: '0 20px 20px 0' },
           boxShadow: '0px 0px 25px rgba(0, 0, 0, 0.1)',
-          padding: 3,
+          padding: { xs: 2, sm: 3 },
           zIndex: 1,
+          flexGrow: 1,
         }}
       >
         <Paper
           elevation={0}
           sx={{
-            padding: 4,
+            padding: { xs: 3, sm: 4 },
             width: '100%',
             maxWidth: '400px',
             backgroundColor: 'rgba(255, 255, 255, 0.8)',
@@ -244,7 +268,7 @@ const Login = () => {
         </Paper>
       </Box>
 
-      {/* Logo Section */}
+      {/* Logo Section for Desktop */}
       <Box
         sx={{
           width: { xs: '0%', md: '60%' },

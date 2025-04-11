@@ -3,7 +3,8 @@ import {
   Box, Typography, Grid, Card, CardContent, 
   Button, CircularProgress, FormControl, FormLabel, 
   RadioGroup, Radio, FormControlLabel,
-  Checkbox, Paper, Divider, Alert, CardActionArea, Tooltip
+  Checkbox, Paper, Divider, Alert, CardActionArea, Tooltip,
+  useMediaQuery, useTheme
 } from '@mui/material';
 import { getCourtAvailability } from '../../services/guestBookingService';
 import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
@@ -16,6 +17,8 @@ const TimeSelection = ({
   onBack,
   onNext
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [availableSlots, setAvailableSlots] = useState([]);
   const [bookedSlots, setBookedSlots] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -248,130 +251,319 @@ const TimeSelection = ({
       a.start.getTime() - b.start.getTime()
     );
     
-    // Create a combined time slot from first start to last end
-    const combinedSlot = {
+    // Create a single time slot from earliest start to latest end
+    const combinedTimeSlot = {
       start: sortedSlots[0].start,
-      end: sortedSlots[sortedSlots.length - 1].end,
-      display: `${formatTime(sortedSlots[0].start)} - ${formatTime(sortedSlots[sortedSlots.length - 1].end)}`
+      end: sortedSlots[sortedSlots.length - 1].end
     };
     
-    setSelectedTimeSlot(combinedSlot);
+    setSelectedTimeSlot(combinedTimeSlot);
     onNext();
   };
 
   return (
     <Box>
-      <Typography variant="h6" gutterBottom>
-        Select Time
+      <Typography 
+        variant="h6" 
+        gutterBottom
+        sx={{ 
+          color: '#0e0051', 
+          fontWeight: 600,
+          mb: 2
+        }}
+      >
+        Select Time Slot
       </Typography>
       
+      <Typography 
+        variant="body1" 
+        sx={{ 
+          mb: 2,
+          color: '#0e0051'
+        }}
+      >
+        Selected Court: <strong>{selectedCourt?.name}</strong>
+      </Typography>
+      
+      {error && (
+        <Alert 
+          severity="error" 
+          sx={{ 
+            mb: 2,
+            borderRadius: '8px'
+          }}
+        >
+          {error}
+        </Alert>
+      )}
+
       {loading ? (
         <Box display="flex" justifyContent="center" my={4}>
-          <CircularProgress />
+          <CircularProgress sx={{ color: '#f7931e' }} />
         </Box>
       ) : timeSlots.length === 0 ? (
-        <Typography>
-          No available time slots found for this court on the selected date.
-        </Typography>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            textAlign: 'center',
+            backgroundColor: 'rgba(14, 0, 81, 0.05)',
+            borderRadius: '12px',
+            border: '1px solid rgba(14, 0, 81, 0.1)'
+          }}
+        >
+          <Typography color="textSecondary">
+            No available time slots for this date. Please select another date.
+          </Typography>
+        </Paper>
       ) : (
-        <Box>
-          {error && (
-            <Alert 
-              severity="warning" 
-              sx={{ mb: 2 }}
-              onClose={() => setError('')}
-            >
-              {error}
-            </Alert>
-          )}
-          <Typography variant="subtitle1" gutterBottom>
+        <>
+          <Typography 
+            variant="subtitle1"
+            sx={{ 
+              mb: 2,
+              fontWeight: 600,
+              color: '#0e0051'
+            }}
+          >
             Available Time Slots
           </Typography>
-          <Typography variant="body2" color="text.secondary" mb={2}>
-            Select one or more consecutive hourly slots for your booking. 
-            Multiple slots must be adjacent to each other.
-            {isBasketballCourt && (
-              <Box component="span" sx={{ display: 'block', mt: 1 }}>
-                <SportsBasketballIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
-                Slots with a basketball icon have one half-court already booked. You can still book the other half.
-              </Box>
-            )}
+          
+          <Typography 
+            variant="body2" 
+            color="textSecondary"
+            sx={{ 
+              mb: 2,
+              fontStyle: 'italic'
+            }}
+          >
+            Select consecutive time slots for your booking
           </Typography>
           
           <Grid container spacing={2}>
-            {timeSlots.map((slot, index) => (
-              <Grid item xs={6} sm={4} md={3} key={index}>
-                <Tooltip 
-                  title={slot.hasHalfCourtBooked ? "One half-court already booked. You can book the other half." : ""}
-                  placement="top"
-                  arrow
-                >
-                  <Card 
-                    sx={{ 
-                      mb: 1, 
-                      backgroundColor: selectedSlots.some(s => s.display === slot.display) 
-                        ? 'rgba(25, 118, 210, 0.3)' 
+            {timeSlots.map((slot, index) => {
+              const isSelected = selectedSlots.some(
+                selected => selected.display === slot.display
+              );
+              
+              return (
+                <Grid item xs={6} sm={4} md={3} key={index}>
+                  <Card
+                    sx={{
+                      backgroundColor: isSelected 
+                        ? 'rgba(247, 147, 30, 0.1)' 
                         : 'rgba(255, 255, 255, 0.7)',
-                      backdropFilter: 'blur(5px)',
-                      border: selectedSlots.some(s => s.display === slot.display) ? '2px solid #1976d2' : 'none',
-                      position: 'relative'
+                      borderRadius: '12px',
+                      border: isSelected 
+                        ? '2px solid #f7931e' 
+                        : '1px solid rgba(14, 0, 81, 0.1)',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      boxShadow: isSelected
+                        ? '0 4px 12px rgba(247, 147, 30, 0.15)'
+                        : 'none',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 8px rgba(14, 0, 81, 0.1)',
+                        backgroundColor: isSelected 
+                          ? 'rgba(247, 147, 30, 0.15)'
+                          : 'rgba(14, 0, 81, 0.05)'
+                      }
                     }}
+                    onClick={() => handleSlotToggle(slot)}
                   >
-                    <CardActionArea onClick={() => handleSlotToggle(slot)}>
-                      <CardContent>
-                        <Typography variant="body1" align="center">
-                          {slot.display}
+                    <CardContent sx={{ textAlign: 'center', p: 2 }}>
+                      <Typography 
+                        variant="body1" 
+                        component="div"
+                        sx={{ 
+                          fontWeight: isSelected ? 'bold' : 'normal',
+                          color: isSelected ? '#f7931e' : '#0e0051'
+                        }}
+                      >
+                        {slot.display}
+                      </Typography>
+                      
+                      {slot.hasHalfCourtBooked && isBasketballCourt && (
+                        <Typography 
+                          variant="caption" 
+                          color="textSecondary"
+                          sx={{ 
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            mt: 1,
+                            gap: 0.5
+                          }}
+                        >
+                          <SportsBasketballIcon fontSize="small" />
+                          Half court available
                         </Typography>
-                        
-                        {isBasketballCourt && slot.hasHalfCourtBooked && (
-                          <Box sx={{ position: 'absolute', top: 5, right: 5 }}>
-                            <SportsBasketballIcon fontSize="small" color="primary" />
-                          </Box>
-                        )}
-                      </CardContent>
-                    </CardActionArea>
+                      )}
+                    </CardContent>
                   </Card>
-                </Tooltip>
-              </Grid>
-            ))}
+                </Grid>
+              );
+            })}
           </Grid>
           
           {selectedSlots.length > 0 && (
-            <Paper sx={{ mt: 3, p: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Selected Time Slots
+            <Paper
+              elevation={0}
+              sx={{
+                mt: 3,
+                p: 2.5,
+                backgroundColor: 'rgba(14, 0, 81, 0.05)',
+                borderRadius: '12px',
+                border: '1px solid rgba(14, 0, 81, 0.1)'
+              }}
+            >
+              <Typography 
+                variant="subtitle1"
+                sx={{ 
+                  fontWeight: 600,
+                  color: '#0e0051',
+                  mb: 1
+                }}
+              >
+                Your Selection
               </Typography>
-              <Box mb={2}>
-                {selectedSlots.sort((a, b) => a.start.getTime() - b.start.getTime()).map((slot, index) => (
-                  <Typography key={index} variant="body2">
-                    • {slot.display}
-                  </Typography>
-                ))}
-              </Box>
-              <Divider sx={{ my: 1 }} />
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Typography variant="body1">
-                  Total Hours: <strong>{selectedSlots.length}</strong>
-                </Typography>
-                <Typography variant="body1">
-                  Total Price: <strong>${calculateTotalPrice().toFixed(2)}</strong>
-                </Typography>
-              </Box>
+              
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      mb: { xs: 2, md: 0 }
+                    }}
+                  >
+                    <Typography variant="body2" color="textSecondary">
+                      Selected Time:
+                    </Typography>
+                    {selectedSlots.length === 1 ? (
+                      <Typography 
+                        variant="body1"
+                        sx={{ fontWeight: 500 }}
+                      >
+                        {selectedSlots[0].display}
+                      </Typography>
+                    ) : (
+                      <Typography 
+                        variant="body1"
+                        sx={{ fontWeight: 500 }}
+                      >
+                        {selectedSlots.sort((a, b) => a.start - b.start)[0].display.split('-')[0]} - 
+                        {selectedSlots.sort((a, b) => a.start - b.start)[selectedSlots.length - 1].display.split('-')[1]}
+                      </Typography>
+                    )}
+                    <Typography 
+                      variant="body2" 
+                      sx={{ mt: 1.5 }}
+                      color="textSecondary"
+                    >
+                      Duration:
+                    </Typography>
+                    <Typography 
+                      variant="body1"
+                      sx={{ fontWeight: 500 }}
+                    >
+                      {selectedSlots.length} hour{selectedSlots.length > 1 ? 's' : ''}
+                    </Typography>
+                  </Box>
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      mb: 1
+                    }}
+                  >
+                    <Typography variant="body2" color="textSecondary">
+                      Court Rate:
+                    </Typography>
+                    <Typography 
+                      variant="body1"
+                      sx={{ fontWeight: 500 }}
+                    >
+                      ${selectedCourt?.hourlyRate.toFixed(2)}/hour
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ mt: 1.5 }}
+                      color="textSecondary"
+                    >
+                      Total Price:
+                    </Typography>
+                    <Typography 
+                      variant="body1" 
+                      sx={{ 
+                        fontWeight: 'bold',
+                        color: '#f7931e',
+                        fontSize: '1.1rem'
+                      }}
+                    >
+                      ${calculateTotalPrice().toFixed(2)}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
             </Paper>
           )}
-        </Box>
+        </>
       )}
       
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-        <Button onClick={onBack}>
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          mt: 4,
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 2, sm: 0 }
+        }}
+      >
+        <Button 
+          onClick={onBack}
+          sx={{
+            color: '#0e0051',
+            borderRadius: '25px',
+            padding: '10px 24px',
+            textTransform: 'none',
+            fontSize: '1rem',
+            '&:hover': {
+              backgroundColor: 'rgba(14, 0, 81, 0.05)'
+            }
+          }}
+        >
           Back
         </Button>
         <Button
           variant="contained"
           onClick={handleProceed}
           disabled={selectedSlots.length === 0}
+          sx={{
+            backgroundColor: '#f7931e',
+            color: 'white',
+            borderRadius: '25px',
+            padding: '10px 24px',
+            fontWeight: 'bold',
+            textTransform: 'none',
+            fontSize: '1rem',
+            boxShadow: '0 4px 10px rgba(247, 147, 30, 0.3)',
+            '&:hover': {
+              backgroundColor: '#e08016',
+              boxShadow: '0 6px 15px rgba(247, 147, 30, 0.4)',
+            },
+            '&.Mui-disabled': {
+              backgroundColor: 'rgba(0, 0, 0, 0.12)',
+              color: 'rgba(0, 0, 0, 0.26)'
+            },
+            order: { xs: -1, sm: 0 }
+          }}
         >
-          Next
+          Continue
         </Button>
       </Box>
     </Box>

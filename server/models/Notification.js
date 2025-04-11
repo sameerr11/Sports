@@ -28,7 +28,8 @@ const NotificationSchema = new mongoose.Schema({
       'coach_feedback',
       'team_announcement',
       'payment_reminder',
-      'attendance_update'
+      'attendance_update',
+      'registration_expiry'
     ],
     required: true
   },

@@ -33,7 +33,8 @@ import {
   useTheme,
   alpha,
   Chip,
-  Divider
+  Divider,
+  useMediaQuery
 } from '@mui/material';
 import {
   Search,
@@ -81,6 +82,8 @@ const StatSlider = ({ name, value, onChange, min = 1, max = 10, step = 1 }) => {
 
 const PlayerStats = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
   const user = getStoredUser();
   const [players, setPlayers] = useState([]);
   const [filteredPlayers, setFilteredPlayers] = useState([]);
@@ -423,36 +426,24 @@ const PlayerStats = () => {
   };
   
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ mb: 4 }}>
-        <Button
-          component={Link}
-          to="/"
-          startIcon={<ArrowBack />}
-          sx={{ mb: 2 }}
-        >
-          Back to Dashboard
-        </Button>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Player Stats Management
-        </Typography>
-        <Typography variant="body1" color="text.secondary" paragraph>
-          Add, update, and track player statistics and performance metrics.
-        </Typography>
-      </Box>
-      
-      {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 3 }}>{success}</Alert>}
-      
-      <Paper sx={{ p: 3, mb: 4 }}>
-        <Box sx={{ mb: 3 }}>
+    <Container maxWidth="xl" sx={{ py: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'stretch', sm: 'center' }, mb: 4, gap: 2 }}>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', mb: 1 }}>
+            Player Statistics
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Track and manage performance metrics for players
+          </Typography>
+        </Box>
+        
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, width: { xs: '100%', sm: 'auto' } }}>
           <TextField
-            fullWidth
-            label="Search Players"
+            placeholder="Search players..."
             variant="outlined"
-            size="small"
+            fullWidth
             value={searchTerm}
-            onChange={handleSearchChange}
+            onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -460,337 +451,364 @@ const PlayerStats = () => {
                 </InputAdornment>
               ),
             }}
+            sx={{ minWidth: { sm: '250px' } }}
           />
         </Box>
-        
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          {success}
+        </Alert>
+      )}
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+          <CircularProgress />
+        </Box>
+      ) : filteredPlayers.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <PersonSearch sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6">No players found</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            {searchTerm ? 'Try a different search term' : 'No players are available in the system'}
+          </Typography>
+        </Paper>
+      ) : (
+        <Paper sx={{ mb: 4, overflow: 'hidden' }}>
+          <TableContainer sx={{ 
+            maxHeight: {
+              xs: '350px',
+              md: '500px'
+            },
+            overflowX: 'auto' 
+          }}>
+            <Table stickyHeader sx={{ minWidth: { xs: 650, md: 800 } }}>
               <TableHead>
                 <TableRow>
-                  <TableCell>Player</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Basketball Stats</TableCell>
-                  <TableCell>Football Stats</TableCell>
-                  <TableCell>Volleyball Stats</TableCell>
-                  <TableCell>Swimming Stats</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Player</TableCell>
+                  {!isMobile && <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Email</TableCell>}
+                  <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Sport Type</TableCell>
+                  {!isMobile && <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Last Updated</TableCell>}
+                  <TableCell align="center" sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Overall Rating</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredPlayers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      No players found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredPlayers.map((player) => {
-                    const basketballStats = getPlayerStatsBySport(player._id, 'Basketball');
-                    const footballStats = getPlayerStatsBySport(player._id, 'Football');
-                    const volleyballStats = getPlayerStatsBySport(player._id, 'Volleyball');
-                    const swimmingStats = getPlayerStatsBySport(player._id, 'Swimming');
-                    
-                    return (
-                      <TableRow key={player._id}>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Person sx={{ mr: 1, color: 'primary.main' }} />
+                {filteredPlayers.map((player) => (
+                  <React.Fragment key={player._id}>
+                    <TableRow hover>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Person sx={{ mr: 1, color: 'primary.main' }} />
+                          <Typography variant="body2">
                             {player.firstName} {player.lastName}
-                          </Box>
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      
+                      {!isMobile && (
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                          <Typography variant="body2">{player.email}</Typography>
                         </TableCell>
-                        <TableCell>{player.email}</TableCell>
-                        
-                        {/* Basketball Stats */}
-                        <TableCell>
-                          {basketballStats ? (
-                            <Box>
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Rating 
-                                  value={basketballStats.grades.overall} 
-                                  readOnly 
-                                  max={10}
-                                  size="small"
-                                />
-                                <Typography variant="body2" sx={{ ml: 1 }}>
-                                  ({basketballStats.grades.overall}/10)
-                                </Typography>
-                              </Box>
-                              <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined" 
-                                  onClick={() => handleOpenEditDialog(basketballStats._id)}
-                                  startIcon={<Edit />}
-                                >
-                                  Edit
-                                </Button>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined" 
-                                  color="error"
-                                  onClick={() => handleOpenDeleteDialog(basketballStats._id)}
-                                  startIcon={<Delete />}
-                                >
-                                  Delete
-                                </Button>
-                              </Box>
-                            </Box>
+                      )}
+                      
+                      <TableCell>
+                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
+                          {sportTypes.map((sport) => {
+                            const playerStats = stats.find(
+                              (stat) => 
+                                stat.player === player._id && 
+                                stat.sportType === sport.value
+                            );
+                            
+                            return playerStats ? (
+                              <Chip
+                                key={sport.value}
+                                label={sport.label}
+                                size="small"
+                                color="primary"
+                                variant="outlined"
+                                sx={{ mr: 0.5 }}
+                              />
+                            ) : (
+                              <Chip
+                                key={sport.value}
+                                label={sport.label}
+                                size="small"
+                                color="default"
+                                variant="outlined"
+                                sx={{ 
+                                  mr: 0.5, 
+                                  opacity: 0.5,
+                                  cursor: 'pointer',
+                                  display: { xs: playerStats ? 'flex' : 'none', md: 'flex' }
+                                }}
+                                onClick={() => handleOpenAddDialog(player, sport.value)}
+                              />
+                            );
+                          })}
+                        </Box>
+                      </TableCell>
+                      
+                      {!isMobile && (
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                          {stats.some(stat => stat.player === player._id) ? (
+                            <>
+                              {formatLastUpdated(
+                                stats
+                                  .filter(stat => stat.player === player._id)
+                                  .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0]?.updatedAt
+                              )}
+                            </>
                           ) : (
-                            <Button 
-                              variant="contained" 
-                              size="small"
-                              onClick={() => handleOpenAddDialog(player, 'Basketball')}
-                              startIcon={<Add />}
-                            >
-                              Add Stats
-                            </Button>
+                            <Typography variant="body2" color="text.disabled">
+                              No stats added
+                            </Typography>
                           )}
                         </TableCell>
+                      )}
+                      
+                      <TableCell align="center">
+                        {stats.some(stat => stat.player === player._id) ? (
+                          <Rating
+                            value={Math.max(
+                              ...stats
+                                .filter(stat => stat.player === player._id)
+                                .map(stat => stat.grades.overall)
+                            ) / 2}
+                            precision={0.5}
+                            readOnly
+                            size="small"
+                          />
+                        ) : (
+                          <Typography variant="body2" color="text.disabled">
+                            Not rated
+                          </Typography>
+                        )}
+                      </TableCell>
+                      
+                      <TableCell align="right">
+                        <Button
+                          startIcon={<Add />}
+                          variant="outlined"
+                          size="small"
+                          onClick={() => handleOpenAddDialog(player, 'Football')}
+                          sx={{ whiteSpace: 'nowrap', mr: 1, display: { xs: 'none', sm: 'inline-flex' } }}
+                        >
+                          Add Stats
+                        </Button>
                         
-                        {/* Football Stats */}
-                        <TableCell>
-                          {footballStats ? (
-                            <Box>
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Rating 
-                                  value={footballStats.grades.overall} 
-                                  readOnly 
-                                  max={10}
-                                  size="small"
-                                />
-                                <Typography variant="body2" sx={{ ml: 1 }}>
-                                  ({footballStats.grades.overall}/10)
-                                </Typography>
-                              </Box>
-                              <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined" 
-                                  onClick={() => handleOpenEditDialog(footballStats._id)}
-                                  startIcon={<Edit />}
-                                >
-                                  Edit
-                                </Button>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined" 
-                                  color="error"
-                                  onClick={() => handleOpenDeleteDialog(footballStats._id)}
-                                  startIcon={<Delete />}
-                                >
-                                  Delete
-                                </Button>
-                              </Box>
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleOpenAddDialog(player, 'Football')}
+                          sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
+                          size="small"
+                        >
+                          <Add />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                    
+                    {/* Player stats rows */}
+                    {stats
+                      .filter(stat => stat.player === player._id)
+                      .map(stat => (
+                        <TableRow key={stat._id} sx={{ backgroundColor: alpha(theme.palette.primary.main, 0.04) }}>
+                          <TableCell 
+                            colSpan={isMobile ? 2 : 4} 
+                            sx={{ 
+                              pl: 7,
+                              borderBottom: 0
+                            }}
+                          >
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                              <Chip 
+                                label={stat.sportType} 
+                                size="small" 
+                                color="primary" 
+                                sx={{ mr: 1 }} 
+                              />
+                              <Typography variant="body2" color="text.secondary">
+                                Height: {stat.common.height.value}{stat.common.height.unit} | 
+                                Weight: {stat.common.weight.value}{stat.common.weight.unit}
+                              </Typography>
                             </Box>
-                          ) : (
-                            <Button 
-                              variant="contained" 
-                              size="small"
-                              onClick={() => handleOpenAddDialog(player, 'Football')}
-                              startIcon={<Add />}
-                            >
-                              Add Stats
-                            </Button>
-                          )}
-                        </TableCell>
-                        
-                        {/* Volleyball Stats */}
-                        <TableCell>
-                          {volleyballStats ? (
-                            <Box>
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Rating 
-                                  value={volleyballStats.grades.overall} 
-                                  readOnly 
-                                  max={10}
-                                  size="small"
-                                />
-                                <Typography variant="body2" sx={{ ml: 1 }}>
-                                  ({volleyballStats.grades.overall}/10)
-                                </Typography>
-                              </Box>
-                              <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined" 
-                                  onClick={() => handleOpenEditDialog(volleyballStats._id)}
-                                  startIcon={<Edit />}
-                                >
-                                  Edit
-                                </Button>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined" 
-                                  color="error"
-                                  onClick={() => handleOpenDeleteDialog(volleyballStats._id)}
-                                  startIcon={<Delete />}
-                                >
-                                  Delete
-                                </Button>
-                              </Box>
+                            
+                            {isMobile && (
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                Updated: {formatLastUpdated(stat.updatedAt)}
+                              </Typography>
+                            )}
+                            
+                            {stat.common.notes && (
+                              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontSize: '0.8rem', fontStyle: 'italic' }}>
+                                "{stat.common.notes}"
+                              </Typography>
+                            )}
+                          </TableCell>
+                          
+                          <TableCell 
+                            colSpan={isMobile ? 4 : 2} 
+                            align="right" 
+                            sx={{ 
+                              borderBottom: 0,
+                              pt: 1, 
+                              pb: 1 
+                            }}
+                          >
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                              <Button
+                                startIcon={<Edit />}
+                                variant="outlined"
+                                size="small"
+                                onClick={() => handleOpenEditDialog(stat._id)}
+                                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                              >
+                                Edit
+                              </Button>
+                              
+                              <IconButton
+                                color="primary"
+                                onClick={() => handleOpenEditDialog(stat._id)}
+                                sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
+                                size="small"
+                              >
+                                <Edit />
+                              </IconButton>
+                              
+                              <Button
+                                startIcon={<Delete />}
+                                variant="outlined"
+                                color="error"
+                                size="small"
+                                onClick={() => handleOpenDeleteDialog(stat._id)}
+                                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                              >
+                                Delete
+                              </Button>
+                              
+                              <IconButton
+                                color="error"
+                                onClick={() => handleOpenDeleteDialog(stat._id)}
+                                sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
+                                size="small"
+                              >
+                                <Delete />
+                              </IconButton>
                             </Box>
-                          ) : (
-                            <Button 
-                              variant="contained" 
-                              size="small"
-                              onClick={() => handleOpenAddDialog(player, 'Volleyball')}
-                              startIcon={<Add />}
-                            >
-                              Add Stats
-                            </Button>
-                          )}
-                        </TableCell>
-                        
-                        {/* Swimming Stats */}
-                        <TableCell>
-                          {swimmingStats ? (
-                            <Box>
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Rating 
-                                  value={swimmingStats.grades.overall} 
-                                  readOnly 
-                                  max={10}
-                                  size="small"
-                                />
-                                <Typography variant="body2" sx={{ ml: 1 }}>
-                                  ({swimmingStats.grades.overall}/10)
-                                </Typography>
-                              </Box>
-                              <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined" 
-                                  onClick={() => handleOpenEditDialog(swimmingStats._id)}
-                                  startIcon={<Edit />}
-                                >
-                                  Edit
-                                </Button>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined" 
-                                  color="error"
-                                  onClick={() => handleOpenDeleteDialog(swimmingStats._id)}
-                                  startIcon={<Delete />}
-                                >
-                                  Delete
-                                </Button>
-                              </Box>
-                            </Box>
-                          ) : (
-                            <Button 
-                              variant="contained" 
-                              size="small"
-                              onClick={() => handleOpenAddDialog(player, 'Swimming')}
-                              startIcon={<Add />}
-                            >
-                              Add Stats
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
+                          </TableCell>
+                        </TableRow>
+                    ))}
+                  </React.Fragment>
+                ))}
               </TableBody>
             </Table>
           </TableContainer>
-        )}
-      </Paper>
-      
-      {/* Player Stats Form Dialog */}
+        </Paper>
+      )}
+
+      {/* Player Stats Dialog */}
       <Dialog 
         open={formDialog.open} 
         onClose={handleCloseDialog}
+        fullScreen={isMobile}
         maxWidth="md"
         fullWidth
       >
         <DialogTitle>
-          {formDialog.isEdit ? 'Edit' : 'Add'} Stats for {formDialog.playerName}
+          {formDialog.isEdit ? 'Edit Player Statistics' : 'Add Player Statistics'}
         </DialogTitle>
-        <DialogContent>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-            <Tabs value={tabValue} onChange={handleTabChange} aria-label="stats tabs">
-              <Tab label="Basic Info" />
-              <Tab label="Sport Specific" />
-              <Tab label="General Grades" />
+        
+        <DialogContent dividers>
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h6" gutterBottom color="primary">
+              {formDialog.playerName} - {formData.sportType}
+            </Typography>
+          </Box>
+          
+          <FormControl fullWidth sx={{ mb: 3 }}>
+            <InputLabel>Sport Type</InputLabel>
+            <Select
+              name="sportType"
+              value={formData.sportType}
+              label="Sport Type"
+              onChange={handleInputChange}
+            >
+              {sportTypes.map((sport) => (
+                <MenuItem key={sport.value} value={sport.value}>
+                  {sport.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+            <Tabs 
+              value={tabValue} 
+              onChange={handleTabChange} 
+              variant={isMobile ? "scrollable" : "fullWidth"}
+              scrollButtons={isMobile ? "auto" : false}
+              allowScrollButtonsMobile
+            >
+              <Tab label="Physical Info" />
+              <Tab label="Skills" />
+              <Tab label="Grades" />
             </Tabs>
           </Box>
           
-          {/* Basic Info Tab */}
           {tabValue === 0 && (
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Sport Type: <strong>{formDialog.sportType}</strong>
-                </Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2, mb: 3 }}>
+                  <TextField
+                    label="Height"
+                    type="number"
+                    fullWidth
+                    value={formData.common.height.value}
+                    onChange={(e) => handleMeasurementChange('common', 'height', 'value', e.target.value)}
+                  />
+                  <FormControl sx={{ width: '100px' }}>
+                    <InputLabel>Unit</InputLabel>
+                    <Select
+                      label="Unit"
+                      value={formData.common.height.unit}
+                      onChange={(e) => handleMeasurementChange('common', 'height', 'unit', e.target.value)}
+                    >
+                      <MenuItem value="cm">cm</MenuItem>
+                      <MenuItem value="in">in</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
               </Grid>
               
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle1" gutterBottom>Height</Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={8}>
-                    <TextField
-                      label="Value"
-                      type="number"
-                      fullWidth
-                      value={formData.common.height.value}
-                      onChange={(e) => handleMeasurementChange(
-                        'common', 'height', 'value', Number(e.target.value)
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={4}>
-                    <FormControl fullWidth>
-                      <InputLabel>Unit</InputLabel>
-                      <Select
-                        value={formData.common.height.unit}
-                        onChange={(e) => handleMeasurementChange(
-                          'common', 'height', 'unit', e.target.value
-                        )}
-                        label="Unit"
-                      >
-                        <MenuItem value="cm">cm</MenuItem>
-                        <MenuItem value="ft">ft</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle1" gutterBottom>Weight</Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={8}>
-                    <TextField
-                      label="Value"
-                      type="number"
-                      fullWidth
-                      value={formData.common.weight.value}
-                      onChange={(e) => handleMeasurementChange(
-                        'common', 'weight', 'value', Number(e.target.value)
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={4}>
-                    <FormControl fullWidth>
-                      <InputLabel>Unit</InputLabel>
-                      <Select
-                        value={formData.common.weight.unit}
-                        onChange={(e) => handleMeasurementChange(
-                          'common', 'weight', 'unit', e.target.value
-                        )}
-                        label="Unit"
-                      >
-                        <MenuItem value="kg">kg</MenuItem>
-                        <MenuItem value="lb">lb</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2, mb: 3 }}>
+                  <TextField
+                    label="Weight"
+                    type="number"
+                    fullWidth
+                    value={formData.common.weight.value}
+                    onChange={(e) => handleMeasurementChange('common', 'weight', 'value', e.target.value)}
+                  />
+                  <FormControl sx={{ width: '100px' }}>
+                    <InputLabel>Unit</InputLabel>
+                    <Select
+                      label="Unit"
+                      value={formData.common.weight.unit}
+                      onChange={(e) => handleMeasurementChange('common', 'weight', 'unit', e.target.value)}
+                    >
+                      <MenuItem value="kg">kg</MenuItem>
+                      <MenuItem value="lb">lb</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
               </Grid>
               
               <Grid item xs={12}>
@@ -799,245 +817,162 @@ const PlayerStats = () => {
                   multiline
                   rows={4}
                   fullWidth
-                  name="common.notes"
                   value={formData.common.notes}
-                  onChange={handleInputChange}
-                  margin="normal"
+                  onChange={(e) => handleMeasurementChange('common', 'notes', '', e.target.value)}
                 />
               </Grid>
             </Grid>
           )}
           
-          {/* Sport Specific Tab */}
           {tabValue === 1 && (
-            <Box sx={{ py: 1 }}>
+            <>
               {formData.sportType === 'Football' && (
-                <>
-                  <Typography variant="h6" gutterBottom>Football Skills</Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <StatSlider 
-                        name="Passing" 
-                        value={formData.football.passing} 
-                        onChange={(e, v) => handleSkillChange('football', 'passing', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Shooting" 
-                        value={formData.football.shooting} 
-                        onChange={(e, v) => handleSkillChange('football', 'shooting', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Dribbling" 
-                        value={formData.football.dribbling} 
-                        onChange={(e, v) => handleSkillChange('football', 'dribbling', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Tackling" 
-                        value={formData.football.tackling} 
-                        onChange={(e, v) => handleSkillChange('football', 'tackling', e, v)} 
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <StatSlider 
-                        name="Speed" 
-                        value={formData.football.speed} 
-                        onChange={(e, v) => handleSkillChange('football', 'speed', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Stamina" 
-                        value={formData.football.stamina} 
-                        onChange={(e, v) => handleSkillChange('football', 'stamina', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Positioning" 
-                        value={formData.football.positioning} 
-                        onChange={(e, v) => handleSkillChange('football', 'positioning', e, v)} 
-                      />
-                    </Grid>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <StatSlider
+                      name="Passing"
+                      value={formData.football.passing}
+                      onChange={(e, newValue) => handleSkillChange('football', 'passing', e, newValue)}
+                    />
+                    <StatSlider
+                      name="Shooting"
+                      value={formData.football.shooting}
+                      onChange={(e, newValue) => handleSkillChange('football', 'shooting', e, newValue)}
+                    />
+                    <StatSlider
+                      name="Dribbling"
+                      value={formData.football.dribbling}
+                      onChange={(e, newValue) => handleSkillChange('football', 'dribbling', e, newValue)}
+                    />
                   </Grid>
-                </>
-              )}
-              
-              {formData.sportType === 'Volleyball' && (
-                <>
-                  <Typography variant="h6" gutterBottom>Volleyball Skills</Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <StatSlider 
-                        name="Serving" 
-                        value={formData.volleyball?.serving || 5} 
-                        onChange={(e, v) => handleSkillChange('volleyball', 'serving', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Passing" 
-                        value={formData.volleyball?.passing || 5} 
-                        onChange={(e, v) => handleSkillChange('volleyball', 'passing', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Setting" 
-                        value={formData.volleyball?.setting || 5} 
-                        onChange={(e, v) => handleSkillChange('volleyball', 'setting', e, v)} 
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <StatSlider 
-                        name="Attacking" 
-                        value={formData.volleyball?.attacking || 5} 
-                        onChange={(e, v) => handleSkillChange('volleyball', 'attacking', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Blocking" 
-                        value={formData.volleyball?.blocking || 5} 
-                        onChange={(e, v) => handleSkillChange('volleyball', 'blocking', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Digging" 
-                        value={formData.volleyball?.digging || 5} 
-                        onChange={(e, v) => handleSkillChange('volleyball', 'digging', e, v)} 
-                      />
-                    </Grid>
+                  <Grid item xs={12} md={6}>
+                    <StatSlider
+                      name="Tackling"
+                      value={formData.football.tackling}
+                      onChange={(e, newValue) => handleSkillChange('football', 'tackling', e, newValue)}
+                    />
+                    <StatSlider
+                      name="Speed"
+                      value={formData.football.speed}
+                      onChange={(e, newValue) => handleSkillChange('football', 'speed', e, newValue)}
+                    />
+                    <StatSlider
+                      name="Stamina"
+                      value={formData.football.stamina}
+                      onChange={(e, newValue) => handleSkillChange('football', 'stamina', e, newValue)}
+                    />
                   </Grid>
-                </>
+                  <Grid item xs={12}>
+                    <StatSlider
+                      name="Positioning"
+                      value={formData.football.positioning}
+                      onChange={(e, newValue) => handleSkillChange('football', 'positioning', e, newValue)}
+                    />
+                  </Grid>
+                </Grid>
               )}
               
               {formData.sportType === 'Basketball' && (
-                <>
-                  <Typography variant="h6" gutterBottom>Basketball Skills</Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <StatSlider 
-                        name="Shooting" 
-                        value={formData.basketball.shooting} 
-                        onChange={(e, v) => handleSkillChange('basketball', 'shooting', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Passing" 
-                        value={formData.basketball.passing} 
-                        onChange={(e, v) => handleSkillChange('basketball', 'passing', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Dribbling" 
-                        value={formData.basketball.dribbling} 
-                        onChange={(e, v) => handleSkillChange('basketball', 'dribbling', e, v)} 
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <StatSlider 
-                        name="Defense" 
-                        value={formData.basketball.defense} 
-                        onChange={(e, v) => handleSkillChange('basketball', 'defense', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Rebounding" 
-                        value={formData.basketball.rebounding} 
-                        onChange={(e, v) => handleSkillChange('basketball', 'rebounding', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Athleticism" 
-                        value={formData.basketball.athleticism} 
-                        onChange={(e, v) => handleSkillChange('basketball', 'athleticism', e, v)} 
-                      />
-                    </Grid>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <StatSlider
+                      name="Shooting"
+                      value={formData.basketball.shooting}
+                      onChange={(e, newValue) => handleSkillChange('basketball', 'shooting', e, newValue)}
+                    />
+                    <StatSlider
+                      name="Passing"
+                      value={formData.basketball.passing}
+                      onChange={(e, newValue) => handleSkillChange('basketball', 'passing', e, newValue)}
+                    />
+                    <StatSlider
+                      name="Dribbling"
+                      value={formData.basketball.dribbling}
+                      onChange={(e, newValue) => handleSkillChange('basketball', 'dribbling', e, newValue)}
+                    />
                   </Grid>
-                </>
+                  <Grid item xs={12} md={6}>
+                    <StatSlider
+                      name="Defense"
+                      value={formData.basketball.defense}
+                      onChange={(e, newValue) => handleSkillChange('basketball', 'defense', e, newValue)}
+                    />
+                    <StatSlider
+                      name="Rebounding"
+                      value={formData.basketball.rebounding}
+                      onChange={(e, newValue) => handleSkillChange('basketball', 'rebounding', e, newValue)}
+                    />
+                    <StatSlider
+                      name="Athleticism"
+                      value={formData.basketball.athleticism}
+                      onChange={(e, newValue) => handleSkillChange('basketball', 'athleticism', e, newValue)}
+                    />
+                  </Grid>
+                </Grid>
               )}
               
-              {formData.sportType === 'Swimming' && (
-                <>
-                  <Typography variant="h6" gutterBottom>Swimming Skills</Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <StatSlider 
-                        name="Freestyle" 
-                        value={formData.swimming?.freestyle || 5} 
-                        onChange={(e, v) => handleSkillChange('swimming', 'freestyle', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Backstroke" 
-                        value={formData.swimming?.backstroke || 5} 
-                        onChange={(e, v) => handleSkillChange('swimming', 'backstroke', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Breaststroke" 
-                        value={formData.swimming?.breaststroke || 5} 
-                        onChange={(e, v) => handleSkillChange('swimming', 'breaststroke', e, v)} 
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <StatSlider 
-                        name="Butterfly" 
-                        value={formData.swimming?.butterfly || 5} 
-                        onChange={(e, v) => handleSkillChange('swimming', 'butterfly', e, v)} 
-                      />
-                      <StatSlider 
-                        name="Endurance" 
-                        value={formData.swimming?.endurance || 5} 
-                        onChange={(e, v) => handleSkillChange('swimming', 'endurance', e, v)} 
-                      />
-                    </Grid>
-                  </Grid>
-                </>
-              )}
-            </Box>
+              {/* Add more sport-specific skill sliders as needed */}
+            </>
           )}
           
-          {/* General Grades Tab */}
           {tabValue === 2 && (
-            <Box sx={{ py: 1 }}>
-              <Typography variant="h6" gutterBottom>General Assessment</Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <StatSlider 
-                    name="Overall Performance" 
-                    value={formData.grades.overall} 
-                    onChange={(e, v) => handleGradeChange('overall', e, v)} 
-                  />
-                  <StatSlider 
-                    name="Improvement" 
-                    value={formData.grades.improvement} 
-                    onChange={(e, v) => handleGradeChange('improvement', e, v)} 
-                  />
-                  <StatSlider 
-                    name="Teamwork" 
-                    value={formData.grades.teamwork} 
-                    onChange={(e, v) => handleGradeChange('teamwork', e, v)} 
-                  />
-                  <StatSlider 
-                    name="Attitude" 
-                    value={formData.grades.attitude} 
-                    onChange={(e, v) => handleGradeChange('attitude', e, v)} 
-                  />
-                </Grid>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <StatSlider
+                  name="Overall Rating"
+                  value={formData.grades.overall}
+                  onChange={(e, newValue) => handleGradeChange('overall', e, newValue)}
+                />
+                <StatSlider
+                  name="Improvement"
+                  value={formData.grades.improvement}
+                  onChange={(e, newValue) => handleGradeChange('improvement', e, newValue)}
+                />
               </Grid>
-            </Box>
+              <Grid item xs={12} md={6}>
+                <StatSlider
+                  name="Teamwork"
+                  value={formData.grades.teamwork}
+                  onChange={(e, newValue) => handleGradeChange('teamwork', e, newValue)}
+                />
+                <StatSlider
+                  name="Attitude"
+                  value={formData.grades.attitude}
+                  onChange={(e, newValue) => handleGradeChange('attitude', e, newValue)}
+                />
+              </Grid>
+            </Grid>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+        
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleCloseDialog} color="inherit">
+            Cancel
+          </Button>
           <Button 
             onClick={handleSaveStats} 
             variant="contained" 
             color="primary"
+            startIcon={<Sports />}
           >
-            Save
+            {formDialog.isEdit ? 'Update Stats' : 'Save Stats'}
           </Button>
         </DialogActions>
       </Dialog>
       
       {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialog.open}
-        onClose={handleCloseDeleteDialog}
-      >
-        <DialogTitle>Delete Player Stats</DialogTitle>
+      <Dialog open={deleteDialog.open} onClose={handleCloseDeleteDialog}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete these player stats? This action cannot be undone.
+            Are you sure you want to delete these player statistics? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
-          <Button onClick={handleDeleteStats} color="error">
+          <Button onClick={handleCloseDeleteDialog} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteStats} color="error" variant="contained">
             Delete
           </Button>
         </DialogActions>

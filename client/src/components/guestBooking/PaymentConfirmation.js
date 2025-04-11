@@ -4,12 +4,14 @@ import {
   CircularProgress, Paper, Divider, 
   FormControl, FormLabel, RadioGroup, 
   FormControlLabel, Radio, Alert,
-  Chip
+  Chip, useMediaQuery, useTheme
 } from '@mui/material';
 import { updateGuestBookingPayment } from '../../services/guestBookingService';
 import { AccessTime } from '@mui/icons-material';
 
 const PaymentConfirmation = ({ booking, onBack, onNext, setError }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('Card');
 
@@ -19,7 +21,20 @@ const PaymentConfirmation = ({ booking, onBack, onNext, setError }) => {
         <Typography variant="h6" color="error">
           No booking information available.
         </Typography>
-        <Button onClick={onBack} sx={{ mt: 2 }}>
+        <Button 
+          onClick={onBack} 
+          sx={{ 
+            mt: 2,
+            color: '#0e0051',
+            borderRadius: '25px',
+            padding: '10px 24px',
+            textTransform: 'none',
+            fontSize: '1rem',
+            '&:hover': {
+              backgroundColor: 'rgba(14, 0, 81, 0.05)'
+            }
+          }}
+        >
           Go Back
         </Button>
       </Box>
@@ -104,23 +119,47 @@ const PaymentConfirmation = ({ booking, onBack, onNext, setError }) => {
 
   return (
     <Box>
-      <Typography variant="h6" gutterBottom>
+      <Typography 
+        variant="h6" 
+        gutterBottom
+        sx={{ 
+          color: '#0e0051', 
+          fontWeight: 600,
+          mb: 2
+        }}
+      >
         Payment
       </Typography>
 
-      <Paper elevation={2} sx={{ p: 2, mb: 4 }}>
+      <Paper 
+        elevation={0} 
+        sx={{ 
+          p: 2.5, 
+          mb: 4,
+          backgroundColor: 'rgba(255, 255, 255, 0.7)',
+          borderRadius: '12px',
+          border: '1px solid rgba(14, 0, 81, 0.1)'
+        }}
+      >
         <Grid container spacing={2}>
           <Grid item xs={6}>
-            <Typography variant="body1">Booking Reference:</Typography>
+            <Typography variant="body2" color="textSecondary">Booking Reference:</Typography>
           </Grid>
           <Grid item xs={6}>
-            <Typography variant="body1" align="right" fontWeight="bold">
+            <Typography 
+              variant="body1" 
+              align="right" 
+              sx={{ 
+                fontWeight: "bold",
+                color: '#0e0051'
+              }}
+            >
               {booking.bookingReference}
             </Typography>
           </Grid>
 
           <Grid item xs={6}>
-            <Typography variant="body1">Court:</Typography>
+            <Typography variant="body2" color="textSecondary">Court:</Typography>
           </Grid>
           <Grid item xs={6}>
             <Typography variant="body1" align="right">
@@ -129,24 +168,48 @@ const PaymentConfirmation = ({ booking, onBack, onNext, setError }) => {
           </Grid>
           
           <Grid item xs={12}>
-            <Divider sx={{ my: 1 }} />
-            <Typography variant="subtitle2" gutterBottom>
+            <Divider sx={{ my: 1.5 }} />
+            <Typography 
+              variant="subtitle2" 
+              gutterBottom
+              sx={{ 
+                color: '#0e0051',
+                fontWeight: 600
+              }}
+            >
               Booking Time
             </Typography>
           </Grid>
           
           <Grid item xs={12}>
             <Box display="flex" alignItems="center" mb={1}>
-              <AccessTime sx={{ mr: 1, fontSize: '1rem' }} />
+              <AccessTime 
+                sx={{ 
+                  mr: 1, 
+                  fontSize: '1rem',
+                  color: '#0e0051'
+                }} 
+              />
               <Typography variant="body2">
                 {formatDateTime(booking.startTime)} to {formatDateTime(booking.endTime)}
               </Typography>
             </Box>
-            <Box display="flex" alignItems="center" justifyContent="space-between">
+            <Box 
+              display="flex" 
+              alignItems="center" 
+              justifyContent="space-between"
+              flexDirection={isMobile ? 'column' : 'row'}
+              gap={isMobile ? 1 : 0}
+            >
               <Chip 
                 label={`${duration} hours`} 
                 size="small" 
-                color="primary" 
+                sx={{
+                  backgroundColor: 'rgba(247, 147, 30, 0.1)',
+                  color: '#f7931e',
+                  borderColor: '#f7931e',
+                  fontWeight: 500
+                }}
                 variant="outlined"
               />
               <Typography variant="body2">
@@ -156,36 +219,127 @@ const PaymentConfirmation = ({ booking, onBack, onNext, setError }) => {
           </Grid>
           
           <Grid item xs={12}>
-            <Divider sx={{ my: 1 }} />
+            <Divider sx={{ my: 1.5 }} />
           </Grid>
           
           <Grid item xs={6}>
-            <Typography variant="body1" fontWeight="bold">Total Amount:</Typography>
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                fontWeight: "bold",
+                color: '#0e0051'
+              }}
+            >
+              Total Amount:
+            </Typography>
           </Grid>
           <Grid item xs={6}>
-            <Typography variant="body1" fontWeight="bold" align="right">
+            <Typography 
+              variant="body1" 
+              align="right"
+              sx={{ 
+                fontWeight: "bold",
+                color: '#f7931e',
+                fontSize: '1.1rem'
+              }}
+            >
               ${booking.totalPrice.toFixed(2)}
             </Typography>
           </Grid>
         </Grid>
       </Paper>
 
-      <FormControl component="fieldset" sx={{ mb: 3 }}>
-        <FormLabel component="legend">Select Payment Method</FormLabel>
+      <FormControl 
+        component="fieldset" 
+        sx={{ mb: 3 }}
+      >
+        <FormLabel 
+          component="legend"
+          sx={{ 
+            color: '#0e0051',
+            fontWeight: 500,
+            '&.Mui-focused': {
+              color: '#0e0051'
+            }
+          }}
+        >
+          Select Payment Method
+        </FormLabel>
         <RadioGroup 
           value={paymentMethod} 
           onChange={handlePaymentMethodChange}
           row
+          sx={{
+            justifyContent: isMobile ? 'space-between' : 'flex-start',
+            '& .MuiFormControlLabel-label': {
+              fontSize: isMobile ? '0.9rem' : 'inherit'
+            }
+          }}
         >
-          <FormControlLabel value="Card" control={<Radio />} label="Credit Card" />
-          <FormControlLabel value="Mobile" control={<Radio />} label="Mobile Payment" />
-          <FormControlLabel value="Cash" control={<Radio />} label="Pay Later at Court" />
+          <FormControlLabel 
+            value="Card" 
+            control={
+              <Radio 
+                sx={{
+                  color: 'rgba(14, 0, 81, 0.6)',
+                  '&.Mui-checked': {
+                    color: '#f7931e',
+                  },
+                }}
+              />
+            } 
+            label="Credit Card" 
+          />
+          <FormControlLabel 
+            value="Mobile" 
+            control={
+              <Radio 
+                sx={{
+                  color: 'rgba(14, 0, 81, 0.6)',
+                  '&.Mui-checked': {
+                    color: '#f7931e',
+                  },
+                }}
+              />
+            } 
+            label="Mobile Payment" 
+          />
+          <FormControlLabel 
+            value="Cash" 
+            control={
+              <Radio 
+                sx={{
+                  color: 'rgba(14, 0, 81, 0.6)',
+                  '&.Mui-checked': {
+                    color: '#f7931e',
+                  },
+                }}
+              />
+            } 
+            label="Pay Later at Court" 
+          />
         </RadioGroup>
       </FormControl>
 
       {paymentMethod === 'Card' && (
-        <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
-          <Typography variant="subtitle1" gutterBottom>
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: 2.5, 
+            mb: 3,
+            backgroundColor: 'rgba(14, 0, 81, 0.05)',
+            borderRadius: '12px',
+            border: '1px solid rgba(14, 0, 81, 0.1)'
+          }}
+        >
+          <Typography 
+            variant="subtitle1" 
+            gutterBottom
+            sx={{ 
+              color: '#0e0051',
+              fontWeight: 600
+            }}
+          >
             Credit Card Payment
           </Typography>
           <Typography variant="body2" gutterBottom color="text.secondary">
@@ -198,8 +352,24 @@ const PaymentConfirmation = ({ booking, onBack, onNext, setError }) => {
       )}
 
       {paymentMethod === 'Mobile' && (
-        <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
-          <Typography variant="subtitle1" gutterBottom>
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: 2.5, 
+            mb: 3,
+            backgroundColor: 'rgba(14, 0, 81, 0.05)',
+            borderRadius: '12px',
+            border: '1px solid rgba(14, 0, 81, 0.1)'
+          }}
+        >
+          <Typography 
+            variant="subtitle1" 
+            gutterBottom
+            sx={{ 
+              color: '#0e0051',
+              fontWeight: 600
+            }}
+          >
             Mobile Payment
           </Typography>
           <Typography variant="body2" gutterBottom color="text.secondary">
@@ -212,11 +382,36 @@ const PaymentConfirmation = ({ booking, onBack, onNext, setError }) => {
       )}
 
       {paymentMethod === 'Cash' && (
-        <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
-          <Typography variant="subtitle1" gutterBottom>
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: 2.5, 
+            mb: 3,
+            backgroundColor: 'rgba(14, 0, 81, 0.05)',
+            borderRadius: '12px',
+            border: '1px solid rgba(14, 0, 81, 0.1)'
+          }}
+        >
+          <Typography 
+            variant="subtitle1" 
+            gutterBottom
+            sx={{ 
+              color: '#0e0051',
+              fontWeight: 600
+            }}
+          >
             Pay Later at Court
           </Typography>
-          <Alert severity="info" sx={{ mb: 2 }}>
+          <Alert 
+            severity="info" 
+            sx={{ 
+              mb: 2,
+              borderRadius: '8px',
+              '& .MuiAlert-icon': {
+                color: '#f7931e'
+              }
+            }}
+          >
             Your booking will be reserved but payment will be collected when you arrive at the court.
           </Alert>
           <Typography variant="body2" gutterBottom color="text.secondary">
@@ -228,17 +423,51 @@ const PaymentConfirmation = ({ booking, onBack, onNext, setError }) => {
         </Paper>
       )}
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-        <Button onClick={onBack}>
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          mt: 4,
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 2, sm: 0 }
+        }}
+      >
+        <Button 
+          onClick={onBack}
+          sx={{
+            color: '#0e0051',
+            borderRadius: '25px',
+            padding: '10px 24px',
+            textTransform: 'none',
+            fontSize: '1rem',
+            '&:hover': {
+              backgroundColor: 'rgba(14, 0, 81, 0.05)'
+            }
+          }}
+        >
           Back
         </Button>
         <Button
           variant="contained"
-          color="primary"
           onClick={handlePayment}
           disabled={loading}
+          sx={{
+            backgroundColor: '#f7931e',
+            color: 'white',
+            borderRadius: '25px',
+            padding: '10px 24px',
+            fontWeight: 'bold',
+            textTransform: 'none',
+            fontSize: '1rem',
+            boxShadow: '0 4px 10px rgba(247, 147, 30, 0.3)',
+            '&:hover': {
+              backgroundColor: '#e08016',
+              boxShadow: '0 6px 15px rgba(247, 147, 30, 0.4)',
+            },
+            order: { xs: -1, sm: 0 }
+          }}
         >
-          {loading ? <CircularProgress size={24} /> : 
+          {loading ? <CircularProgress size={24} color="inherit" /> : 
             paymentMethod === 'Cash' ? 'Confirm Booking' : 'Complete Payment'}
         </Button>
       </Box>

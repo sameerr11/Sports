@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { 
   Box, Typography, TextField, Button, Grid, 
   CircularProgress, Paper, Divider, FormControl,
-  FormLabel, RadioGroup, FormControlLabel, Radio
+  FormLabel, RadioGroup, FormControlLabel, Radio,
+  useMediaQuery, useTheme
 } from '@mui/material';
 import { createGuestBooking } from '../../services/guestBookingService';
 
@@ -17,6 +18,8 @@ const GuestDetails = ({
   setBooking,
   setError
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(false);
   const [courtType, setCourtType] = useState('Full Court');
   const [localError, setLocalError] = useState({
@@ -136,11 +139,19 @@ const GuestDetails = ({
 
   return (
     <Box component="form" onSubmit={handleSubmit} noValidate>
-      <Typography variant="h6" gutterBottom>
+      <Typography 
+        variant="h6" 
+        gutterBottom
+        sx={{ 
+          color: '#0e0051', 
+          fontWeight: 600,
+          mb: 2
+        }}
+      >
         Your Details
       </Typography>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         <Grid item xs={12}>
           <TextField
             required
@@ -152,11 +163,24 @@ const GuestDetails = ({
             error={!!localError.guestName}
             helperText={localError.guestName}
             sx={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.7)',
               '& .MuiOutlinedInput-root': {
+                backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                borderRadius: '8px',
                 '& fieldset': {
-                  borderColor: 'rgba(0, 0, 0, 0.23)'
+                  borderColor: 'rgba(14, 0, 81, 0.2)'
+                },
+                '&:hover fieldset': {
+                  borderColor: 'rgba(14, 0, 81, 0.5)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#f7931e',
                 }
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: '#f7931e',
+              },
+              '& .MuiFormHelperText-root.Mui-error': {
+                fontWeight: 500
               }
             }}
           />
@@ -173,11 +197,24 @@ const GuestDetails = ({
             error={!!localError.guestEmail}
             helperText={localError.guestEmail}
             sx={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.7)',
               '& .MuiOutlinedInput-root': {
+                backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                borderRadius: '8px',
                 '& fieldset': {
-                  borderColor: 'rgba(0, 0, 0, 0.23)'
+                  borderColor: 'rgba(14, 0, 81, 0.2)'
+                },
+                '&:hover fieldset': {
+                  borderColor: 'rgba(14, 0, 81, 0.5)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#f7931e',
                 }
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: '#f7931e',
+              },
+              '& .MuiFormHelperText-root.Mui-error': {
+                fontWeight: 500
               }
             }}
           />
@@ -187,112 +224,215 @@ const GuestDetails = ({
             required
             fullWidth
             name="guestPhone"
-            label="Phone Number"
+            label="Phone"
             value={guestDetails.guestPhone}
             onChange={handleChange}
             error={!!localError.guestPhone}
             helperText={localError.guestPhone}
             sx={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.7)',
               '& .MuiOutlinedInput-root': {
+                backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                borderRadius: '8px',
                 '& fieldset': {
-                  borderColor: 'rgba(0, 0, 0, 0.23)'
+                  borderColor: 'rgba(14, 0, 81, 0.2)'
+                },
+                '&:hover fieldset': {
+                  borderColor: 'rgba(14, 0, 81, 0.5)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#f7931e',
                 }
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: '#f7931e',
+              },
+              '& .MuiFormHelperText-root.Mui-error': {
+                fontWeight: 500
               }
             }}
           />
         </Grid>
-        
-        {isBasketballCourt && (
-          <Grid item xs={12}>
-            <Paper sx={{ p: 2, backgroundColor: 'rgba(255, 255, 255, 0.7)' }}>
-              <FormControl component="fieldset">
-                <FormLabel component="legend">Court Type</FormLabel>
-                <RadioGroup
-                  name="courtType"
-                  value={courtType}
-                  onChange={handleCourtTypeChange}
-                  row
-                >
-                  <FormControlLabel value="Full Court" control={<Radio />} label="Full Court" />
-                  <FormControlLabel value="Half Court" control={<Radio />} label="Half Court (50% off)" />
-                </RadioGroup>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  {courtType === 'Half Court' 
-                    ? "Half court booking allows you to use half of the basketball court at half the price. Another guest may book or might have already booked the other half during the same time." 
-                    : "Full court booking gives you exclusive access to the entire basketball court."}
-                </Typography>
-              </FormControl>
-            </Paper>
-          </Grid>
-        )}
       </Grid>
 
-      <Box mt={4}>
-        <Typography variant="h6" gutterBottom>
+      {isBasketballCourt && (
+        <Box sx={{ mt: 3, mb: 2 }}>
+          <FormControl component="fieldset">
+            <FormLabel 
+              component="legend"
+              sx={{ 
+                color: '#0e0051',
+                '&.Mui-focused': {
+                  color: '#0e0051',
+                }
+              }}
+            >
+              Court Type
+            </FormLabel>
+            <RadioGroup
+              row
+              name="courtType"
+              value={courtType}
+              onChange={handleCourtTypeChange}
+            >
+              <FormControlLabel 
+                value="Full Court" 
+                control={
+                  <Radio 
+                    sx={{
+                      color: 'rgba(14, 0, 81, 0.6)',
+                      '&.Mui-checked': {
+                        color: '#f7931e',
+                      },
+                    }}
+                  />
+                } 
+                label="Full Court" 
+              />
+              <FormControlLabel 
+                value="Half Court" 
+                control={
+                  <Radio 
+                    sx={{
+                      color: 'rgba(14, 0, 81, 0.6)',
+                      '&.Mui-checked': {
+                        color: '#f7931e',
+                      },
+                    }}
+                  />
+                } 
+                label="Half Court" 
+              />
+            </RadioGroup>
+          </FormControl>
+        </Box>
+      )}
+
+      <Paper 
+        elevation={0} 
+        sx={{ 
+          p: 2.5, 
+          mt: 3, 
+          mb: 3, 
+          backgroundColor: 'rgba(14, 0, 81, 0.05)',
+          borderRadius: '12px',
+          border: '1px solid rgba(14, 0, 81, 0.1)'
+        }}
+      >
+        <Typography 
+          variant="subtitle1" 
+          gutterBottom
+          sx={{ 
+            fontWeight: 600, 
+            color: '#0e0051',
+            mb: 1.5
+          }}
+        >
           Booking Summary
         </Typography>
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Court
-              </Typography>
-              <Typography variant="body1">
-                {selectedCourt?.name}
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Sport
-              </Typography>
-              <Typography variant="body1">
-                {selectedCourt?.sportType} {isBasketballCourt && `(${courtType})`}
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Date
-              </Typography>
-              <Typography variant="body1">
-                {formatDateTime(selectedTimeSlot?.start).split(',')[0]}
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Time
-              </Typography>
-              <Typography variant="body1">
-                {formatDateTime(selectedTimeSlot?.start).split(',')[1]} - {formatDateTime(selectedTimeSlot?.end).split(',')[1]}
-              </Typography>
-            </Grid>
-          </Grid>
-          <Divider sx={{ my: 2 }} />
-          <Grid container justifyContent="space-between">
-            <Grid item>
-              <Typography variant="subtitle1">
-                Total Amount
-              </Typography>
-            </Grid>
-            <Grid item>
-              <Typography variant="h6" color="primary">
-                ${totalPrice.toFixed(2)}
-              </Typography>
-            </Grid>
-          </Grid>
-        </Paper>
-      </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-        <Button onClick={onBack}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="body2" color="text.secondary">
+              Court:
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              {selectedCourt?.name} {isBasketballCourt ? `(${courtType})` : ''}
+            </Typography>
+            
+            <Typography variant="body2" color="text.secondary">
+              Sport Type:
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              {selectedCourt?.sportType}
+            </Typography>
+            
+            <Typography variant="body2" color="text.secondary">
+              Location:
+            </Typography>
+            <Typography variant="body1">
+              {selectedCourt?.location}
+            </Typography>
+          </Grid>
+          
+          <Grid item xs={12} sm={6}>
+            <Typography variant="body2" color="text.secondary">
+              Date:
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              {formatDateTime(selectedTimeSlot?.start).split(',')[0]},
+              {formatDateTime(selectedTimeSlot?.start).split(',')[1]}
+            </Typography>
+            
+            <Typography variant="body2" color="text.secondary">
+              Time:
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              {formatDateTime(selectedTimeSlot?.start).split(',')[2]} - 
+              {formatDateTime(selectedTimeSlot?.end).split(',')[2]}
+            </Typography>
+            
+            <Typography variant="body2" color="text.secondary">
+              Price:
+            </Typography>
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                fontWeight: 'bold', 
+                color: '#f7931e',
+                fontSize: '1.1rem'
+              }}
+            >
+              ${totalPrice.toFixed(2)}
+            </Typography>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          mt: 4,
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 2, sm: 0 }
+        }}
+      >
+        <Button 
+          onClick={onBack}
+          sx={{
+            color: '#0e0051',
+            borderRadius: '25px',
+            padding: '10px 24px',
+            textTransform: 'none',
+            fontSize: '1rem',
+            '&:hover': {
+              backgroundColor: 'rgba(14, 0, 81, 0.05)'
+            }
+          }}
+        >
           Back
         </Button>
         <Button
           type="submit"
           variant="contained"
           disabled={loading}
+          sx={{
+            backgroundColor: '#f7931e',
+            color: 'white',
+            borderRadius: '25px',
+            padding: '10px 24px',
+            fontWeight: 'bold',
+            textTransform: 'none',
+            fontSize: '1rem',
+            boxShadow: '0 4px 10px rgba(247, 147, 30, 0.3)',
+            '&:hover': {
+              backgroundColor: '#e08016',
+              boxShadow: '0 6px 15px rgba(247, 147, 30, 0.4)',
+            },
+            order: { xs: -1, sm: 0 }
+          }}
         >
-          {loading ? <CircularProgress size={24} /> : 'Proceed to Payment'}
+          {loading ? <CircularProgress size={24} color="inherit" /> : 'Proceed to Payment'}
         </Button>
       </Box>
     </Box>

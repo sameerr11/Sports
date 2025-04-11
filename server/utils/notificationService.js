@@ -176,10 +176,65 @@ const notifyTeamPlayers = async (notificationData) => {
   }
 };
 
+/**
+ * Create a registration expiry notification for both a player and their parent
+ * @param {Object} data - Notification data
+ * @param {String} data.playerId - Player user ID
+ * @param {String} data.registrationId - Registration ID
+ * @param {String} data.title - Notification title
+ * @param {String} data.message - Notification message
+ * @param {String} data.type - Notification type
+ * @returns {Promise<Array>} Created notifications
+ */
+const createRegistrationExpiryNotifications = async (data) => {
+  try {
+    const notifications = [];
+    
+    // First, create notification for the player
+    const playerNotification = await createNotification({
+      recipientId: data.playerId,
+      type: data.type || 'payment_reminder',
+      title: data.title,
+      message: data.message,
+      relatedTo: {
+        model: 'PlayerRegistration',
+        id: data.registrationId
+      }
+    });
+    
+    notifications.push(playerNotification);
+    
+    // Check if player has a parent
+    const player = await User.findById(data.playerId);
+    
+    if (player && player.parentId) {
+      // Also notify the parent
+      const parentNotification = await createNotification({
+        recipientId: player.parentId,
+        type: data.type || 'payment_reminder',
+        title: `${data.title} (${player.firstName} ${player.lastName})`,
+        message: `${data.message} for ${player.firstName} ${player.lastName}`,
+        relatedTo: {
+          model: 'PlayerRegistration',
+          id: data.registrationId
+        }
+      });
+      
+      notifications.push(parentNotification);
+    }
+    
+    return notifications;
+  } catch (error) {
+    console.error('Error creating registration expiry notifications:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   createNotification,
   createRoleNotifications,
   notifyCoachesAboutPlayer,
   notifyPlayerFromCoach,
-  notifyTeamPlayers
+  notifyTeamPlayers,
+  createRegistrationExpiryNotifications
 }; 
