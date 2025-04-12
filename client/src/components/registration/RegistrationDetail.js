@@ -16,7 +16,10 @@ import {
   DialogContent,
   DialogActions,
   Alert,
-  CircularProgress
+  CircularProgress,
+  InputAdornment,
+  IconButton,
+  Stack
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -26,7 +29,7 @@ import {
   createUserAccount 
 } from '../../services/registrationService';
 import { useAuth } from '../../contexts/AuthContext';
-import { Print as PrintIcon } from '@mui/icons-material';
+import { Print as PrintIcon, CheckCircle, Cancel as CancelIcon, Visibility, VisibilityOff } from '@mui/icons-material';
 import RegistrationReceipt from './RegistrationReceipt';
 
 const RegistrationDetail = () => {
@@ -41,6 +44,7 @@ const RegistrationDetail = () => {
   const [approvalStatus, setApprovalStatus] = useState(true);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionSuccess, setActionSuccess] = useState(null);
   const [actionError, setActionError] = useState(null);
@@ -49,6 +53,14 @@ const RegistrationDetail = () => {
   const isAdmin = user && user.role === 'admin';
   const isSupport = user && user.role === 'support';
   const hasAccessRights = isAdmin || isSupport;
+  
+  // Password validation state
+  const [passwordValidation, setPasswordValidation] = useState({
+    hasMinLength: false,
+    hasAlphabet: false,
+    hasNumber: false,
+    hasSpecial: false
+  });
   
   useEffect(() => {
     console.log('Current user role:', user?.role);
@@ -73,6 +85,53 @@ const RegistrationDetail = () => {
     
     fetchRegistration();
   }, [id]);
+  
+  useEffect(() => {
+    // Validate password when it changes
+    if (password) {
+      validatePasswordStrength(password);
+    } else {
+      setPasswordValidation({
+        hasMinLength: false,
+        hasAlphabet: false,
+        hasNumber: false,
+        hasSpecial: false
+      });
+    }
+  }, [password]);
+  
+  const validatePasswordStrength = (password) => {
+    const hasMinLength = password.length >= 8;
+    const hasAlphabet = /[a-zA-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    
+    setPasswordValidation({
+      hasMinLength,
+      hasAlphabet,
+      hasNumber,
+      hasSpecial
+    });
+  };
+  
+  const isPasswordValid = () => {
+    // If password is empty, it's valid (random password will be generated)
+    if (!password) {
+      return true;
+    }
+    
+    // If password is provided, it must meet all criteria
+    return (
+      passwordValidation.hasMinLength &&
+      passwordValidation.hasAlphabet &&
+      passwordValidation.hasNumber &&
+      passwordValidation.hasSpecial
+    );
+  };
+  
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
   
   const handleApproval = async () => {
     setActionLoading(true);
@@ -119,9 +178,13 @@ const RegistrationDetail = () => {
   };
   
   const handleCreateAccount = async () => {
-    setActionLoading(true);
-    setActionError(null);
+    // Check password validity if one is provided
+    if (password && !isPasswordValid()) {
+      setError('Password must be at least 8 characters and include letters, numbers, and special characters');
+      return;
+    }
     
+    setActionLoading(true);
     try {
       const result = await createUserAccount(id, { password });
       setRegistration(result.registration);
@@ -500,17 +563,67 @@ const RegistrationDetail = () => {
           <Typography variant="body2" gutterBottom sx={{ mb: 2 }}>
             Create a player account for {player.firstName} {player.lastName}
           </Typography>
+          
           <TextField
             autoFocus
             margin="dense"
             label="Password (Optional)"
-            type="password"
+            type={showPassword ? "text" : "password"}
             fullWidth
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             variant="outlined"
-            helperText="Leave blank to generate a random password"
+            helperText={
+              password.length > 0 && !isPasswordValid()
+                ? "Password must meet all requirements below"
+                : "Leave blank to generate a random password, or enter a secure password"
+            }
+            error={password.length > 0 && !isPasswordValid()}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={togglePasswordVisibility}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
           />
+          
+          {/* Password requirement indicators */}
+          {password.length > 0 && (
+            <Box sx={{ mt: 2, mb: 1 }}>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
+                <Chip 
+                  size="small"
+                  color={passwordValidation.hasMinLength ? "success" : "default"}
+                  label="At least 8 characters" 
+                  icon={passwordValidation.hasMinLength ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                />
+                <Chip 
+                  size="small"
+                  color={passwordValidation.hasAlphabet ? "success" : "default"}
+                  label="Contains letters" 
+                  icon={passwordValidation.hasAlphabet ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                />
+                <Chip 
+                  size="small"
+                  color={passwordValidation.hasNumber ? "success" : "default"}
+                  label="Contains numbers" 
+                  icon={passwordValidation.hasNumber ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                />
+                <Chip 
+                  size="small"
+                  color={passwordValidation.hasSpecial ? "success" : "default"}
+                  label="Contains special characters" 
+                  icon={passwordValidation.hasSpecial ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                />
+              </Stack>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAccountDialogOpen(false)} disabled={actionLoading}>
@@ -520,7 +633,7 @@ const RegistrationDetail = () => {
             onClick={handleCreateAccount} 
             color="primary" 
             variant="contained"
-            disabled={actionLoading}
+            disabled={actionLoading || (password.length > 0 && !isPasswordValid())}
           >
             {actionLoading ? 'Creating...' : 'Create Account'}
           </Button>

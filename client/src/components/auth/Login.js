@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TextField, Button, Paper, Typography, Container, Box, Alert, Divider, Grid } from '@mui/material';
+import { 
+  TextField, 
+  Button, 
+  Paper, 
+  Typography, 
+  Container, 
+  Box, 
+  Alert, 
+  Divider, 
+  Grid, 
+  InputAdornment, 
+  IconButton 
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { login } from '../../services/authService';
 import { useAuth } from '../../contexts/AuthContext';
 import ultrasLogo from '../../assets/images/ultras_logo.png';
@@ -12,6 +25,7 @@ const Login = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { user, login: authLogin } = useAuth();
 
@@ -26,6 +40,10 @@ const Login = () => {
 
   const onChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   const onSubmit = async (e) => {
@@ -181,11 +199,23 @@ const Login = () => {
               fullWidth
               name="password"
               label="Password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               id="password"
               autoComplete="current-password"
               value={password}
               onChange={onChange}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={togglePasswordVisibility}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   backgroundColor: 'rgba(255, 255, 255, 0.9)',

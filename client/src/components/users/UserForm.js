@@ -17,9 +17,19 @@ import {
   Switch,
   FormControlLabel,
   Divider,
-  Avatar
+  Avatar,
+  InputAdornment,
+  IconButton,
+  Stack,
+  Chip
 } from '@mui/material';
-import { PhotoCamera } from '@mui/icons-material';
+import { 
+  PhotoCamera, 
+  Visibility, 
+  VisibilityOff, 
+  CheckCircle, 
+  Cancel as CancelIcon 
+} from '@mui/icons-material';
 import { createUser, getUserById, updateUser, getUsersByRole, uploadProfilePicture } from '../../services/userService';
 
 const ROLES = [
@@ -83,8 +93,17 @@ const UserForm = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [parents, setParents] = useState([]);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
+  
+  // Password validation state
+  const [passwordValidation, setPasswordValidation] = useState({
+    hasMinLength: false,
+    hasAlphabet: false,
+    hasNumber: false,
+    hasSpecial: false
+  });
 
   useEffect(() => {
     if (id) {
@@ -110,6 +129,20 @@ const UserForm = () => {
       }));
     }
   }, []);
+
+  useEffect(() => {
+    // Validate password when it changes
+    if (formData.password) {
+      validatePasswordStrength(formData.password);
+    } else {
+      setPasswordValidation({
+        hasMinLength: false,
+        hasAlphabet: false,
+        hasNumber: false,
+        hasSpecial: false
+      });
+    }
+  }, [formData.password]);
   
   const fetchParents = async () => {
     try {
@@ -222,10 +255,50 @@ const UserForm = () => {
     }
   };
 
+  const validatePasswordStrength = (password) => {
+    const hasMinLength = password.length >= 8;
+    const hasAlphabet = /[a-zA-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    
+    setPasswordValidation({
+      hasMinLength,
+      hasAlphabet,
+      hasNumber,
+      hasSpecial
+    });
+  };
+
+  const isPasswordValid = () => {
+    // If editing and password field is empty, consider it valid (not changing password)
+    if (isEdit && !formData.password) {
+      return true;
+    }
+    
+    // New users or password changes must meet all criteria
+    return (
+      passwordValidation.hasMinLength &&
+      passwordValidation.hasAlphabet &&
+      passwordValidation.hasNumber &&
+      passwordValidation.hasSpecial
+    );
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Validate password for new users
+    if (!isEdit && !isPasswordValid()) {
+      setError('Password must be at least 8 characters and include letters, numbers, and special characters');
+      setLoading(false);
+      return;
+    }
 
     // Log what we're submitting
     console.log('Submitting form data:', formData);
@@ -238,6 +311,11 @@ const UserForm = () => {
         const updateData = { ...formData };
         if (!updateData.password) {
           delete updateData.password;
+        } else if (!isPasswordValid()) {
+          // If password is provided but invalid
+          setError('Password must be at least 8 characters and include letters, numbers, and special characters');
+          setLoading(false);
+          return;
         }
         // Ensure profilePicture is included in the update data
         console.log('Sending profile picture in update:', updateData.profilePicture);
@@ -249,11 +327,13 @@ const UserForm = () => {
         const result = await createUser(formData);
         console.log('Create response:', result);
       }
+      
+      // Redirect back to users list
       navigate('/users');
     } catch (err) {
-      console.error('Error submitting form:', err);
-      setError(err.toString());
-    } finally {
+      // Set error message from response or a default
+      setError(err.response?.data?.msg || 'Failed to save user. Please try again.');
+      console.error('Error saving user:', err);
       setLoading(false);
     }
   };
@@ -312,16 +392,68 @@ const UserForm = () => {
                 onChange={handleChange}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 label={isEdit ? 'New Password (leave blank to keep current)' : 'Password'}
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={formData.password}
                 onChange={handleChange}
                 required={!isEdit}
+                error={formData.password.length > 0 && !isPasswordValid()}
+                helperText={
+                  isEdit
+                    ? "Leave blank to keep current password"
+                    : formData.password.length > 0 && !isPasswordValid()
+                      ? "Password must meet all requirements below"
+                      : "Password must be at least 8 characters with letters, numbers, and special characters"
+                }
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={togglePasswordVisibility}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
               />
+              
+              {/* Password requirement indicators */}
+              {formData.password.length > 0 && (
+                <Box sx={{ mt: 1, mb: 2 }}>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
+                    <Chip 
+                      size="small"
+                      color={passwordValidation.hasMinLength ? "success" : "default"}
+                      label="At least 8 characters" 
+                      icon={passwordValidation.hasMinLength ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                    />
+                    <Chip 
+                      size="small"
+                      color={passwordValidation.hasAlphabet ? "success" : "default"}
+                      label="Contains letters" 
+                      icon={passwordValidation.hasAlphabet ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                    />
+                    <Chip 
+                      size="small"
+                      color={passwordValidation.hasNumber ? "success" : "default"}
+                      label="Contains numbers" 
+                      icon={passwordValidation.hasNumber ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                    />
+                    <Chip 
+                      size="small"
+                      color={passwordValidation.hasSpecial ? "success" : "default"}
+                      label="Contains special characters" 
+                      icon={passwordValidation.hasSpecial ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                    />
+                  </Stack>
+                </Box>
+              )}
             </Grid>
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth required>
@@ -550,7 +682,7 @@ const UserForm = () => {
                   type="submit"
                   variant="contained"
                   color="primary"
-                  disabled={loading}
+                  disabled={loading || (!isEdit && !isPasswordValid())}
                 >
                   {loading ? 'Saving...' : isEdit ? 'Update User' : 'Create User'}
                 </Button>

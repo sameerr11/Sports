@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Grid,
@@ -9,7 +9,9 @@ import {
     Divider,
     Alert,
     IconButton,
-    InputAdornment
+    InputAdornment,
+    Stack,
+    Chip
 } from '@mui/material';
 import {
     Security,
@@ -18,7 +20,9 @@ import {
     VisibilityOff,
     Save,
     Cancel,
-    Edit
+    Edit,
+    CheckCircle,
+    Cancel as CancelIcon
 } from '@mui/icons-material';
 import { changePassword } from '../../services/userService';
 
@@ -38,6 +42,51 @@ const SecurityForm = ({ editMode, onSave, loading, userId }) => {
     const [error, setError] = useState(null);
     const [passwordLoading, setPasswordLoading] = useState(false);
     const [passwordSuccess, setPasswordSuccess] = useState(false);
+    
+    // Password validation state
+    const [passwordValidation, setPasswordValidation] = useState({
+        hasMinLength: false,
+        hasAlphabet: false,
+        hasNumber: false,
+        hasSpecial: false
+    });
+
+    useEffect(() => {
+        // Validate password on change
+        if (passwordData.newPassword) {
+            validatePasswordStrength(passwordData.newPassword);
+        } else {
+            setPasswordValidation({
+                hasMinLength: false,
+                hasAlphabet: false,
+                hasNumber: false,
+                hasSpecial: false
+            });
+        }
+    }, [passwordData.newPassword]);
+
+    const validatePasswordStrength = (password) => {
+        const hasMinLength = password.length >= 8;
+        const hasAlphabet = /[a-zA-Z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+        
+        setPasswordValidation({
+            hasMinLength,
+            hasAlphabet,
+            hasNumber,
+            hasSpecial
+        });
+    };
+
+    const isPasswordValid = () => {
+        return (
+            passwordValidation.hasMinLength &&
+            passwordValidation.hasAlphabet &&
+            passwordValidation.hasNumber &&
+            passwordValidation.hasSpecial
+        );
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -70,8 +119,8 @@ const SecurityForm = ({ editMode, onSave, loading, userId }) => {
             return false;
         }
         
-        if (passwordData.newPassword.length < 8) {
-            setError('New password must be at least 8 characters long');
+        if (!isPasswordValid()) {
+            setError('Password must be at least 8 characters and include letters, numbers, and special characters');
             return false;
         }
         
@@ -179,7 +228,12 @@ const SecurityForm = ({ editMode, onSave, loading, userId }) => {
                                 required
                                 variant={editMode ? "outlined" : "filled"}
                                 margin="normal"
-                                helperText="Password must be at least 8 characters long"
+                                error={passwordData.newPassword.length > 0 && !isPasswordValid()}
+                                helperText={
+                                    passwordData.newPassword.length > 0 && !isPasswordValid()
+                                    ? "Password must meet all requirements below"
+                                    : "Password must be at least 8 characters with letters, numbers, and special characters"
+                                }
                                 InputProps={{
                                     endAdornment: editMode && (
                                         <InputAdornment position="end">
@@ -193,6 +247,38 @@ const SecurityForm = ({ editMode, onSave, loading, userId }) => {
                                     )
                                 }}
                             />
+                            
+                            {/* Password requirement indicators */}
+                            {passwordData.newPassword.length > 0 && (
+                                <Box sx={{ mt: 1, mb: 2 }}>
+                                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
+                                        <Chip 
+                                            size="small"
+                                            color={passwordValidation.hasMinLength ? "success" : "default"}
+                                            label="At least 8 characters" 
+                                            icon={passwordValidation.hasMinLength ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                                        />
+                                        <Chip 
+                                            size="small"
+                                            color={passwordValidation.hasAlphabet ? "success" : "default"}
+                                            label="Contains letters" 
+                                            icon={passwordValidation.hasAlphabet ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                                        />
+                                        <Chip 
+                                            size="small"
+                                            color={passwordValidation.hasNumber ? "success" : "default"}
+                                            label="Contains numbers" 
+                                            icon={passwordValidation.hasNumber ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                                        />
+                                        <Chip 
+                                            size="small"
+                                            color={passwordValidation.hasSpecial ? "success" : "default"}
+                                            label="Contains special characters" 
+                                            icon={passwordValidation.hasSpecial ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                                        />
+                                    </Stack>
+                                </Box>
+                            )}
                         </Grid>
                         <Grid item xs={12}>
                             <TextField
@@ -206,6 +292,13 @@ const SecurityForm = ({ editMode, onSave, loading, userId }) => {
                                 required
                                 variant={editMode ? "outlined" : "filled"}
                                 margin="normal"
+                                error={passwordData.confirmPassword.length > 0 && passwordData.newPassword !== passwordData.confirmPassword}
+                                helperText={
+                                    passwordData.confirmPassword.length > 0 && 
+                                    passwordData.newPassword !== passwordData.confirmPassword 
+                                    ? "Passwords don't match" 
+                                    : ""
+                                }
                                 InputProps={{
                                     endAdornment: editMode && (
                                         <InputAdornment position="end">
@@ -229,7 +322,7 @@ const SecurityForm = ({ editMode, onSave, loading, userId }) => {
                                 variant="contained"
                                 color="primary"
                                 startIcon={passwordLoading ? <CircularProgress size={24} /> : <Save />}
-                                disabled={passwordLoading}
+                                disabled={passwordLoading || !isPasswordValid() || passwordData.newPassword !== passwordData.confirmPassword}
                             >
                                 Change Password
                             </Button>
