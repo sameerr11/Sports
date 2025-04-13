@@ -307,16 +307,10 @@ const UserForm = () => {
 
     try {
       if (isEdit) {
-        // If editing and password is empty, remove it from the request
+        // When editing, never include password in the update
         const updateData = { ...formData };
-        if (!updateData.password) {
-          delete updateData.password;
-        } else if (!isPasswordValid()) {
-          // If password is provided but invalid
-          setError('Password must be at least 8 characters and include letters, numbers, and special characters');
-          setLoading(false);
-          return;
-        }
+        delete updateData.password;
+        
         // Ensure profilePicture is included in the update data
         console.log('Sending profile picture in update:', updateData.profilePicture);
         const result = await updateUser(id, updateData);
@@ -392,69 +386,69 @@ const UserForm = () => {
                 onChange={handleChange}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label={isEdit ? 'New Password (leave blank to keep current)' : 'Password'}
-                name="password"
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={handleChange}
-                required={!isEdit}
-                error={formData.password.length > 0 && !isPasswordValid()}
-                helperText={
-                  isEdit
-                    ? "Leave blank to keep current password"
-                    : formData.password.length > 0 && !isPasswordValid()
+            {!isEdit && (
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  error={formData.password.length > 0 && !isPasswordValid()}
+                  helperText={
+                    formData.password.length > 0 && !isPasswordValid()
                       ? "Password must meet all requirements below"
                       : "Password must be at least 8 characters with letters, numbers, and special characters"
-                }
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={togglePasswordVisibility}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }}
-              />
-              
-              {/* Password requirement indicators */}
-              {formData.password.length > 0 && (
-                <Box sx={{ mt: 1, mb: 2 }}>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
-                    <Chip 
-                      size="small"
-                      color={passwordValidation.hasMinLength ? "success" : "default"}
-                      label="At least 8 characters" 
-                      icon={passwordValidation.hasMinLength ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
-                    />
-                    <Chip 
-                      size="small"
-                      color={passwordValidation.hasAlphabet ? "success" : "default"}
-                      label="Contains letters" 
-                      icon={passwordValidation.hasAlphabet ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
-                    />
-                    <Chip 
-                      size="small"
-                      color={passwordValidation.hasNumber ? "success" : "default"}
-                      label="Contains numbers" 
-                      icon={passwordValidation.hasNumber ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
-                    />
-                    <Chip 
-                      size="small"
-                      color={passwordValidation.hasSpecial ? "success" : "default"}
-                      label="Contains special characters" 
-                      icon={passwordValidation.hasSpecial ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
-                    />
-                  </Stack>
-                </Box>
-              )}
-            </Grid>
+                  }
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={togglePasswordVisibility}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
+                
+                {/* Password requirement indicators */}
+                {formData.password.length > 0 && (
+                  <Box sx={{ mt: 1, mb: 2 }}>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
+                      <Chip 
+                        size="small"
+                        color={passwordValidation.hasMinLength ? "success" : "default"}
+                        label="At least 8 characters" 
+                        icon={passwordValidation.hasMinLength ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                      />
+                      <Chip 
+                        size="small"
+                        color={passwordValidation.hasAlphabet ? "success" : "default"}
+                        label="Contains letters" 
+                        icon={passwordValidation.hasAlphabet ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                      />
+                      <Chip 
+                        size="small"
+                        color={passwordValidation.hasNumber ? "success" : "default"}
+                        label="Contains numbers" 
+                        icon={passwordValidation.hasNumber ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                      />
+                      <Chip 
+                        size="small"
+                        color={passwordValidation.hasSpecial ? "success" : "default"}
+                        label="Contains special characters" 
+                        icon={passwordValidation.hasSpecial ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
+                      />
+                    </Stack>
+                  </Box>
+                )}
+              </Grid>
+            )}
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth required>
                 <InputLabel>Role</InputLabel>

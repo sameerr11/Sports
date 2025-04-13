@@ -153,7 +153,7 @@ const GuestBookingPage = () => {
           zIndex: 2,
           '&::after': {
             content: '""',
-            position: 'absolute',
+          position: 'absolute',
             bottom: 0,
             left: '50%',
             transform: 'translateX(-50%)',
@@ -220,7 +220,7 @@ const GuestBookingPage = () => {
 
       {/* Form Section with enhanced styling */}
       <Container maxWidth="md" sx={{ zIndex: 1, py: { xs: 2, sm: 3, md: 4 }, flexGrow: 1 }}>
-        <Paper
+        <Paper 
           elevation={5} 
           sx={{ 
             width: '100%',
@@ -352,7 +352,7 @@ const GuestBookingPage = () => {
           </Box>
         </Paper>
       </Container>
-
+      
       {/* Styled Footer */}
       <Box 
         sx={{ 

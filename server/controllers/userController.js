@@ -467,6 +467,74 @@ exports.changePassword = async (req, res) => {
   }
 };
 
+// @desc    Admin reset user password (no current password required)
+// @route   PUT /api/users/:id/reset-password
+// @access  Admin only
+exports.adminResetPassword = async (req, res) => {
+  const { newPassword } = req.body;
+
+  try {
+    let user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    // Ensure only admin can reset passwords
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ msg: 'Not authorized. Only admins can reset passwords.' });
+    }
+
+    // Validate password
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ msg: 'Please provide a valid password (minimum 6 characters)' });
+    }
+    
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    
+    // Update password
+    user = await User.findByIdAndUpdate(
+      req.params.id,
+      { 
+        $set: { 
+          password: hashedPassword,
+          updatedAt: Date.now()
+        } 
+      },
+      { new: true }
+    ).select('-password');
+    
+    // Create notification for the user
+    try {
+      const notification = new Notification({
+        recipient: user._id,
+        type: 'password_reset',
+        title: 'Password Reset',
+        message: 'Your password has been reset by an administrator.',
+        relatedTo: {
+          model: 'User',
+          id: user._id
+        }
+      });
+      
+      await notification.save();
+    } catch (notificationErr) {
+      console.error('Error creating notification:', notificationErr);
+      // Continue execution even if notification fails
+    }
+    
+    res.json({ msg: 'Password reset successfully' });
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    res.status(500).json({ msg: 'Server error' });
+  }
+};
+
 // @desc    Get users by role
 // @route   GET /api/users/role/:role
 // @access  Supervisor, Admin, Support

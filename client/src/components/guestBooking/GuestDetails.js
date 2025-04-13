@@ -330,32 +330,32 @@ const GuestDetails = ({
           Booking Summary
         </Typography>
 
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <Typography variant="body2" color="text.secondary">
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="body2" color="text.secondary">
               Court:
-            </Typography>
+              </Typography>
             <Typography variant="body1" sx={{ mb: 1 }}>
               {selectedCourt?.name} {isBasketballCourt ? `(${courtType})` : ''}
-            </Typography>
+              </Typography>
             
-            <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary">
               Sport Type:
-            </Typography>
+              </Typography>
             <Typography variant="body1" sx={{ mb: 1 }}>
               {selectedCourt?.sportType}
-            </Typography>
+              </Typography>
             
-            <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary">
               Location:
-            </Typography>
+              </Typography>
             <Typography variant="body1">
               {selectedCourt?.location}
-            </Typography>
-          </Grid>
+              </Typography>
+            </Grid>
           
-          <Grid item xs={12} sm={6}>
-            <Typography variant="body2" color="text.secondary">
+            <Grid item xs={12} sm={6}>
+              <Typography variant="body2" color="text.secondary">
               Date:
             </Typography>
             <Typography variant="body1" sx={{ mb: 1 }}>
@@ -365,15 +365,15 @@ const GuestDetails = ({
             
             <Typography variant="body2" color="text.secondary">
               Time:
-            </Typography>
+              </Typography>
             <Typography variant="body1" sx={{ mb: 1 }}>
               {formatDateTime(selectedTimeSlot?.start).split(',')[2]} - 
               {formatDateTime(selectedTimeSlot?.end).split(',')[2]}
-            </Typography>
+              </Typography>
             
-            <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary">
               Price:
-            </Typography>
+              </Typography>
             <Typography 
               variant="body1" 
               sx={{ 
@@ -382,11 +382,11 @@ const GuestDetails = ({
                 fontSize: '1.1rem'
               }}
             >
-              ${totalPrice.toFixed(2)}
-            </Typography>
+                ${totalPrice.toFixed(2)}
+              </Typography>
+            </Grid>
           </Grid>
-        </Grid>
-      </Paper>
+        </Paper>
 
       <Box 
         sx={{ 

@@ -86,6 +86,19 @@ export const changePassword = async (passwordData) => {
     }
 };
 
+// Admin reset password (no current password required)
+export const adminResetPassword = async (userId, newPassword) => {
+    try {
+        const response = await api.put(`/users/${userId}/reset-password`, {
+            newPassword
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        throw error.response?.data?.msg || 'Failed to reset password';
+    }
+};
+
 // Upload profile picture
 export const uploadProfilePicture = async (formData, userId = null) => {
     try {

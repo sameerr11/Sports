@@ -19,19 +19,28 @@ import {
   DialogContentText,
   DialogTitle,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Tooltip
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import LockResetIcon from '@mui/icons-material/LockReset';
 import { getAllUsers, deleteUser, getUsersByRole } from '../../services/userService';
 import { isAdmin, isSupport } from '../../services/authService';
+import ResetPasswordDialog from './ResetPasswordDialog';
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteDialog, setDeleteDialog] = useState({ open: false, userId: null });
+  const [resetPasswordDialog, setResetPasswordDialog] = useState({ 
+    open: false, 
+    userId: null,
+    userName: ''
+  });
+  const [successMessage, setSuccessMessage] = useState('');
   const { role } = useParams();
   const admin = isAdmin();
   const support = isSupport();
@@ -40,6 +49,16 @@ const UserList = () => {
   useEffect(() => {
     fetchUsers();
   }, [role]);
+
+  useEffect(() => {
+    // Clear success message after 3 seconds
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -71,6 +90,7 @@ const UserList = () => {
       await deleteUser(deleteDialog.userId);
       setUsers(users.filter(user => user._id !== deleteDialog.userId));
       setDeleteDialog({ open: false, userId: null });
+      setSuccessMessage('User deleted successfully');
     } catch (err) {
       setError('Failed to delete user. Please try again.');
       console.error(err);
@@ -79,6 +99,21 @@ const UserList = () => {
 
   const handleDeleteCancel = () => {
     setDeleteDialog({ open: false, userId: null });
+  };
+
+  const handleResetPasswordClick = (userId, firstName, lastName) => {
+    setResetPasswordDialog({ 
+      open: true, 
+      userId,
+      userName: `${firstName} ${lastName}`
+    });
+  };
+
+  const handleResetPasswordClose = (success) => {
+    setResetPasswordDialog({ open: false, userId: null, userName: '' });
+    if (success) {
+      setSuccessMessage('Password reset successfully');
+    }
   };
 
   const getRoleColor = (role) => {
@@ -137,6 +172,12 @@ const UserList = () => {
         </Alert>
       )}
 
+      {successMessage && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          {successMessage}
+        </Alert>
+      )}
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -153,7 +194,7 @@ const UserList = () => {
           <TableBody>
             {users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={7} align="center">
                   No users found
                 </TableCell>
               </TableRow>
@@ -202,22 +243,36 @@ const UserList = () => {
                     {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton 
-                      component={Link} 
-                      to={`/users/edit/${user._id}`} 
-                      color="primary"
-                      title="Edit user"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    {admin && (
+                    <Tooltip title="Edit user">
                       <IconButton 
-                        onClick={() => handleDeleteClick(user._id)} 
-                        color="error"
-                        title="Delete user"
+                        component={Link} 
+                        to={`/users/edit/${user._id}`} 
+                        color="primary"
                       >
-                        <DeleteIcon />
+                        <EditIcon />
                       </IconButton>
+                    </Tooltip>
+                    
+                    {admin && (
+                      <>
+                        <Tooltip title="Reset password">
+                          <IconButton 
+                            onClick={() => handleResetPasswordClick(user._id, user.firstName, user.lastName)} 
+                            color="secondary"
+                          >
+                            <LockResetIcon />
+                          </IconButton>
+                        </Tooltip>
+                        
+                        <Tooltip title="Delete user">
+                          <IconButton 
+                            onClick={() => handleDeleteClick(user._id)} 
+                            color="error"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </>
                     )}
                   </TableCell>
                 </TableRow>
@@ -243,6 +298,14 @@ const UserList = () => {
           <Button onClick={handleDeleteConfirm} color="error">Delete</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Reset Password Dialog */}
+      <ResetPasswordDialog 
+        open={resetPasswordDialog.open}
+        onClose={handleResetPasswordClose}
+        userId={resetPasswordDialog.userId}
+        userName={resetPasswordDialog.userName}
+      />
     </Box>
   );
 };

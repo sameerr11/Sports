@@ -71,6 +71,7 @@ router.get('/users/:id', [auth, adminOrSupport], userController.getUserById);
 router.put('/users/:id', [auth, adminOrSupport], userController.updateUser);
 router.delete('/users/:id', [auth, admin], userController.deleteUser);
 router.put('/users/:id/password', [auth], userController.changePassword);
+router.put('/users/:id/reset-password', [auth, admin], userController.adminResetPassword);
 
 // Add new profile picture upload routes
 // Admin or support uploading a profile picture for any user
