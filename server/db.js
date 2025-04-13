@@ -1,17 +1,17 @@
 const mongoose = require('mongoose');
 
-const MONGODB_URI = "mongodb://localhost:27017/sports";
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://mongodb:27017/sports";
 
 const connectDB = async () => {
     try {
-        console.log('Attempting to connect to MongoDB Atlas...');
+        console.log('Attempting to connect to MongoDB...');
         
         const conn = await mongoose.connect(MONGODB_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true
         });
         
-        console.log(`MongoDB Atlas Connected Successfully: ${conn.connection.host}`);
+        console.log(`MongoDB Connected Successfully: ${conn.connection.host}`);
         console.log(`Database Name: ${conn.connection.name}`);
 
         return conn;
