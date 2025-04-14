@@ -1,31 +1,24 @@
 {
-  "name": "sports-management-system",
+  "name": "sports-management-system-server",
   "version": "1.0.0",
-  "description": "Sports Management System",
-  "main": "index.js",
+  "description": "Sports Management System Server",
+  "main": "server.js",
   "scripts": {
-    "start": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "cd server && npm run dev",
-    "client": "cd client && npm start",
-    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
-    "build": "cd client && npm run build",
-    "start:prod": "NODE_ENV=production node index.js",
-    "create-admin": "cd server && node scripts/createAdminUser.js",
-    "create-test-users": "cd server && node scripts/createTestUsers.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
-  "keywords": [
-    "sports",
-    "management",
-    "system"
-  ],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "bootstrap": "^5.3.3",
-    "chart.js": "^4.4.8",
-    "concurrently": "^8.2.2",
-    "node-cron": "^3.0.3",
-    "react-bootstrap": "^2.10.9",
-    "react-chartjs-2": "^5.3.0"
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.5.0",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
