@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const MONGODB_URI = "mongodb+srv://sameersaif2002:KrgxJfAZ0t2PlcXz@sportsmanagement.mwplt.mongodb.net/sports?retryWrites=true&w=majority";
+const MONGODB_URI = "mongodb://192.158.236.68:27017/sports";
 
 const connectDB = async () => {
     try {
@@ -8,7 +8,7 @@ const connectDB = async () => {
         
         const conn = await mongoose.connect(MONGODB_URI, {
             useNewUrlParser: true,
-            useUnifiedTopology: true
+            useUnifiedTopology: trueb
         });
         
         console.log(`MongoDB Atlas Connected Successfully: ${conn.connection.host}`);
