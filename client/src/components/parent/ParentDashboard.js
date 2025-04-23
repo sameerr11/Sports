@@ -72,6 +72,7 @@ const ParentDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [trainingSessions, setTrainingSessions] = useState([]);
   const [upcomingMatches, setUpcomingMatches] = useState([]);
+  const [trainingPlans, setTrainingPlans] = useState([]);
   const [children, setChildren] = useState([]);
   const [selectedChild, setSelectedChild] = useState('');
   const [loading, setLoading] = useState(true);
@@ -127,6 +128,21 @@ const ParentDashboard = () => {
             booking => booking.purpose === 'Match' && new Date(booking.startTime) >= new Date()
           );
           setUpcomingMatches(matchSessions);
+          
+          // 5. Fetch training plans for the child's teams
+          if (teamIds.length > 0) {
+            const trainingPlansPromises = teamIds.map(teamId => 
+              api.get(`/training-plans/team/${teamId}`)
+            );
+            
+            const trainingPlansResponses = await Promise.all(trainingPlansPromises);
+            
+            // Combine all training plans and filter for assigned or in progress
+            const allPlans = trainingPlansResponses.flatMap(res => res.data)
+              .filter(plan => ['Assigned', 'InProgress'].includes(plan.status));
+            
+            setTrainingPlans(allPlans);
+          }
         }
         
         setLoading(false);
@@ -174,6 +190,23 @@ const ParentDashboard = () => {
         booking => booking.purpose === 'Match' && new Date(booking.startTime) >= new Date()
       );
       setUpcomingMatches(matchSessions);
+      
+      // Fetch training plans for the selected child's teams
+      if (teamIds.length > 0) {
+        const trainingPlansPromises = teamIds.map(teamId => 
+          api.get(`/training-plans/team/${teamId}`)
+        );
+        
+        const trainingPlansResponses = await Promise.all(trainingPlansPromises);
+        
+        // Combine all training plans and filter for assigned or in progress
+        const allPlans = trainingPlansResponses.flatMap(res => res.data)
+          .filter(plan => ['Assigned', 'InProgress'].includes(plan.status));
+        
+        setTrainingPlans(allPlans);
+      } else {
+        setTrainingPlans([]);
+      }
       
       setLoading(false);
     } catch (error) {
@@ -421,6 +454,153 @@ const ParentDashboard = () => {
     );
   };
   
+  const renderTrainingPlansTab = () => (
+    <Grid container spacing={3}>
+      <Grid item xs={12}>
+        <Paper 
+          elevation={0}
+          sx={{ 
+            p: 2, 
+            mb: 3, 
+            borderRadius: 2,
+            bgcolor: alpha(theme.palette.info.main, 0.05),
+            border: `1px solid ${alpha(theme.palette.info.main, 0.1)}`
+          }}
+        >
+          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+            <Assignment sx={{ mr: 1 }} />
+            {selectedChild && children.find(child => child._id === selectedChild) ? 
+              `${children.find(child => child._id === selectedChild).firstName}'s Training Plans` : 
+              'Your Child\'s Training Plans'}
+          </Typography>
+        </Paper>
+        
+        {trainingPlans.length === 0 ? (
+          <Paper sx={{ p: 3, textAlign: 'center' }}>
+            <Typography variant="body1">
+              No training plans have been assigned to your child's teams yet.
+            </Typography>
+          </Paper>
+        ) : (
+          trainingPlans.map(plan => (
+            <Card 
+              key={plan._id} 
+              sx={{ 
+                mb: 3, 
+                borderRadius: 2,
+                position: 'relative',
+                overflow: 'hidden',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: 5,
+                  bgcolor: 
+                    plan.status === 'InProgress' ? theme.palette.warning.main : 
+                    theme.palette.info.main
+                }
+              }}
+            >
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="h6" component="div">
+                      {plan.title}
+                    </Typography>
+                    <Chip 
+                      label={plan.status}
+                      color={plan.status === 'InProgress' ? 'warning' : 'info'}
+                      size="small"
+                      sx={{ ml: 2 }}
+                    />
+                  </Box>
+                }
+                subheader={
+                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+                    <CalendarMonth sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
+                    <Typography variant="body2" color="text.secondary">
+                      {format(new Date(plan.date), 'EEEE, MMMM d, yyyy')}
+                    </Typography>
+                  </Box>
+                }
+              />
+              <Divider />
+              <CardContent>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  {plan.description}
+                </Typography>
+                
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid item xs={6} sm={3}>
+                    <Typography variant="caption" color="text.secondary">Team</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {plan.team?.name || 'N/A'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Typography variant="caption" color="text.secondary">Duration</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {plan.duration} minutes
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Typography variant="caption" color="text.secondary">Activities</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {plan.activities?.length || 0}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Typography variant="caption" color="text.secondary">Coach</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {plan.assignedTo ? `${plan.assignedTo.firstName} ${plan.assignedTo.lastName}` : 'Unassigned'}
+                    </Typography>
+                  </Grid>
+                </Grid>
+                
+                {plan.activities && plan.activities.length > 0 && (
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      Activities:
+                    </Typography>
+                    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 1 }}>
+                      <Table size="small">
+                        <TableHead sx={{ bgcolor: alpha(theme.palette.background.default, 0.8) }}>
+                          <TableRow>
+                            <TableCell width={50}>#</TableCell>
+                            <TableCell>Activity</TableCell>
+                            <TableCell align="right">Duration</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {plan.activities.map((activity, index) => (
+                            <TableRow key={index} hover>
+                              <TableCell>{activity.order}</TableCell>
+                              <TableCell>
+                                <Typography variant="body2">{activity.title}</Typography>
+                                {activity.description && (
+                                  <Typography variant="caption" color="text.secondary">
+                                    {activity.description}
+                                  </Typography>
+                                )}
+                              </TableCell>
+                              <TableCell align="right">{activity.duration} min</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </Grid>
+    </Grid>
+  );
+  
   const renderMatchesTab = () => (
     <Box>
       <Card elevation={2}>
@@ -579,6 +759,11 @@ const ParentDashboard = () => {
                 iconPosition="start"
               />
               <Tab 
+                label="Training Plans" 
+                icon={<Assignment />} 
+                iconPosition="start"
+              />
+              <Tab 
                 label="Upcoming Matches" 
                 icon={<SportsScore />} 
                 iconPosition="start"
@@ -589,7 +774,8 @@ const ParentDashboard = () => {
           {/* Tab Panels */}
           <Box sx={{ mt: 2 }}>
             {activeTab === 0 && renderTrainingScheduleTab()}
-            {activeTab === 1 && renderMatchesTab()}
+            {activeTab === 1 && renderTrainingPlansTab()}
+            {activeTab === 2 && renderMatchesTab()}
           </Box>
         </>
       )}

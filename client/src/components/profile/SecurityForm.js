@@ -22,7 +22,8 @@ import {
     Cancel,
     Edit,
     CheckCircle,
-    Cancel as CancelIcon
+    Cancel as CancelIcon,
+    Info
 } from '@mui/icons-material';
 import { changePassword } from '../../services/userService';
 
@@ -176,6 +177,16 @@ const SecurityForm = ({ editMode, onSave, loading, userId }) => {
                     <Lock /> Change Password
                 </Typography>
                 
+                {!editMode && (
+                    <Alert 
+                        severity="info" 
+                        sx={{ mb: 2 }}
+                        icon={<Info />}
+                    >
+                        You don't have permission to change your password. Please contact an administrator for assistance with password changes.
+                    </Alert>
+                )}
+                
                 {error && (
                     <Alert severity="error" sx={{ mb: 2 }}>
                         {error}
@@ -188,158 +199,146 @@ const SecurityForm = ({ editMode, onSave, loading, userId }) => {
                     </Alert>
                 )}
                 
-                <form onSubmit={handlePasswordChange}>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12}>
-                            <TextField
-                                fullWidth
-                                label="Current Password"
-                                name="currentPassword"
-                                type={showPassword.currentPassword ? 'text' : 'password'}
-                                value={passwordData.currentPassword}
-                                onChange={handleChange}
-                                disabled={!editMode || passwordLoading}
-                                required
-                                variant={editMode ? "outlined" : "filled"}
-                                margin="normal"
-                                InputProps={{
-                                    endAdornment: editMode && (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                onClick={() => togglePasswordVisibility('currentPassword')}
-                                                edge="end"
-                                            >
-                                                {showPassword.currentPassword ? <VisibilityOff /> : <Visibility />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    )
-                                }}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                fullWidth
-                                label="New Password"
-                                name="newPassword"
-                                type={showPassword.newPassword ? 'text' : 'password'}
-                                value={passwordData.newPassword}
-                                onChange={handleChange}
-                                disabled={!editMode || passwordLoading}
-                                required
-                                variant={editMode ? "outlined" : "filled"}
-                                margin="normal"
-                                error={passwordData.newPassword.length > 0 && !isPasswordValid()}
-                                helperText={
-                                    passwordData.newPassword.length > 0 && !isPasswordValid()
-                                    ? "Password must meet all requirements below"
-                                    : "Password must be at least 8 characters with letters, numbers, and special characters"
-                                }
-                                InputProps={{
-                                    endAdornment: editMode && (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                onClick={() => togglePasswordVisibility('newPassword')}
-                                                edge="end"
-                                            >
-                                                {showPassword.newPassword ? <VisibilityOff /> : <Visibility />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    )
-                                }}
-                            />
+                {editMode ? (
+                    <form onSubmit={handlePasswordChange}>
+                        <Grid container spacing={2}>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Current Password"
+                                    name="currentPassword"
+                                    type={showPassword.currentPassword ? 'text' : 'password'}
+                                    value={passwordData.currentPassword}
+                                    onChange={handleChange}
+                                    disabled={passwordLoading}
+                                    required
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => togglePasswordVisibility('currentPassword')}
+                                                    edge="end"
+                                                >
+                                                    {showPassword.currentPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="New Password"
+                                    name="newPassword"
+                                    type={showPassword.newPassword ? 'text' : 'password'}
+                                    value={passwordData.newPassword}
+                                    onChange={handleChange}
+                                    disabled={passwordLoading}
+                                    required
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => togglePasswordVisibility('newPassword')}
+                                                    edge="end"
+                                                >
+                                                    {showPassword.newPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Confirm New Password"
+                                    name="confirmPassword"
+                                    type={showPassword.confirmPassword ? 'text' : 'password'}
+                                    value={passwordData.confirmPassword}
+                                    onChange={handleChange}
+                                    disabled={passwordLoading}
+                                    required
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => togglePasswordVisibility('confirmPassword')}
+                                                    edge="end"
+                                                >
+                                                    {showPassword.confirmPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                            </Grid>
                             
-                            {/* Password requirement indicators */}
-                            {passwordData.newPassword.length > 0 && (
-                                <Box sx={{ mt: 1, mb: 2 }}>
-                                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
-                                        <Chip 
-                                            size="small"
-                                            color={passwordValidation.hasMinLength ? "success" : "default"}
-                                            label="At least 8 characters" 
-                                            icon={passwordValidation.hasMinLength ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
-                                        />
-                                        <Chip 
-                                            size="small"
-                                            color={passwordValidation.hasAlphabet ? "success" : "default"}
-                                            label="Contains letters" 
-                                            icon={passwordValidation.hasAlphabet ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
-                                        />
-                                        <Chip 
-                                            size="small"
-                                            color={passwordValidation.hasNumber ? "success" : "default"}
-                                            label="Contains numbers" 
-                                            icon={passwordValidation.hasNumber ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
-                                        />
-                                        <Chip 
-                                            size="small"
-                                            color={passwordValidation.hasSpecial ? "success" : "default"}
-                                            label="Contains special characters" 
-                                            icon={passwordValidation.hasSpecial ? <CheckCircle fontSize="small" /> : <CancelIcon fontSize="small" />}
-                                        />
-                                    </Stack>
-                                </Box>
-                            )}
+                            {/* Password Strength Indicators */}
+                            <Grid item xs={12}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                    Password Requirements:
+                                </Typography>
+                                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                    <Chip
+                                        icon={passwordValidation.hasMinLength ? <CheckCircle color="success" /> : <CancelIcon color="error" />}
+                                        label="At least 8 characters"
+                                        variant="outlined"
+                                        color={passwordValidation.hasMinLength ? "success" : "error"}
+                                        size="small"
+                                    />
+                                    <Chip
+                                        icon={passwordValidation.hasAlphabet ? <CheckCircle color="success" /> : <CancelIcon color="error" />}
+                                        label="Contains letters"
+                                        variant="outlined"
+                                        color={passwordValidation.hasAlphabet ? "success" : "error"}
+                                        size="small"
+                                    />
+                                    <Chip
+                                        icon={passwordValidation.hasNumber ? <CheckCircle color="success" /> : <CancelIcon color="error" />}
+                                        label="Contains numbers"
+                                        variant="outlined"
+                                        color={passwordValidation.hasNumber ? "success" : "error"}
+                                        size="small"
+                                    />
+                                    <Chip
+                                        icon={passwordValidation.hasSpecial ? <CheckCircle color="success" /> : <CancelIcon color="error" />}
+                                        label="Contains special characters"
+                                        variant="outlined"
+                                        color={passwordValidation.hasSpecial ? "success" : "error"}
+                                        size="small"
+                                    />
+                                </Stack>
+                            </Grid>
+                            
+                            <Grid item xs={12} sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    color="primary"
+                                    startIcon={passwordLoading ? <CircularProgress size={20} /> : <Save />}
+                                    disabled={passwordLoading || !isPasswordValid() || passwordData.newPassword !== passwordData.confirmPassword}
+                                >
+                                    Save Password
+                                </Button>
+                            </Grid>
                         </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                fullWidth
-                                label="Confirm New Password"
-                                name="confirmPassword"
-                                type={showPassword.confirmPassword ? 'text' : 'password'}
-                                value={passwordData.confirmPassword}
-                                onChange={handleChange}
-                                disabled={!editMode || passwordLoading}
-                                required
-                                variant={editMode ? "outlined" : "filled"}
-                                margin="normal"
-                                error={passwordData.confirmPassword.length > 0 && passwordData.newPassword !== passwordData.confirmPassword}
-                                helperText={
-                                    passwordData.confirmPassword.length > 0 && 
-                                    passwordData.newPassword !== passwordData.confirmPassword 
-                                    ? "Passwords don't match" 
-                                    : ""
-                                }
-                                InputProps={{
-                                    endAdornment: editMode && (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                onClick={() => togglePasswordVisibility('confirmPassword')}
-                                                edge="end"
-                                            >
-                                                {showPassword.confirmPassword ? <VisibilityOff /> : <Visibility />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    )
-                                }}
-                            />
-                        </Grid>
-                    </Grid>
-                    
-                    {editMode && (
-                        <Box className="form-actions">
-                            <Button
-                                type="submit"
-                                variant="contained"
-                                color="primary"
-                                startIcon={passwordLoading ? <CircularProgress size={24} /> : <Save />}
-                                disabled={passwordLoading || !isPasswordValid() || passwordData.newPassword !== passwordData.confirmPassword}
-                            >
-                                Change Password
-                            </Button>
-                        </Box>
-                    )}
-                </form>
+                    </form>
+                ) : (
+                    <Typography variant="body1" sx={{ color: 'text.secondary', fontStyle: 'italic', my: 2 }}>
+                        Password information is hidden for security. If you need to reset your password, please contact a system administrator.
+                    </Typography>
+                )}
             </Box>
-
-            <Divider sx={{ my: 3 }} />
-
-            {/* Security Settings */}
-            <Box className="form-section">
+            
+            {/* Two-Factor Authentication - Can be added in the future */}
+            <Box className="form-section" sx={{ mt: 4 }}>
                 <Typography variant="h6" className="form-section-title">
-                    <Security /> Security Settings
+                    <Security /> Two-Factor Authentication
                 </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                    Additional security settings will be available in future updates.
+                <Typography variant="body1" sx={{ color: 'text.secondary', fontStyle: 'italic', my: 2 }}>
+                    Two-factor authentication is not enabled for this account. This feature will be available soon.
                 </Typography>
             </Box>
         </Box>

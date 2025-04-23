@@ -355,6 +355,17 @@ const TrainingPlanManager = () => {
         return;
       }
       
+      // Check if total activity duration exceeds plan duration
+      const totalActivityDuration = calculateTotalActivityDuration(formData.activities);
+      if (totalActivityDuration > Number(formData.duration)) {
+        setAlert({
+          open: true,
+          message: `Total activity duration (${totalActivityDuration} min) exceeds plan duration (${formData.duration} min). Please adjust activities or increase plan duration.`,
+          severity: 'error'
+        });
+        return;
+      }
+      
       // Find the actual schedule object if a schedule ID is selected
       let selectedSchedule = null;
       if (formData.schedule) {

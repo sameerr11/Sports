@@ -26,7 +26,7 @@ import {
     updateUserProfile,
     uploadProfilePicture
 } from '../../services/userService';
-import { getStoredUser, isAdmin } from '../../services/authService';
+import { getStoredUser, isAdmin, isPlayerOnly, isParent } from '../../services/authService';
 import PersonalInfoForm from './PersonalInfoForm';
 import SecurityForm from './SecurityForm';
 import './Profile.css';
@@ -40,6 +40,9 @@ const Profile = () => {
     const [success, setSuccess] = useState(null);
     const [editMode, setEditMode] = useState(false);
     const [uploadLoading, setUploadLoading] = useState(false);
+    
+    // Check if user is a player or parent (who can't edit their profiles)
+    const canEditProfile = !isPlayerOnly() && !isParent();
 
     useEffect(() => {
         const fetchProfileData = async () => {
@@ -85,6 +88,12 @@ const Profile = () => {
     };
 
     const handleProfileUpdate = async (updatedData) => {
+        // If user is a player or parent, don't allow updates
+        if (!canEditProfile) {
+            setError('Players and parents cannot edit their profiles. Please contact an administrator.');
+            return;
+        }
+        
         try {
             setLoading(true);
             
@@ -117,6 +126,12 @@ const Profile = () => {
     };
 
     const handleProfilePictureUpload = async (event) => {
+        // If user is a player or parent, don't allow upload
+        if (!canEditProfile) {
+            setError('Players and parents cannot change their profile picture. Please contact an administrator.');
+            return;
+        }
+        
         const file = event.target.files[0];
         if (!file) return;
 
@@ -190,6 +205,13 @@ const Profile = () => {
                 </Alert>
             )}
             
+            {/* Display note for players and parents */}
+            {!canEditProfile && (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                    As a {isPlayerOnly() ? 'player' : 'parent'}, you cannot edit your profile. Please contact an administrator for any changes.
+                </Alert>
+            )}
+            
             <Grid container spacing={3}>
                 {/* Profile Header */}
                 <Grid item xs={12}>
@@ -203,7 +225,7 @@ const Profile = () => {
                                 >
                                     {profile?.firstName?.charAt(0)}
                                 </Avatar>
-                                {isAdmin() && (
+                                {canEditProfile && (
                                   <>
                                     <input
                                         accept="image/*"
@@ -254,15 +276,17 @@ const Profile = () => {
                             </Box>
                             
                             <Box className="profile-actions">
-                                <Button
-                                    variant={editMode ? "outlined" : "contained"}
-                                    color={editMode ? "secondary" : "primary"}
-                                    startIcon={<Edit />}
-                                    onClick={handleEditToggle}
-                                    disabled={loading}
-                                >
-                                    {editMode ? "Cancel" : "Edit Profile"}
-                                </Button>
+                                {canEditProfile && (
+                                    <Button
+                                        variant={editMode ? "outlined" : "contained"}
+                                        color={editMode ? "secondary" : "primary"}
+                                        startIcon={<Edit />}
+                                        onClick={handleEditToggle}
+                                        disabled={loading}
+                                    >
+                                        {editMode ? "Cancel" : "Edit Profile"}
+                                    </Button>
+                                )}
                             </Box>
                         </Box>
                     </Paper>
@@ -289,7 +313,7 @@ const Profile = () => {
                             {tabValue === 0 && (
                                 <PersonalInfoForm 
                                     profile={profile} 
-                                    editMode={editMode} 
+                                    editMode={editMode && canEditProfile} 
                                     onSave={handleProfileUpdate}
                                     loading={loading}
                                 />
@@ -298,7 +322,7 @@ const Profile = () => {
                             {/* Security Tab */}
                             {tabValue === 1 && (
                                 <SecurityForm 
-                                    editMode={editMode} 
+                                    editMode={editMode && canEditProfile} 
                                     onSave={handleProfileUpdate}
                                     loading={loading}
                                     userId={profile?._id}
