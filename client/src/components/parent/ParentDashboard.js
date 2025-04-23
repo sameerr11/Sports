@@ -89,50 +89,77 @@ const ParentDashboard = () => {
   // Check if user is a parent
   const parentAccess = isParent();
   
-  useEffect(() => {
-    const fetchParentData = async () => {
-      setLoading(true);
+  // Add a function to retry API calls
+  const retryApiCall = async (apiCall, maxRetries = 3) => {
+    let retries = 0;
+    while (retries < maxRetries) {
       try {
-        // 1. Fetch children associated with the parent
-        const childrenRes = await api.get('/users/parent/children');
-        setChildren(childrenRes.data);
+        return await apiCall();
+      } catch (error) {
+        retries++;
+        if (retries >= maxRetries) {
+          throw error;
+        }
+        console.log(`Retry attempt ${retries}/${maxRetries} after failure`);
+        // Wait for a short time before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+      }
+    }
+  };
+
+  // Declare fetchParentData outside of useEffect
+  const fetchParentData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Test API connection first
+      const connectionTest = await api.testConnection();
+      if (!connectionTest.success) {
+        throw new Error(`Cannot connect to the server: ${connectionTest.error}`);
+      }
+      
+      // 1. Fetch children associated with the parent
+      const childrenRes = await retryApiCall(() => api.get('/users/parent/children'));
+      setChildren(childrenRes.data);
+      
+      // Set the first child as selected by default if available
+      if (childrenRes.data.length > 0) {
+        setSelectedChild(childrenRes.data[0]._id);
         
-        // Set the first child as selected by default if available
-        if (childrenRes.data.length > 0) {
-          setSelectedChild(childrenRes.data[0]._id);
-          
-          // 2. Fetch teams where the selected child is a player
-          const teamsRes = await api.get(`/teams/player/${childrenRes.data[0]._id}`);
-          const teamIds = teamsRes.data.map(team => team._id);
-          
-          // 3. Fetch bookings related to child's teams
-          let teamBookings = [];
-          if (teamIds.length > 0) {
-            const bookingsPromises = teamIds.map(teamId => 
-              api.get('/bookings', { 
-                params: { team: teamId } 
-              })
-            );
-            
-            const bookingsResponses = await Promise.all(bookingsPromises);
-            teamBookings = bookingsResponses.flatMap(res => res.data);
-          }
-          
-          // 4. Filter bookings for training sessions and matches
-          const trainingSessions = teamBookings.filter(
-            booking => booking.purpose === 'Training' && new Date(booking.startTime) >= new Date()
+        // 2. Fetch teams where the selected child is a player
+        const teamsRes = await retryApiCall(() => 
+          api.get(`/teams/player/${childrenRes.data[0]._id}`)
+        );
+        const teamIds = teamsRes.data.map(team => team._id);
+        
+        // 3. Fetch bookings related to child's teams
+        let teamBookings = [];
+        if (teamIds.length > 0) {
+          const bookingsPromises = teamIds.map(teamId => 
+            retryApiCall(() => api.get('/bookings', { params: { team: teamId } }))
           );
-          setTrainingSessions(trainingSessions);
           
-          const matchSessions = teamBookings.filter(
-            booking => booking.purpose === 'Match' && new Date(booking.startTime) >= new Date()
-          );
-          setUpcomingMatches(matchSessions);
-          
-          // 5. Fetch training plans for the child's teams
-          if (teamIds.length > 0) {
+          const bookingsResponses = await Promise.all(bookingsPromises);
+          teamBookings = bookingsResponses.flatMap(res => res.data);
+        }
+        
+        // 4. Filter bookings for training sessions and matches
+        const trainingSessions = teamBookings.filter(
+          booking => booking.purpose === 'Training' && new Date(booking.startTime) >= new Date()
+        );
+        setTrainingSessions(trainingSessions);
+        
+        const matchSessions = teamBookings.filter(
+          booking => booking.purpose === 'Match' && new Date(booking.startTime) >= new Date()
+        );
+        setUpcomingMatches(matchSessions);
+        
+        // 5. Fetch training plans for the child's teams
+        if (teamIds.length > 0) {
+          try {
             const trainingPlansPromises = teamIds.map(teamId => 
-              api.get(`/training-plans/team/${teamId}`)
+              retryApiCall(() => api.get(`/training-plans/team/${teamId}`))
             );
             
             const trainingPlansResponses = await Promise.all(trainingPlansPromises);
@@ -142,17 +169,24 @@ const ParentDashboard = () => {
               .filter(plan => ['Assigned', 'InProgress'].includes(plan.status));
             
             setTrainingPlans(allPlans);
+          } catch (trainingPlanError) {
+            console.error('Error fetching training plans:', trainingPlanError);
+            setError('Could not load training plans. Please try again later.');
+            // Still set empty training plans to avoid undefined errors
+            setTrainingPlans([]);
           }
         }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching parent data:', error);
-        setError(error.toString());
-        setLoading(false);
       }
-    };
-    
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching parent data:', error);
+      setError(error.toString());
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchParentData();
   }, []);
   
@@ -161,19 +195,18 @@ const ParentDashboard = () => {
     const childId = event.target.value;
     setSelectedChild(childId);
     setLoading(true);
+    setError(null);
     
     try {
       // Fetch data for the selected child
-      const teamsRes = await api.get(`/teams/player/${childId}`);
+      const teamsRes = await retryApiCall(() => api.get(`/teams/player/${childId}`));
       const teamIds = teamsRes.data.map(team => team._id);
       
       // Fetch bookings related to child's teams
       let teamBookings = [];
       if (teamIds.length > 0) {
         const bookingsPromises = teamIds.map(teamId => 
-          api.get('/bookings', { 
-            params: { team: teamId } 
-          })
+          retryApiCall(() => api.get('/bookings', { params: { team: teamId } }))
         );
         
         const bookingsResponses = await Promise.all(bookingsPromises);
@@ -193,17 +226,23 @@ const ParentDashboard = () => {
       
       // Fetch training plans for the selected child's teams
       if (teamIds.length > 0) {
-        const trainingPlansPromises = teamIds.map(teamId => 
-          api.get(`/training-plans/team/${teamId}`)
-        );
-        
-        const trainingPlansResponses = await Promise.all(trainingPlansPromises);
-        
-        // Combine all training plans and filter for assigned or in progress
-        const allPlans = trainingPlansResponses.flatMap(res => res.data)
-          .filter(plan => ['Assigned', 'InProgress'].includes(plan.status));
-        
-        setTrainingPlans(allPlans);
+        try {
+          const trainingPlansPromises = teamIds.map(teamId => 
+            retryApiCall(() => api.get(`/training-plans/team/${teamId}`))
+          );
+          
+          const trainingPlansResponses = await Promise.all(trainingPlansPromises);
+          
+          // Combine all training plans and filter for assigned or in progress
+          const allPlans = trainingPlansResponses.flatMap(res => res.data)
+            .filter(plan => ['Assigned', 'InProgress'].includes(plan.status));
+          
+          setTrainingPlans(allPlans);
+        } catch (trainingPlanError) {
+          console.error('Error fetching training plans:', trainingPlanError);
+          setError('Could not load training plans. Please try again later.');
+          setTrainingPlans([]);
+        }
       } else {
         setTrainingPlans([]);
       }
@@ -285,22 +324,37 @@ const ParentDashboard = () => {
     const filteredSessions = filterSessionsByDate(trainingSessions);
     
     return (
-      <Box>
-        <Card elevation={2}>
-          <CardHeader 
-            title="Training Schedule" 
-            titleTypographyProps={{ variant: 'h6' }}
-            action={
-              <Button 
-                variant="outlined" 
-                size="small"
-                startIcon={<FilterAlt />}
-                onClick={handleOpenDateFilter}
-              >
-                {isFilterActive ? 'Change Date Filter' : 'Filter by Date'}
-              </Button>
-            }
-          />
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2, 
+              mb: 3, 
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.primary.main, 0.05),
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+              <FitnessCenter sx={{ mr: 1 }} />
+              {selectedChild && children.find(child => child._id === selectedChild) ? 
+                `${children.find(child => child._id === selectedChild).firstName}'s Training Schedule` : 
+                'Your Child\'s Training Schedule'}
+            </Typography>
+            <Button 
+              variant="outlined" 
+              size="small"
+              startIcon={<FilterAlt />}
+              onClick={handleOpenDateFilter}
+            >
+              {isFilterActive ? 'Change Date Filter' : 'Filter by Date'}
+            </Button>
+          </Paper>
+          
           {isFilterActive && (
             <Chip 
               icon={<FilterAlt />} 
@@ -330,48 +384,74 @@ const ParentDashboard = () => {
               }}
             />
           )}
-          <CardContent>
-            {filteredSessions.length === 0 ? (
-              <Typography variant="body1" sx={{ textAlign: 'center', py: 3 }}>
+          
+          {filteredSessions.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1">
                 {isFilterActive 
                   ? 'No training sessions found within the selected date range.' 
-                  : 'No upcoming training sessions scheduled.'}
+                  : 'No upcoming training sessions scheduled for your child.'}
               </Typography>
-            ) : (
-              <TableContainer component={Paper} elevation={0}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Date</TableCell>
-                      <TableCell>Time</TableCell>
-                      <TableCell>Location</TableCell>
-                      <TableCell>Team</TableCell>
-                      <TableCell>Notes</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredSessions.map((session) => (
-                      <TableRow key={session._id}>
+            </Paper>
+          ) : (
+            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+              <Table>
+                <TableHead sx={{ bgcolor: alpha(theme.palette.background.default, 0.8) }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Date & Time</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Team</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Location</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Duration</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredSessions.map((session) => {
+                    const startTime = new Date(session.startTime);
+                    const endTime = new Date(session.endTime);
+                    const durationHours = (endTime - startTime) / (1000 * 60 * 60);
+                    
+                    return (
+                      <TableRow key={session._id} hover>
                         <TableCell>
-                          {format(new Date(session.startTime), 'MMM dd, yyyy')}
+                          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                            <Typography variant="body2" fontWeight={500}>
+                              {format(startTime, 'EEEE, MMMM d, yyyy')}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
+                            </Typography>
+                          </Box>
                         </TableCell>
                         <TableCell>
-                          {format(new Date(session.startTime), 'h:mm a')} - {format(new Date(session.endTime), 'h:mm a')}
+                          {session.team ? session.team.name : 'No team specified'}
                         </TableCell>
-                        <TableCell>{formatLocation(session.court)}</TableCell>
                         <TableCell>
-                          {session.team ? session.team.name : 'Personal Training'}
+                          {formatLocation(session.court)}
                         </TableCell>
-                        <TableCell>{session.notes || '-'}</TableCell>
+                        <TableCell>
+                          {Math.round(durationHours * 10) / 10} hours
+                        </TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={session.status}
+                            color={
+                              session.status === 'Confirmed' ? 'success' :
+                              session.status === 'Pending' ? 'warning' :
+                              session.status === 'Cancelled' ? 'error' : 'default'
+                            }
+                            size="small"
+                          />
+                        </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </CardContent>
-        </Card>
-        
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Grid>
+
         {/* Date Range Filter Dialog */}
         <Dialog open={dateFilterOpen} onClose={handleCloseDateFilter}>
           <DialogTitle>Filter Sessions by Date</DialogTitle>
@@ -450,7 +530,7 @@ const ParentDashboard = () => {
             </Button>
           </DialogActions>
         </Dialog>
-      </Box>
+      </Grid>
     );
   };
   
@@ -691,6 +771,21 @@ const ParentDashboard = () => {
     </Box>
   );
   
+  // Add a retry button component to refresh data
+  const RetryButton = () => (
+    <Button 
+      variant="contained" 
+      color="primary" 
+      onClick={() => {
+        setError(null);
+        fetchParentData();
+      }}
+      sx={{ mt: 2 }}
+    >
+      Retry Connection
+    </Button>
+  );
+  
   return (
     <Box sx={{ py: 3 }}>
       {/* Header */}
@@ -782,10 +877,14 @@ const ParentDashboard = () => {
       
       {/* Error message */}
       {error && (
-        <Box sx={{ mt: 3 }}>
-          <Paper sx={{ p: 2, bgcolor: alpha(theme.palette.error.main, 0.1) }}>
-            <Typography color="error">{error}</Typography>
-          </Paper>
+        <Box sx={{ p: 3, textAlign: 'center' }}>
+          <Typography variant="h6" color="error" gutterBottom>
+            Error Loading Data
+          </Typography>
+          <Typography paragraph>
+            {error}
+          </Typography>
+          <RetryButton />
         </Box>
       )}
     </Box>

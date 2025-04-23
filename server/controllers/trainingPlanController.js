@@ -207,7 +207,7 @@ exports.getCoachTrainingPlans = async (req, res) => {
 
 // @desc    Get training plans for a specific team
 // @route   GET /api/training-plans/team/:teamId
-// @access  Private (Coach of that team, Supervisor, Admin, Player in that team)
+// @access  Private (Coach of that team, Supervisor, Admin, Player in that team, Parent of player in team)
 exports.getTeamTrainingPlans = async (req, res) => {
   try {
     const { teamId } = req.params;
@@ -240,10 +240,12 @@ exports.getTeamTrainingPlans = async (req, res) => {
       }
       // General supervisors can access all teams
     } 
-    // Verify user is coach or player of this team if not supervisor/admin
+    // Verify user is coach, player, or parent of a player in this team if not supervisor/admin
     else if (!['admin'].includes(req.user.role)) {
+      let team = null;
+      
       // Check if user is a coach for this team
-      let team = await Team.findOne({
+      team = await Team.findOne({
         _id: teamId,
         'coaches.coach': req.user.id
       });
@@ -256,31 +258,70 @@ exports.getTeamTrainingPlans = async (req, res) => {
         });
       }
       
+      // If not a coach or player, check if user is a parent of a player in this team
+      if (!team && req.user.role === 'parent') {
+        try {
+          // First, find the user's children
+          const user = await User.findById(req.user.id).populate({
+            path: 'children',
+            options: { strictPopulate: false }
+          });
+          
+          if (user && user.children && user.children.length > 0) {
+            // Get child IDs
+            const childIds = user.children.map(child => child._id);
+            
+            // Find team with any of these children as players
+            team = await Team.findOne({
+              _id: teamId,
+              'players.player': { $in: childIds }
+            });
+          }
+        } catch (childError) {
+          console.error('Error fetching parent children:', childError);
+          return res.status(500).json({ 
+            msg: 'Server error fetching user children data',
+            error: childError.message 
+          });
+        }
+      }
+      
       if (!team) {
         return res.status(403).json({ msg: 'Not authorized to view training plans for this team' });
       }
     }
     
-    const trainingPlans = await TrainingPlan.find({ 
-      team: teamId,
-      isActive: true 
-    })
-      .populate('assignedTo', 'firstName lastName')
-      .populate('createdBy', 'firstName lastName')
-      .populate('team', 'name sportType')
-      .populate({
-        path: 'scheduleId',
-        populate: {
-          path: 'court',
-          select: 'name location'
-        }
+    try {
+      const trainingPlans = await TrainingPlan.find({ 
+        team: teamId,
+        isActive: true 
       })
-      .sort({ date: 1 });
-    
-    res.json(trainingPlans);
+        .populate('assignedTo', 'firstName lastName')
+        .populate('createdBy', 'firstName lastName')
+        .populate('team', 'name sportType')
+        .populate({
+          path: 'scheduleId',
+          populate: {
+            path: 'court',
+            select: 'name location'
+          }
+        })
+        .sort({ date: 1 });
+      
+      res.json(trainingPlans);
+    } catch (queryError) {
+      console.error('Error in database query for training plans:', queryError);
+      return res.status(500).json({ 
+        msg: 'Error retrieving training plans',
+        error: queryError.message 
+      });
+    }
   } catch (err) {
-    console.error('Error fetching team training plans:', err.message);
-    res.status(500).send('Server Error');
+    console.error('Error fetching team training plans:', err);
+    res.status(500).json({ 
+      msg: 'Server Error',
+      error: err.message || 'Unknown error'
+    });
   }
 };
 

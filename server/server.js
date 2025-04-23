@@ -35,6 +35,15 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api', routes);
 
+// Health check route
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    message: 'API server is running'
+  });
+});
+
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
     const buildPath = path.join(__dirname, '../client/build');

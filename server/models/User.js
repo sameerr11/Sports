@@ -97,7 +97,16 @@ const UserSchema = new mongoose.Schema({
     default: Date.now
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Virtual field for children - users who have this user as their parent
+UserSchema.virtual('children', {
+  ref: 'User',
+  localField: '_id',
+  foreignField: 'parentId'
 });
 
 // Hash password before saving
