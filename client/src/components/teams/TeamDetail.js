@@ -392,7 +392,7 @@ const TeamDetail = () => {
               sx={{ mb: 3 }}
             >
               <Tab label="Players" icon={<Person />} iconPosition="start" />
-              <Tab label="Coaches" icon={<EmojiEvents />} iconPosition="start" />
+              <Tab label="Coaches" icon={<Person />} iconPosition="start" />
             </Tabs>
 
             {tabValue === 0 && (
