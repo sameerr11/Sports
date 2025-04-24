@@ -31,7 +31,7 @@ const feedbackController = require('../controllers/feedbackController');
 const playerStatsRoutes = require('./playerStatsRoutes');
 const registrationRoutes = require('./registrationRoutes');
 const utilityRoutes = require('./utilityRoutes');
-const roleSalaryRoutes = require('./roleSalaryRoutes');
+const userSalaryRoutes = require('./userSalaryRoutes');
 const revenueRoutes = require('./revenueRoutes');
 const guestBookingRoutes = require('./guestBookingRoutes');
 const recurringScheduleController = require('../controllers/recurringScheduleController');
@@ -277,8 +277,8 @@ router.use('/player-stats', playerStatsRoutes);
 // Utility routes
 router.use('/utilities', utilityRoutes);
 
-// Role Salary routes
-router.use('/role-salaries', roleSalaryRoutes);
+// User Salary routes
+router.use('/user-salaries', userSalaryRoutes);
 
 // Revenue routes
 router.use('/revenue', revenueRoutes);

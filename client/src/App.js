@@ -47,7 +47,7 @@ import { Box, CircularProgress } from '@mui/material';
 // Import utility components
 import UtilityBillList from './components/utilities/UtilityBillList';
 import UtilityBillForm from './components/utilities/UtilityBillForm';
-import RoleSalaryConfig from './components/admin/RoleSalaryConfig';
+import UserSalaryConfig from './components/admin/UserSalaryConfig';
 // Import the RegistrationFeeConfig component
 import RegistrationFeeConfig from './components/admin/RegistrationFeeConfig';
 // Import the RevenueDashboard component
@@ -557,10 +557,10 @@ function AppContent() {
           </ProtectedRoute>
         } />
         
-        <Route path="/admin/salary-config" element={
-          <ProtectedRoute requiredRole="admin">
+        <Route path="/admin/user-salary-config" element={
+          <ProtectedRoute allowedRoles={['admin']}>
             <MainLayout>
-              <RoleSalaryConfig />
+              <UserSalaryConfig />
             </MainLayout>
           </ProtectedRoute>
         } />

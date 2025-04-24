@@ -133,7 +133,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'Player Registration', icon: <HowToRegIcon />, path: '/registrations' },
         { text: 'Registration Fees', icon: <ReceiptIcon />, path: '/admin/registration-fees' },
         { text: 'Salary Invoices', icon: <PaymentIcon />, path: '/registrations/salary/list' },
-        { text: 'Salary Configuration', icon: <SettingsIcon />, path: '/admin/salary-config' },
+        { text: 'User Salary Config', icon: <SettingsIcon />, path: '/admin/user-salary-config' },
         { text: 'Utility Bills', icon: <ReceiptIcon />, path: '/utilities' }
     ];
 

@@ -27,7 +27,7 @@ import { Send as SendIcon, Print as PrintIcon, Info as InfoIcon } from '@mui/ico
 import { Link as RouterLink } from 'react-router-dom';
 import { getAllUsers } from '../../services/userService';
 import { createSalaryInvoice } from '../../services/registrationService';
-import { getRoleSalaryByRole } from '../../services/roleSalaryService';
+import { getUserSalaryByUserId } from '../../services/userSalaryService';
 import { formatCurrency } from '../../utils/format';
 import { isAdmin } from '../../services/authService';
 import ultrasLogo from '../../assets/images/ultras_logo.png';
@@ -98,38 +98,26 @@ const SalaryInvoice = () => {
       [name]: value
     });
 
-    // If the user ID has changed, try to get the salary for that user's role
+    // If the user ID has changed, try to get the specific salary for that user
     if (name === 'userId' && value) {
       try {
         setUserLoading(true);
         // Find the selected user
         const selectedUser = users.find(user => user._id === value);
+        
         if (selectedUser) {
-          let roleKey = selectedUser.role;
+          // First try to get user-specific salary configuration
+          const userSalary = await getUserSalaryByUserId(value);
           
-          // For supervisors, check their specific supervisor type
-          if (selectedUser.role === 'supervisor' && selectedUser.supervisorType) {
-            roleKey = `supervisor-${selectedUser.supervisorType}`;
-          }
-          
-          // Get the predefined salary for this role
-          let roleSalary = await getRoleSalaryByRole(roleKey);
-          
-          // If no specific supervisor type salary is found, fall back to generic supervisor
-          if (!roleSalary && selectedUser.role === 'supervisor') {
-            roleSalary = await getRoleSalaryByRole('supervisor');
-          }
-          
-          if (roleSalary) {
-            // Update the form with the predefined salary amount
+          if (userSalary) {
+            // Update the form with the user-specific salary amount
             setFormData(prevData => ({
               ...prevData,
-              amount: roleSalary.amount,
-              // Set a new description based on the selected user
-              description: `Monthly salary for ${selectedUser.firstName} ${selectedUser.lastName}`
+              amount: userSalary.amount,
+              description: userSalary.description || `Monthly salary for ${selectedUser.firstName} ${selectedUser.lastName}`
             }));
           } else {
-            // If no role salary is found, just update the description
+            // If no user-specific salary is found, just update the description
             setFormData(prevData => ({
               ...prevData,
               description: `Monthly salary for ${selectedUser.firstName} ${selectedUser.lastName}`
@@ -137,7 +125,7 @@ const SalaryInvoice = () => {
           }
         }
       } catch (err) {
-        console.error('Error fetching role salary:', err);
+        console.error('Error fetching user salary:', err);
       } finally {
         setUserLoading(false);
       }
@@ -367,9 +355,9 @@ const SalaryInvoice = () => {
           sx={{ mb: 3 }}
           icon={<InfoIcon />}
         >
-          You can configure default salaries for each role in the{' '}
-          <Link component={RouterLink} to="/admin/salary-config">
-            Salary Configuration
+          You can configure salaries for each staff member in the{' '}
+          <Link component={RouterLink} to="/admin/user-salary-config">
+            User Salary Config
           </Link>{' '}
           page.
         </Alert>
@@ -415,8 +403,8 @@ const SalaryInvoice = () => {
                 onChange={isAdmin() ? handleChange : undefined}
                 disabled={!isAdmin()}
                 helperText={isAdmin() 
-                  ? "Amount will auto-populate based on staff role if configured" 
-                  : "Amount is automatically set based on staff role configured by admin"}
+                  ? "Amount will auto-populate if configured for this staff member" 
+                  : "Amount is automatically set based on user salary configuration"}
               />
             </Grid>
             
