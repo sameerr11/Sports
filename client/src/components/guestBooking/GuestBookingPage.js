@@ -26,7 +26,18 @@ const GuestBookingPage = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  // Set initial date to tomorrow
+  const getTomorrow = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to midnight
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow;
+  };
+  
+  const [selectedDate, setSelectedDate] = useState(getTomorrow());
   const [selectedCourt, setSelectedCourt] = useState(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
   const [guestDetails, setGuestDetails] = useState({

@@ -120,19 +120,19 @@ const TimeSelection = ({
     return halfCourtBookingsCount === 1; // Return true only if exactly 1 half court is booked
   };
 
-  // Generate one-hour time slots from available slots
+  // Generate half-hour time slots from available slots
   const generateHourlyTimeSlots = () => {
-    const hourlySlots = [];
+    const halfHourSlots = [];
     
     availableSlots.forEach(slot => {
       const slotStart = new Date(slot.start);
       const slotEnd = new Date(slot.end);
       
-      // Generate one-hour slots
+      // Generate half-hour slots
       let currentStart = new Date(slotStart);
       while (currentStart < slotEnd) {
         const currentEnd = new Date(currentStart);
-        currentEnd.setHours(currentEnd.getHours() + 1);
+        currentEnd.setMinutes(currentEnd.getMinutes() + 30); // Create 30-minute slots
         
         // If current end time exceeds slot end time, adjust
         if (currentEnd > slotEnd) {
@@ -143,7 +143,7 @@ const TimeSelection = ({
         if (!isTimeSlotBooked(currentStart, currentEnd)) {
           const hasHalfBooked = hasHalfCourtBooked(currentStart, currentEnd);
           
-          hourlySlots.push({
+          halfHourSlots.push({
             start: new Date(currentStart),
             end: new Date(currentEnd),
             display: `${formatTime(currentStart)} - ${formatTime(currentEnd)}`,
@@ -151,12 +151,12 @@ const TimeSelection = ({
           });
         }
         
-        // Move to next hour
-        currentStart.setHours(currentStart.getHours() + 1);
+        // Move to next half hour
+        currentStart.setMinutes(currentStart.getMinutes() + 30);
       }
     });
     
-    return hourlySlots;
+    return halfHourSlots;
   };
 
   const timeSlots = generateHourlyTimeSlots();
@@ -238,8 +238,8 @@ const TimeSelection = ({
   const calculateTotalPrice = () => {
     if (!selectedCourt || selectedSlots.length === 0) return 0;
     
-    // Each slot is one hour, so total is hourly rate * number of slots
-    return selectedCourt.hourlyRate * selectedSlots.length;
+    // Each slot is half an hour, so total is hourly rate / 2 * number of slots
+    return (selectedCourt.hourlyRate / 2) * selectedSlots.length;
   };
 
   // When proceeding to next step, combine the selected slots into a single booking timeframe
@@ -262,7 +262,15 @@ const TimeSelection = ({
   };
 
   return (
-    <Box>
+    <Box sx={{ mt: 2 }}>
+      <Typography variant="h5" gutterBottom>
+        Select Time
+      </Typography>
+      
+      <Alert severity="info" sx={{ mb: 3 }}>
+        You can book courts in 30-minute increments. Select multiple time slots for longer bookings.
+      </Alert>
+      
       <Typography 
         variant="h6" 
         gutterBottom
@@ -453,13 +461,13 @@ const TimeSelection = ({
                         variant="body1"
                         sx={{ fontWeight: 500 }}
                       >
-                        {selectedSlots.sort((a, b) => a.start - b.start)[0].display.split('-')[0]} - 
-                        {selectedSlots.sort((a, b) => a.start - b.start)[selectedSlots.length - 1].display.split('-')[1]}
+                        {/* Sort slots by start time to show accurate range */}
+                        {selectedSlots.sort((a, b) => a.start - b.start)[0].display.split(' - ')[0]} - 
+                        {selectedSlots.sort((a, b) => b.start - a.start)[0].display.split(' - ')[1]}
                       </Typography>
                     )}
                     <Typography 
                       variant="body2" 
-                      sx={{ mt: 1.5 }}
                       color="textSecondary"
                     >
                       Duration:
@@ -468,7 +476,7 @@ const TimeSelection = ({
                       variant="body1"
                       sx={{ fontWeight: 500 }}
                     >
-                      {selectedSlots.length} hour{selectedSlots.length > 1 ? 's' : ''}
+                      {selectedSlots.length / 2} hour{selectedSlots.length/2 !== 1 ? 's' : ''} ({selectedSlots.length} x 30 min)
                     </Typography>
                   </Box>
                 </Grid>
@@ -488,7 +496,7 @@ const TimeSelection = ({
                       variant="body1"
                       sx={{ fontWeight: 500 }}
                     >
-                      ${selectedCourt?.hourlyRate.toFixed(2)}/hour
+                      ${(selectedCourt?.hourlyRate/2).toFixed(2)}/30 min (${selectedCourt?.hourlyRate.toFixed(2)}/hour)
                     </Typography>
                     <Typography 
                       variant="body2" 

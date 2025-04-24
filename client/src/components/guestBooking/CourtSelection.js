@@ -20,6 +20,16 @@ const CourtSelection = ({ selectedDate, setSelectedDate, selectedCourt, setSelec
     return date.toISOString().split('T')[0];
   };
 
+  // Get tomorrow's date for minimum booking date
+  const getTomorrow = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to midnight
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow;
+  };
+
   useEffect(() => {
     const fetchCourts = async () => {
       setLoading(true);
@@ -68,7 +78,7 @@ const CourtSelection = ({ selectedDate, setSelectedDate, selectedCourt, setSelec
             label="Select Date"
             value={selectedDate}
             onChange={handleDateChange}
-            minDate={new Date()}
+            minDate={getTomorrow()}
             renderInput={(params) => 
               <TextField 
                 {...params} 
@@ -193,6 +203,9 @@ const CourtSelection = ({ selectedDate, setSelectedDate, selectedCourt, setSelec
                       >
                         Sport: {court.sportType}
                       </Typography>
+                      <Typography variant="body1" gutterBottom>
+                        {court.description}
+                      </Typography>
                       <Typography 
                         variant="body2" 
                         color="text.secondary"
@@ -209,7 +222,7 @@ const CourtSelection = ({ selectedDate, setSelectedDate, selectedCourt, setSelec
                           fontSize: '1rem'
                         }}
                       >
-                        ${court.hourlyRate} / hour
+                        ${court.hourlyRate/2} / half hour (${court.hourlyRate} / hour)
                       </Typography>
                     </CardContent>
                   </CardActionArea>

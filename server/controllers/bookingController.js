@@ -142,7 +142,9 @@ exports.createBooking = async (req, res) => {
     // Calculate total price - free for Training and Match bookings
     let totalPrice = 0;
     if (purpose === 'Rental') {
-      totalPrice = durationHours * courtDoc.hourlyRate;
+      // Calculate price based on half-hour increments (hourly rate / 2 * number of half hours)
+      const halfHourIncrements = Math.ceil(durationHours * 2); // Convert to half-hour increments
+      totalPrice = (courtDoc.hourlyRate / 2) * halfHourIncrements;
     }
 
     // Create new booking

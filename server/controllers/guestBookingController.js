@@ -27,6 +27,23 @@ exports.createGuestBooking = async (req, res) => {
     const startDate = new Date(startTime);
     const endDate = new Date(endTime);
     
+    // Get current date (without time)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Get tomorrow's date
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Compare dates by converting to YYYY-MM-DD format to ignore time component
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    
+    // Verify booking is for tomorrow or later
+    if (startDateStr < tomorrowStr) {
+      return res.status(400).json({ msg: 'Bookings must be made at least one day in advance' });
+    }
+    
     // Verify end time is after start time
     if (endDate <= startDate) {
       return res.status(400).json({ msg: 'End time must be after start time' });
@@ -173,7 +190,10 @@ exports.createGuestBooking = async (req, res) => {
     
     // Calculate total price - half price for half court
     const priceMultiplier = courtType === 'Half Court' ? 0.5 : 1;
-    const totalPrice = durationHours * courtDoc.hourlyRate * priceMultiplier;
+    
+    // Calculate price based on half-hour increments
+    const halfHourIncrements = Math.ceil(durationHours * 2); // Convert to half-hour increments
+    const totalPrice = (courtDoc.hourlyRate / 2) * halfHourIncrements * priceMultiplier;
 
     // Generate a unique booking reference
     const bookingReference = 'GB-' + crypto.randomBytes(4).toString('hex').toUpperCase();
@@ -349,6 +369,23 @@ exports.getCourtAvailability = async (req, res) => {
       return res.status(400).json({ msg: 'Invalid date format' });
     }
     
+    // Get current date (without time)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Get tomorrow's date
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Compare dates by converting to YYYY-MM-DD format to ignore time component
+    const checkDateStr = checkDate.toISOString().split('T')[0];
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    
+    // Verify date is tomorrow or later
+    if (checkDateStr < tomorrowStr) {
+      return res.status(400).json({ msg: 'Availability can only be checked for dates starting from tomorrow' });
+    }
+    
     // Beginning and end of the requested date
     const startOfDay = new Date(checkDate);
     startOfDay.setHours(0, 0, 0, 0);
@@ -460,6 +497,23 @@ exports.getAvailableCourts = async (req, res) => {
     
     if (isNaN(checkDate.getTime())) {
       return res.status(400).json({ msg: 'Invalid date format' });
+    }
+    
+    // Get current date (without time)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Get tomorrow's date
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Compare dates by converting to YYYY-MM-DD format to ignore time component
+    const checkDateStr = checkDate.toISOString().split('T')[0];
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    
+    // Verify date is tomorrow or later
+    if (checkDateStr < tomorrowStr) {
+      return res.status(400).json({ msg: 'Courts can only be checked for dates starting from tomorrow' });
     }
     
     // Get day of week

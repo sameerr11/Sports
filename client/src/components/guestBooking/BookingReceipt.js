@@ -18,19 +18,30 @@ import ultrasLogo from '../../assets/images/ultras_logo.png';
 const BookingReceipt = ({ booking, open, onClose }) => {
   // Function to generate receipt HTML content
   const generateReceiptHTML = () => {
-    // Format date for printing
+    // Format date for receipt
     const formatReceiptDate = (dateString) => {
       return format(new Date(dateString), 'MMM d, yyyy');
     };
     
-    // Format time for printing
+    // Format time for receipt
     const formatReceiptTime = (dateString) => {
       return format(new Date(dateString), 'h:mm a');
     };
     
-    // Get court type info if basketball
+    // Calculate duration in half-hour increments
+    const calculateDuration = (startTime, endTime) => {
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+      const durationHours = (end - start) / (1000 * 60 * 60);
+      const halfHours = Math.ceil(durationHours * 2);
+      return `${halfHours / 2} hour${halfHours !== 2 ? 's' : ''} (${halfHours} x 30 min)`;
+    };
+
+    // Detect if it's a basketball court and half court booking
     const isBasketballCourt = booking.court?.sportType === 'Basketball';
-    const courtTypeInfo = isBasketballCourt ? `(${booking.courtType || 'Full Court'})` : '';
+    const courtTypeInfo = booking.courtType && isBasketballCourt 
+      ? `(${booking.courtType})`
+      : '';
     
     return `
       <!DOCTYPE html>
@@ -151,6 +162,7 @@ const BookingReceipt = ({ booking, open, onClose }) => {
                       <th>Date</th>
                       <th>Start Time</th>
                       <th>End Time</th>
+                      <th>Duration</th>
                       <th style="text-align: right;">Amount</th>
                     </tr>
                   </thead>
@@ -159,10 +171,11 @@ const BookingReceipt = ({ booking, open, onClose }) => {
                       <td>${formatReceiptDate(booking.startTime)}</td>
                       <td>${formatReceiptTime(booking.startTime)}</td>
                       <td>${formatReceiptTime(booking.endTime)}</td>
+                      <td>${calculateDuration(booking.startTime, booking.endTime)}</td>
                       <td style="text-align: right;">$${booking.totalPrice.toFixed(2)}</td>
                     </tr>
                     <tr>
-                      <td colspan="3" style="font-weight: bold; text-align: right;">Total</td>
+                      <td colspan="4" style="font-weight: bold; text-align: right;">Total</td>
                       <td style="text-align: right; font-weight: bold;">$${booking.totalPrice.toFixed(2)}</td>
                     </tr>
                   </tbody>
@@ -254,6 +267,15 @@ const BookingReceipt = ({ booking, open, onClose }) => {
     return format(new Date(dateString), 'MMMM d, yyyy');
   };
   
+  // Calculate duration for display in the React component
+  const calculateComponentDuration = (startTime, endTime) => {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const durationHours = (end - start) / (1000 * 60 * 60);
+    const halfHours = Math.ceil(durationHours * 2);
+    return `${halfHours / 2} hour${halfHours !== 2 ? 's' : ''} (${halfHours} x 30 min)`;
+  };
+
   // Get court type info if basketball
   const isBasketballCourt = booking.court?.sportType === 'Basketball';
   const courtTypeInfo = isBasketballCourt ? `(${booking.courtType || 'Full Court'})` : '';
@@ -342,16 +364,16 @@ const BookingReceipt = ({ booking, open, onClose }) => {
                   <Typography variant="body1">{formatDate(booking.startTime)}</Typography>
                 </Grid>
                 <Grid item xs={3}>
-                  <Typography variant="body2" color="textSecondary">Start Time</Typography>
-                  <Typography variant="body1">{formatTime(booking.startTime)}</Typography>
+                  <Typography variant="body2" color="textSecondary">Time</Typography>
+                  <Typography variant="body1">{formatTime(booking.startTime)} - {formatTime(booking.endTime)}</Typography>
                 </Grid>
                 <Grid item xs={3}>
-                  <Typography variant="body2" color="textSecondary">End Time</Typography>
-                  <Typography variant="body1">{formatTime(booking.endTime)}</Typography>
+                  <Typography variant="body2" color="textSecondary">Duration</Typography>
+                  <Typography variant="body1">{calculateComponentDuration(booking.startTime, booking.endTime)}</Typography>
                 </Grid>
                 <Grid item xs={3}>
                   <Typography variant="body2" color="textSecondary">Amount</Typography>
-                  <Typography variant="body1" fontWeight="bold">${booking.totalPrice.toFixed(2)}</Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 'bold' }}>${booking.totalPrice.toFixed(2)}</Typography>
                 </Grid>
               </Grid>
             </Paper>
