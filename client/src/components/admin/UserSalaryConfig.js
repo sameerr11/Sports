@@ -24,12 +24,15 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
-  TextField
+  TextField,
+  Link
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 import { getUserSalaries, updateUserSalary, deleteUserSalary } from '../../services/userSalaryService';
 import { getAllUsers } from '../../services/userService';
 import { formatCurrency } from '../../utils/format';
+import { isAdmin, isAccounting } from '../../services/authService';
 
 const UserSalaryConfig = () => {
   const [userSalaries, setUserSalaries] = useState([]);
@@ -63,7 +66,11 @@ const UserSalaryConfig = () => {
       setError(null);
     } catch (err) {
       console.error('Error fetching user salaries:', err);
-      setError('Failed to load user salary configurations');
+      if (isAccounting()) {
+        setError('Failed to load user salary configurations');
+      } else {
+        setError('Failed to load user salary configurations');
+      }
     } finally {
       setLoading(false);
     }
@@ -242,7 +249,12 @@ const UserSalaryConfig = () => {
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
+          {isAccounting() ? 
+            <>
+              {error} Please check with your administrator to ensure you have the correct permissions to access salary configurations.
+            </> 
+            : error
+          }
         </Alert>
       )}
 

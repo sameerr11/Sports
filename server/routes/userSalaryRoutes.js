@@ -7,19 +7,19 @@ const { check } = require('express-validator');
 
 // @route   GET /api/user-salaries
 // @desc    Get all user salaries
-// @access  Admin
+// @access  Admin, Accounting
 router.get(
   '/',
-  [auth, roles(['admin'])],
+  [auth, roles(['admin', 'accounting'])],
   userSalaryController.getUserSalaries
 );
 
 // @route   GET /api/user-salaries/:id
 // @desc    Get user salary by user ID
-// @access  Admin
+// @access  Admin, Accounting
 router.get(
   '/:id',
-  [auth, roles(['admin'])],
+  [auth, roles(['admin', 'accounting'])],
   userSalaryController.getUserSalaryByUserId
 );
 

@@ -29,7 +29,7 @@ import { getAllUsers } from '../../services/userService';
 import { createSalaryInvoice } from '../../services/registrationService';
 import { getUserSalaryByUserId } from '../../services/userSalaryService';
 import { formatCurrency } from '../../utils/format';
-import { isAdmin } from '../../services/authService';
+import { isAdmin, isAccounting } from '../../services/authService';
 import ultrasLogo from '../../assets/images/ultras_logo.png';
 
 const SalaryInvoice = () => {
@@ -349,7 +349,7 @@ const SalaryInvoice = () => {
         Issue Salary Invoice
       </Typography>
       
-      {isAdmin() && (
+      {(isAdmin() || isAccounting()) && (
         <Alert 
           severity="info" 
           sx={{ mb: 3 }}
@@ -397,14 +397,10 @@ const SalaryInvoice = () => {
                 InputProps={{ 
                   inputProps: { min: 0, step: "0.01" },
                   endAdornment: userLoading && <CircularProgress size={20} />,
-                  readOnly: !isAdmin()
                 }}
                 value={formData.amount}
-                onChange={isAdmin() ? handleChange : undefined}
-                disabled={!isAdmin()}
-                helperText={isAdmin() 
-                  ? "Amount will auto-populate if configured for this staff member" 
-                  : "Amount is automatically set based on user salary configuration"}
+                onChange={handleChange}
+                helperText="Amount is automatically set based on user salary configuration"
               />
             </Grid>
             
