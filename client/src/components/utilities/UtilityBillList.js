@@ -334,7 +334,9 @@ const UtilityBillList = () => {
                   <Box sx={{ textAlign: 'center', mb: 3 }}>
                     <img src={ultrasLogo} alt="Ultras Logo" style={{ maxWidth: '80px', maxHeight: '80px', margin: '0 auto 10px', display: 'block' }} />
                     <Typography variant="h5" sx={{ fontWeight: 'bold', margin: '5px 0' }}>SPORTS MANAGEMENT</Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', margin: '8px 0' }}>{selectedBill.billType} BILL</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', margin: '8px 0' }}>
+                      {selectedBill.billType.toUpperCase()} BILL
+                    </Typography>
                     <Typography variant="body2" color="textSecondary" sx={{ margin: '4px 0' }}>
                       Bill #: {selectedBill.billNumber}
                     </Typography>
@@ -363,6 +365,13 @@ const UtilityBillList = () => {
                         />
                       </Typography>
                     </Box>
+                  </Box>
+                  
+                  <Box mb={3}>
+                    <Typography variant="subtitle1" gutterBottom>Description:</Typography>
+                    <Typography variant="body1">
+                      Payment for {selectedBill.billType} services
+                    </Typography>
                   </Box>
                   
                   <Box mb={3}>
@@ -473,151 +482,88 @@ const UtilityBillList = () => {
                       body {
                         font-family: 'Arial', sans-serif;
                         margin: 0;
-                        padding: 20px;
+                        padding: 1cm;
+                        font-size: 12px;
                       }
-                      .invoice-container {
-                        max-width: 800px;
+                      .invoice {
+                        width: 21cm;
                         margin: 0 auto;
-                        border: 1px solid #e0e0e0;
-                        border-radius: 4px;
-                        padding: 20px;
                       }
-                      .text-center {
+                      .header {
                         text-align: center;
+                        margin-bottom: 20px;
                       }
-                      .mb-3 {
-                        margin-bottom: 24px;
-                      }
-                      .company-logo {
+                      .logo {
                         max-width: 80px;
                         max-height: 80px;
                         margin: 0 auto 10px;
                         display: block;
                       }
                       .company-name {
-                        font-weight: bold;
                         font-size: 24px;
+                        font-weight: bold;
                         margin: 5px 0;
                       }
                       .invoice-title {
+                        font-size: 18px;
                         font-weight: bold;
-                        font-size: 20px;
                         margin: 8px 0;
                       }
                       .invoice-details {
-                        margin: 4px 0;
-                        color: #666;
+                        margin: 5px 0;
                       }
-                      .flex-row {
+                      .divider {
+                        border-top: 1px solid #000;
+                        margin: 15px 0;
+                      }
+                      .flex-container {
                         display: flex;
                         justify-content: space-between;
-                        margin-bottom: 16px;
+                        margin-bottom: 20px;
                       }
-                      .bill-to {
-                        font-weight: 600;
-                        margin-bottom: 8px;
+                      .flex-item {
+                        flex: 1;
                       }
                       .text-right {
                         text-align: right;
                       }
-                      .payment-details {
-                        margin-bottom: 32px;
+                      .bold {
+                        font-weight: bold;
                       }
-                      .payment-grid {
-                        display: flex;
-                        justify-content: space-between;
+                      .mb-10 {
+                        margin-bottom: 10px;
                       }
-                      .payment-grid-item {
-                        width: 48%;
+                      .mt-20 {
+                        margin-top: 20px;
                       }
-                      .payment-info {
-                        margin-top: 32px;
-                        color: #666;
-                      }
-                      .amount {
-                        font-size: 20px;
-                        font-weight: 600;
-                      }
-                      .status-chip {
-                        display: inline-block;
-                        padding: 4px 8px;
-                        border-radius: 16px;
-                        font-size: 12px;
-                        color: white;
-                        background-color: #ff9800;
-                      }
-                      .status-chip.success {
-                        background-color: #4caf50;
-                      }
-                      .status-chip.error {
-                        background-color: #f44336;
-                      }
-                      .thank-you {
+                      .text-center {
                         text-align: center;
-                        margin-top: 32px;
+                      }
+                      @media print {
+                        body {
+                          padding: 0;
+                        }
                       }
                     </style>
                   </head>
                   <body>
-                    <div class="invoice-print">
-                      <div class="invoice-container">
-                        <div class="text-center mb-3">
-                          <img src="${ultrasLogo}" alt="Ultras Logo" class="company-logo" />
-                          <h1 class="company-name">SPORTS MANAGEMENT</h1>
-                          <h2 class="invoice-title">${selectedBill.billType.toUpperCase()} BILL</h2>
-                          <p class="invoice-details">Bill #: ${selectedBill.billNumber}</p>
-                          <p class="invoice-details">Date: ${formatDate(selectedBill.billDate)}</p>
+                    <div class="invoice">
+                      <div class="header">
+                        <img src="${ultrasLogo}" alt="Ultras Logo" class="logo">
+                        <div class="company-name">SPORTS MANAGEMENT</div>
+                        <div class="invoice-title">${selectedBill.billType.toUpperCase()} BILL</div>
+                        <div class="invoice-details">Bill #: ${selectedBill.billNumber}</div>
+                        <div class="invoice-details">Date: ${new Date().toLocaleDateString()}</div>
                         </div>
                         
-                        <div class="flex-row">
-                          <div>
-                            <p class="bill-to">Vendor:</p>
-                            <p>${selectedBill.vendor}</p>
-                          </div>
-                          <div class="text-right">
-                            <p class="bill-to">Due Date:</p>
-                            <p>${formatDate(selectedBill.dueDate)}</p>
-                            <div style="margin-top: 8px;">
-                              <span class="status-chip ${selectedBill.paymentStatus === 'Paid' 
-                                ? 'success' 
-                                : selectedBill.paymentStatus === 'Overdue' 
-                                  ? 'error' 
-                                  : ''}">${selectedBill.paymentStatus}</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div class="payment-details">
-                          <p class="bill-to">Bill Details:</p>
-                          <div class="payment-grid">
-                            <div class="payment-grid-item">
-                              <p class="invoice-details">Description:</p>
-                              <p>${selectedBill.billType} Payment</p>
-                            </div>
-                            <div class="payment-grid-item text-right">
-                              <p class="invoice-details">Amount:</p>
-                              <p class="amount">${formatCurrency(selectedBill.amount)}</p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div class="payment-info">
-                          <p class="invoice-details">Payment Method: Cash</p>
-                          <p class="invoice-details">Created By: ${selectedBill.createdBy ? 
-                            `${selectedBill.createdBy.firstName} ${selectedBill.createdBy.lastName}` : 
-                            'Unknown'}</p>
-                          ${selectedBill.paidDate ? 
-                            `<p class="invoice-details">Paid Date: ${formatDate(selectedBill.paidDate)}</p>` : 
-                            ''}
-                          ${selectedBill.paidBy ? 
-                            `<p class="invoice-details">Paid By: ${selectedBill.paidBy.firstName} ${selectedBill.paidBy.lastName}</p>` : 
-                            ''}
-                        </div>
-                        
-                        <div class="thank-you">
-                          <p>Thank you for your service.</p>
+                      <div class="flex-container">
+                        <div class="flex-item">
+                          <p class="bold">Description:</p>
+                          <p>Payment for ${selectedBill.billType} services</p>
                         </div>
                       </div>
+                      
+                      ${content.innerHTML}
                     </div>
                   </body>
                 </html>

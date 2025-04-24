@@ -29,6 +29,7 @@ const UtilityBillForm = () => {
     message: '',
     severity: 'success'
   });
+  const [customBillType, setCustomBillType] = useState('');
 
   const [formData, setFormData] = useState({
     billNumber: generateBillNumber(),
@@ -62,10 +63,33 @@ const UtilityBillForm = () => {
     });
   };
 
+  const handleCustomBillTypeChange = (e) => {
+    setCustomBillType(e.target.value);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.billType || !formData.amount || !formData.vendor || !formData.dueDate) {
+    // Prepare form data
+    const submissionData = {
+      ...formData
+    };
+
+    // If Other is selected, ensure the custom bill type is provided
+    if (formData.billType === 'Other') {
+      if (!customBillType.trim()) {
+        setSnackbar({
+          open: true,
+          message: 'Please specify a custom bill type',
+          severity: 'error'
+        });
+        return;
+      }
+      // Use the custom bill type as the actual bill type
+      submissionData.billType = customBillType.trim();
+    }
+
+    if (!submissionData.billType || !submissionData.amount || !submissionData.vendor || !submissionData.dueDate) {
       setSnackbar({
         open: true,
         message: 'Please fill in all required fields',
@@ -76,7 +100,7 @@ const UtilityBillForm = () => {
 
     try {
       setLoading(true);
-      await createUtilityBill(formData);
+      await createUtilityBill(submissionData);
       setSnackbar({
         open: true,
         message: 'Utility bill created successfully',
@@ -139,6 +163,20 @@ const UtilityBillForm = () => {
                 </Select>
               </FormControl>
             </Grid>
+
+            {formData.billType === 'Other' && (
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  required
+                  label="Custom Bill Type"
+                  name="customBillType"
+                  value={customBillType}
+                  onChange={handleCustomBillTypeChange}
+                  placeholder="Enter a custom bill type"
+                />
+              </Grid>
+            )}
 
             <Grid item xs={12} md={6}>
               <TextField

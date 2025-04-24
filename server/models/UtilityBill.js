@@ -8,8 +8,11 @@ const UtilityBillSchema = new mongoose.Schema({
   },
   billType: {
     type: String,
-    enum: ['Electricity', 'Water', 'Gas', 'Internet', 'Phone', 'Maintenance', 'Equipment', 'Other'],
     required: true
+  },
+  customBillType: {
+    type: String,
+    trim: true
   },
   amount: {
     type: Number,

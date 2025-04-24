@@ -14,6 +14,7 @@ exports.createUtilityBill = async (req, res) => {
     const {
       billNumber,
       billType,
+      customBillType,
       amount,
       vendor,
       billDate,
@@ -31,6 +32,7 @@ exports.createUtilityBill = async (req, res) => {
     const utilityBill = new UtilityBill({
       billNumber,
       billType,
+      customBillType,
       amount,
       vendor,
       billDate,
