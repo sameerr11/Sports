@@ -770,4 +770,75 @@ exports.cancelGuestBooking = async (req, res) => {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
+};
+
+// @desc    Update booking payment status
+// @route   PUT /api/bookings/:id/payment
+// @access  Private (Admin, Supervisor, Accounting)
+exports.updateBookingPaymentStatus = async (req, res) => {
+  const { paymentStatus } = req.body;
+
+  // Check if paymentStatus is valid
+  if (!['Unpaid', 'Paid', 'Refunded'].includes(paymentStatus)) {
+    return res.status(400).json({ msg: 'Invalid payment status value' });
+  }
+
+  try {
+    // Only admin, supervisor and accounting can update payment status
+    if (!['admin', 'supervisor', 'accounting'].includes(req.user.role)) {
+      return res.status(403).json({ msg: 'Not authorized to update payment status' });
+    }
+
+    // Find the booking
+    const booking = await Booking.findById(req.params.id)
+      .populate('court', 'name location sportType hourlyRate')
+      .populate('user', 'firstName lastName email');
+    
+    if (!booking) {
+      return res.status(404).json({ msg: 'Booking not found' });
+    }
+
+    // Store previous payment status to detect changes
+    const previousPaymentStatus = booking.paymentStatus;
+    
+    // Update payment status
+    booking.paymentStatus = paymentStatus;
+    
+    // If marking as paid, also update status to Confirmed if it was pending
+    if (paymentStatus === 'Paid' && booking.status === 'Pending') {
+      booking.status = 'Confirmed';
+    }
+    
+    await booking.save();
+    
+    // Create revenue transaction if payment status changed from 'Unpaid' to 'Paid'
+    // and this is a rental booking (not training or other free booking)
+    if (previousPaymentStatus === 'Unpaid' && paymentStatus === 'Paid' && booking.purpose === 'Rental' && booking.totalPrice > 0) {
+      // Import RevenueTransaction model
+      const RevenueTransaction = require('../models/revenue/RevenueTransaction');
+      
+      // Create new revenue transaction
+      const revenueTransaction = new RevenueTransaction({
+        amount: booking.totalPrice,
+        sourceType: 'Rental',
+        sourceId: booking._id,
+        sourceModel: 'Booking',
+        description: `Court rental: ${booking.court ? booking.court.name : 'Unknown court'} - ${booking.user ? `${booking.user.firstName} ${booking.user.lastName}` : 'Unknown user'}`,
+        date: new Date(), // Use current date as payment date
+        createdBy: req.user.id, // Use the current user who marked it as paid
+        notes: `${new Date(booking.startTime).toLocaleString()} to ${new Date(booking.endTime).toLocaleString()}`
+      });
+      
+      await revenueTransaction.save();
+      console.log(`Created revenue transaction for booking paid at court: ${booking._id}`);
+    }
+    
+    res.json({ 
+      msg: `Payment status updated to ${paymentStatus}`,
+      booking
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
 }; 

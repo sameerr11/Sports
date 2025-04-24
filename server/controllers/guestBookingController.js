@@ -268,6 +268,9 @@ exports.updateGuestBookingPayment = async (req, res) => {
       return res.status(400).json({ msg: 'Cannot update payment for bookings that are not pending' });
     }
 
+    // Track previous payment status to detect changes
+    const previousPaymentStatus = booking.paymentStatus;
+
     // Update payment info
     booking.paymentMethod = paymentMethod;
     booking.paymentId = paymentId || '';
@@ -291,6 +294,33 @@ exports.updateGuestBookingPayment = async (req, res) => {
     }
     
     await booking.save();
+    
+    // Create revenue transaction if payment status changed from 'Unpaid' to 'Paid'
+    if (previousPaymentStatus === 'Unpaid' && booking.paymentStatus === 'Paid') {
+      // Import RevenueTransaction model
+      const RevenueTransaction = require('../models/revenue/RevenueTransaction');
+      
+      // Find default admin user for creating the transaction
+      const User = require('../models/User');
+      const admin = await User.findOne({ role: 'admin' });
+      
+      if (admin) {
+        // Create new revenue transaction
+        const revenueTransaction = new RevenueTransaction({
+          amount: booking.totalPrice,
+          sourceType: 'Rental',
+          sourceId: booking._id,
+          sourceModel: 'GuestBooking',
+          description: `Guest court rental: ${booking.court ? booking.court.name : 'Unknown court'} - ${booking.guestName}`,
+          date: new Date(), // Use current date as payment date
+          createdBy: admin._id,
+          notes: `Reference: ${booking.bookingReference}, ${new Date(booking.startTime).toLocaleString()} to ${new Date(booking.endTime).toLocaleString()}`
+        });
+        
+        await revenueTransaction.save();
+        console.log(`Created revenue transaction for guest booking paid at court: ${booking._id}`);
+      }
+    }
     
     // Return the updated booking with populated court
     const updatedBooking = await GuestBooking.findById(booking._id)

@@ -275,7 +275,7 @@ const BookingReceipt = ({ booking, open, onClose }) => {
     const halfHours = Math.ceil(durationHours * 2);
     return `${halfHours / 2} hour${halfHours !== 2 ? 's' : ''} (${halfHours} x 30 min)`;
   };
-
+  
   // Get court type info if basketball
   const isBasketballCourt = booking.court?.sportType === 'Basketball';
   const courtTypeInfo = isBasketballCourt ? `(${booking.courtType || 'Full Court'})` : '';

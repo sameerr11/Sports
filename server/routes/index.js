@@ -149,16 +149,17 @@ router.post(
 router.get('/bookings', auth, bookingController.getBookings);
 router.get('/bookings/me', auth, bookingController.getUserBookings);
 router.get('/bookings/:id', auth, bookingController.getBookingById);
-router.put(
-  '/bookings/:id/status',
-  [
-    auth,
-    supervisor,
-    check('status', 'Status is required').isIn(['Pending', 'Confirmed', 'Cancelled', 'Completed'])
-  ],
-  bookingController.updateBookingStatus
-);
+router.put('/bookings/:id/status', [auth, check('status', 'Status is required').notEmpty()], bookingController.updateBookingStatus);
 router.put('/bookings/:id/cancel', auth, bookingController.cancelBooking);
+
+// Add new route for booking payment status
+router.put('/bookings/:id/payment', 
+  [
+    auth, 
+    check('paymentStatus', 'Payment status is required').notEmpty()
+  ], 
+  bookingController.updateBookingPaymentStatus
+);
 
 // Guest Booking management routes (admin/supervisor only)
 router.put(

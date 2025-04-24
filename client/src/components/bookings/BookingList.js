@@ -9,10 +9,11 @@ import {
 } from '@mui/material';
 import { 
   Event, Cancel, CheckCircle, Visibility, 
-  SportsTennis, AccessTime, CalendarMonth, FilterAlt, Clear
+  SportsTennis, AccessTime, CalendarMonth, FilterAlt, Clear,
+  Payment as PaymentIcon, CheckCircleOutline
 } from '@mui/icons-material';
-import { getBookings, getUserBookings, cancelBooking, updateBookingStatus } from '../../services/bookingService';
-import { isAdmin, isBookingSupervisor } from '../../services/authService';
+import { getBookings, getUserBookings, cancelBooking, updateBookingStatus, updateBookingPaymentStatus } from '../../services/bookingService';
+import { isAdmin, isBookingSupervisor, isAccounting } from '../../services/authService';
 import AlertMessage from '../common/AlertMessage';
 import { getSportIcon } from '../../utils/sportIcons';
 
@@ -24,6 +25,7 @@ const BookingList = ({ userOnly = false }) => {
   const [successMessage, setSuccessMessage] = useState(null);
   const [statusDialog, setStatusDialog] = useState({ open: false, bookingId: null, status: '' });
   const [cancelDialog, setCancelDialog] = useState({ open: false, bookingId: null });
+  const [paymentDialog, setPaymentDialog] = useState({ open: false, bookingId: null, isGuestBooking: false });
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -34,6 +36,7 @@ const BookingList = ({ userOnly = false }) => {
   const [showFilters, setShowFilters] = useState(!userOnly);
   
   const canManageBookings = isAdmin() || isBookingSupervisor();
+  const canManagePayments = isAdmin() || isBookingSupervisor() || isAccounting();
   const theme = useTheme();
 
   useEffect(() => {
@@ -118,6 +121,15 @@ const BookingList = ({ userOnly = false }) => {
     setCancelDialog({ open: false, bookingId: null });
   };
 
+  const handlePaymentDialogOpen = (bookingId, isGuestBooking) => {
+    const id = isGuestBooking ? `guest-${bookingId}` : bookingId;
+    setPaymentDialog({ open: true, bookingId: id, isGuestBooking });
+  };
+
+  const handlePaymentDialogClose = () => {
+    setPaymentDialog({ open: false, bookingId: null, isGuestBooking: false });
+  };
+
   const handleStatusChange = (e) => {
     setStatusDialog(prev => ({
       ...prev,
@@ -137,6 +149,32 @@ const BookingList = ({ userOnly = false }) => {
       
       setSuccessMessage(`Booking status updated to ${status}`);
       handleStatusDialogClose();
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
+    } catch (err) {
+      setError(err.toString());
+    }
+  };
+
+  const handleMarkAsPaid = async () => {
+    try {
+      const { bookingId } = paymentDialog;
+      await updateBookingPaymentStatus(bookingId, 'Paid');
+      
+      // Update booking in state
+      setBookings(bookings.map(booking => {
+        if ((booking._id === bookingId) || 
+            (paymentDialog.isGuestBooking && `guest-${booking._id}` === bookingId)) {
+          return { ...booking, paymentStatus: 'Paid' };
+        }
+        return booking;
+      }));
+      
+      setSuccessMessage('Booking has been marked as paid');
+      handlePaymentDialogClose();
       
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -184,6 +222,19 @@ const BookingList = ({ userOnly = false }) => {
         return 'error';
       case 'Completed':
         return 'info';
+      default:
+        return 'default';
+    }
+  };
+
+  const getPaymentStatusColor = (status) => {
+    switch (status) {
+      case 'Paid':
+        return 'success';
+      case 'Unpaid':
+        return 'warning';
+      case 'Refunded':
+        return 'error';
       default:
         return 'default';
     }
@@ -373,11 +424,12 @@ const BookingList = ({ userOnly = false }) => {
               <TableRow>
                 <TableCell width="15%">Court</TableCell>
                 <TableCell width="18%">Date & Time</TableCell>
-                <TableCell width="12%">Duration</TableCell>
-                <TableCell width="12%">Purpose</TableCell>
-                <TableCell width="12%">Status</TableCell>
-                <TableCell width="12%">Price</TableCell>
-                <TableCell width="19%">Actions</TableCell>
+                <TableCell width="10%">Duration</TableCell>
+                <TableCell width="10%">Purpose</TableCell>
+                <TableCell width="10%">Status</TableCell>
+                <TableCell width="10%">Payment</TableCell>
+                <TableCell width="10%">Price</TableCell>
+                <TableCell width="17%">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -385,6 +437,7 @@ const BookingList = ({ userOnly = false }) => {
                 const startTime = new Date(booking.startTime);
                 const endTime = new Date(booking.endTime);
                 const durationHours = ((endTime - startTime) / (1000 * 60 * 60)).toFixed(1);
+                const isRental = booking.purpose === 'Rental';
                 
                 return (
                   <TableRow key={booking._id}>
@@ -435,27 +488,43 @@ const BookingList = ({ userOnly = false }) => {
                         />
                       )}
                     </TableCell>
-                    <TableCell width="12%">
+                    <TableCell width="10%">
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <AccessTime sx={{ mr: 1, flexShrink: 0 }} />
                         <Typography noWrap>{durationHours} hours</Typography>
                       </Box>
                     </TableCell>
-                    <TableCell width="12%">{booking.purpose}</TableCell>
-                    <TableCell width="12%">
+                    <TableCell width="10%">{booking.purpose}</TableCell>
+                    <TableCell width="10%">
                       <Chip 
                         label={booking.status} 
                         color={getStatusColor(booking.status)} 
                         size="small"
                       />
                     </TableCell>
-                    <TableCell width="12%">
-                      {booking.purpose === 'Rental' ? 
+                    <TableCell width="10%">
+                      {isRental ? (
+                        <Chip 
+                          label={booking.paymentStatus || 'Unpaid'} 
+                          color={getPaymentStatusColor(booking.paymentStatus || 'Unpaid')} 
+                          size="small"
+                          icon={<PaymentIcon fontSize="small" />}
+                        />
+                      ) : (
+                        <Chip 
+                          label="N/A" 
+                          variant="outlined"
+                          size="small"
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell width="10%">
+                      {isRental ? 
                         `$${booking.totalPrice.toFixed(2)}` : 
                         <Chip label="Free" color="success" size="small" />
                       }
                     </TableCell>
-                    <TableCell width="19%">
+                    <TableCell width="17%">
                       <Box>
                         {booking.isGuestBooking && (
                           <Typography variant="caption" display="block" color="textSecondary" sx={{ mb: 1 }} noWrap>
@@ -471,6 +540,19 @@ const BookingList = ({ userOnly = false }) => {
                             sx={{ mr: 1, mb: 1 }}
                           >
                             Update Status
+                          </Button>
+                        )}
+                        
+                        {canManagePayments && isRental && (booking.paymentStatus === 'Unpaid' || !booking.paymentStatus) && 
+                         booking.status !== 'Cancelled' && booking.totalPrice > 0 && (
+                          <Button
+                            size="small"
+                            color="success"
+                            startIcon={<CheckCircleOutline />}
+                            onClick={() => handlePaymentDialogOpen(booking._id, booking.isGuestBooking)}
+                            sx={{ mr: 1, mb: 1 }}
+                          >
+                            Mark as Paid
                           </Button>
                         )}
                         
@@ -535,6 +617,22 @@ const BookingList = ({ userOnly = false }) => {
           <Button onClick={handleCancelDialogClose}>No, Keep Booking</Button>
           <Button onClick={handleCancelBooking} color="error" variant="contained">
             Yes, Cancel Booking
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Mark as Paid Dialog */}
+      <Dialog open={paymentDialog.open} onClose={handlePaymentDialogClose}>
+        <DialogTitle>Mark Booking as Paid</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to mark this booking as paid? This will record the payment in the system and add it to revenue.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handlePaymentDialogClose}>Cancel</Button>
+          <Button onClick={handleMarkAsPaid} color="success" variant="contained" startIcon={<CheckCircleOutline />}>
+            Confirm Payment
           </Button>
         </DialogActions>
       </Dialog>

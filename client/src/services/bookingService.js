@@ -74,6 +74,23 @@ export const updateBookingStatus = async (id, status) => {
   }
 };
 
+// Update booking payment status (admin/supervisor/accounting only)
+export const updateBookingPaymentStatus = async (id, paymentStatus) => {
+  try {
+    // Check if it's a guest booking
+    if (id.startsWith && id.startsWith('guest-')) {
+      const guestId = id.replace('guest-', '');
+      const response = await api.put(`/guest-bookings/${guestId}/payment`, { paymentStatus });
+      return response.data;
+    } else {
+      const response = await api.put(`/bookings/${id}/payment`, { paymentStatus });
+      return response.data;
+    }
+  } catch (error) {
+    throw error.response?.data?.msg || 'Failed to update payment status';
+  }
+};
+
 // Cancel booking
 export const cancelBooking = async (id) => {
   try {
