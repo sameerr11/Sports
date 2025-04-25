@@ -296,4 +296,38 @@ export const updateTrainingPlanAttendance = async (id, attendance) => {
   } catch (error) {
     throw error.response?.data?.msg || 'Failed to update attendance';
   }
+};
+
+// Get all players in a team with their stats
+export const getTeamPlayerStats = async (teamId) => {
+  try {
+    // Get all players in the team
+    const teamResponse = await api.get(`/teams/${teamId}`);
+    const team = teamResponse.data;
+    
+    // Get all player stats
+    const statsResponse = await api.get('/player-stats');
+    const allStats = statsResponse.data;
+    
+    // Map players with their stats
+    const playersWithStats = team.players.map(playerObj => {
+      const player = playerObj.player;
+      const playerStats = allStats.filter(stat => 
+        stat.player._id === player._id || stat.player === player._id
+      );
+      
+      return {
+        ...player,
+        stats: playerStats
+      };
+    });
+    
+    return {
+      team,
+      playersWithStats
+    };
+  } catch (error) {
+    console.error('Error fetching team player stats:', error);
+    throw error.response?.data?.msg || 'Failed to fetch team player stats';
+  }
 }; 

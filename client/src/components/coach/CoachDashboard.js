@@ -38,7 +38,10 @@ import {
   Switch,
   Popper,
   Fade,
-  ClickAwayListener
+  ClickAwayListener,
+  MenuItem,
+  Select,
+  InputLabel
 } from '@mui/material';
 import { 
   People, 
@@ -60,7 +63,9 @@ import {
   PeopleAlt,
   FilterAlt,
   Clear,
-  Event
+  Event,
+  BarChart,
+  DonutLarge
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router-dom';
@@ -69,7 +74,8 @@ import {
   getCoachTrainingPlans, 
   updateTrainingPlanStatus,
   getCoachTrainingSchedules,
-  getCoachTrainingSessions
+  getCoachTrainingSessions,
+  getTeamPlayerStats
 } from '../../services/trainingService';
 import { getStoredUser, isCoach } from '../../services/authService';
 import { getSportIcon } from '../../utils/sportIcons';
@@ -81,6 +87,23 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+
+// Import charts components
+import { 
+  RadarChart, 
+  PolarGrid, 
+  PolarAngleAxis, 
+  PolarRadiusAxis, 
+  Radar, 
+  ResponsiveContainer,
+  BarChart as ReBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as ReTooltip,
+  Legend
+} from 'recharts';
 
 // Update calendarStyles with more customizations
 const calendarStyles = {
@@ -277,6 +300,31 @@ const styles = {
   }
 };
 
+// Create radar chart data for player skills
+const createRadarData = (sport, sportData) => {
+  if (!sportData) return [];
+  
+  return Object.entries(sportData)
+    .filter(([key]) => key !== '_id') // Exclude _id field
+    .map(([key, value]) => ({
+      subject: key.charAt(0).toUpperCase() + key.slice(1),
+      A: value,
+      fullMark: 10,
+    }));
+};
+
+// Create bar chart data for grades
+const createBarData = (grades) => {
+  if (!grades) return [];
+  
+  return Object.entries(grades)
+    .filter(([key]) => key !== '_id') // Exclude _id field
+    .map(([key, value]) => ({
+      name: key === "improvement" || key === "nprovement" ? "Progress" : key.charAt(0).toUpperCase() + key.slice(1),
+      value: value,
+    }));
+};
+
 const CoachDashboard = () => {
   const theme = useTheme();
   const user = getStoredUser();
@@ -288,7 +336,10 @@ const CoachDashboard = () => {
   const [trainingPlans, setTrainingPlans] = useState([]);
   const [trainingSchedules, setTrainingSchedules] = useState([]);
   const [trainingSessions, setTrainingSessions] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState('');
+  const [teamPlayerStats, setTeamPlayerStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [plansTab, setPlansTab] = useState(0);
   
@@ -308,75 +359,6 @@ const CoachDashboard = () => {
   // Check if user is a coach
   const coach = isCoach();
   
-  // Custom event rendering for FullCalendar
-  const renderEventContent = (eventInfo) => {
-    return (
-      <Box sx={{ 
-        overflow: 'hidden', 
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        p: 0.7,
-        borderLeft: '4px solid',
-        borderLeftColor: eventInfo.event.backgroundColor,
-        bgcolor: alpha(eventInfo.event.backgroundColor, 0.1),
-        borderRadius: '4px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
-      }}>
-        <Typography variant="body2" noWrap sx={{ 
-          fontWeight: 600, 
-          color: alpha(theme.palette.text.primary, 0.9),
-          fontSize: eventInfo.view.type === 'dayGridMonth' ? '0.75rem' : '0.85rem'
-        }}>
-          {eventInfo.event.title}
-        </Typography>
-        {eventInfo.view.type !== 'dayGridMonth' && (
-          <>
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              mt: 0.5,
-              p: 0.7,
-              bgcolor: alpha(theme.palette.background.paper, 0.8),
-              borderRadius: '4px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
-            }}>
-              <LocationOn fontSize="small" sx={{ 
-                fontSize: '0.8rem', 
-                mr: 0.7, 
-                color: theme.palette.primary.main,
-                minWidth: 18
-              }} />
-              <Typography variant="caption" noWrap sx={{ 
-                color: theme.palette.text.primary,
-                fontWeight: 600,
-                fontSize: '0.75rem'
-              }}>
-                {eventInfo.event.extendedProps.location}
-              </Typography>
-            </Box>
-            <Box sx={{ mt: 0.7, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Chip 
-                size="small"
-                label={eventInfo.event.extendedProps.status}
-                sx={{ 
-                  fontSize: '0.65rem', 
-                  height: 20, 
-                  maxWidth: '100%',
-                  bgcolor: eventInfo.event.backgroundColor,
-                  color: '#fff',
-                  fontWeight: 600
-                }}
-              />
-            </Box>
-          </>
-        )}
-      </Box>
-    );
-  };
-  
   useEffect(() => {
     const fetchCoachData = async () => {
       setIsLoading(true);
@@ -385,6 +367,11 @@ const CoachDashboard = () => {
         const teamsData = await getCoachTeams();
         console.log('Coach teams:', teamsData);
         setCoachTeams(teamsData);
+        
+        // Set the first team as selected by default if available
+        if (teamsData.length > 0) {
+          setSelectedTeam(teamsData[0]._id);
+        }
         
         // Fetch training plans assigned to the coach
         const plansData = await getCoachTrainingPlans();
@@ -416,62 +403,59 @@ const CoachDashboard = () => {
   
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+    
+    // If team stats tab is selected and no team stats have been loaded yet, load them
+    if (newValue === 3 && selectedTeam && !teamPlayerStats) {
+      fetchTeamPlayerStats(selectedTeam);
+    }
   };
   
-  const handleUpdateStatus = async (id, newStatus) => {
+  const handleTeamChange = (event) => {
+    const teamId = event.target.value;
+    setSelectedTeam(teamId);
+    
+    // Fetch stats for the selected team if we're on the team stats tab
+    if (activeTab === 3) {
+      fetchTeamPlayerStats(teamId);
+    }
+  };
+  
+  const fetchTeamPlayerStats = async (teamId) => {
+    if (!teamId) return;
+    
+    setStatsLoading(true);
     try {
-      await updateTrainingPlanStatus(id, newStatus);
-      
-      // Update both trainingPlans and trainingSchedules states
-      setTrainingPlans(prevPlans => 
-        prevPlans.map(plan => 
-          plan._id === id ? { ...plan, status: newStatus } : plan
-        )
-      );
-      
-      // Also update training schedules
-      setTrainingSchedules(prevSchedules => 
-        prevSchedules.map(schedule => 
-          schedule._id === id ? { ...schedule, status: newStatus } : schedule
-        )
-      );
+      const response = await getTeamPlayerStats(teamId);
+      setTeamPlayerStats(response);
+      setStatsLoading(false);
     } catch (error) {
-      console.error('Error updating training plan status:', error);
+      console.error('Error fetching team player stats:', error);
+      setError('Failed to load player statistics. Please try again.');
+      setStatsLoading(false);
     }
   };
-  
-  // Get team players count
-  const getTeamPlayersCount = (team) => {
-    return team.players ? team.players.length : 0;
-  };
-  
-  // Get upcoming training plans
-  const getUpcomingPlans = () => {
-    const today = new Date();
-    return trainingPlans
-      .filter(plan => new Date(plan.date) >= today)
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
-  };
-  
-  // Get training plans by status
-  const getPlansByStatus = (status) => {
-    return trainingPlans.filter(plan => plan.status === status);
-  };
-  
-  // Get filtered plans based on selected tab
-  const getFilteredPlans = () => {
-    switch(plansTab) {
-      case 0: // Upcoming
-        return trainingPlans.filter(plan => 
-          plan.status === 'Draft' || plan.status === 'Assigned'
-        ).sort((a, b) => new Date(a.date) - new Date(b.date));
-      case 1: // In Progress
-        return trainingPlans.filter(plan => plan.status === 'InProgress');
-      case 2: // Completed
-        return trainingPlans.filter(plan => plan.status === 'Completed');
-      default:
-        return trainingPlans;
+
+  // Handle updating training plan status
+  const handleUpdateStatus = async (planId, newStatus) => {
+    try {
+      await updateTrainingPlanStatus(planId, newStatus);
+      
+      // Update local state to reflect the change
+      const updatedPlans = trainingPlans.map(plan => 
+        plan._id === planId ? { ...plan, status: newStatus } : plan
+      );
+      
+      setTrainingPlans(updatedPlans);
+    } catch (error) {
+      console.error('Error updating plan status:', error);
+      setError('Failed to update plan status. Please try again.');
     }
+  };
+
+  // Format last updated date
+  const formatLastUpdated = (dateString) => {
+    if (!dateString) return 'Never';
+    return format(new Date(dateString), 'MMM dd, yyyy');
   };
   
   // Get status color
@@ -539,254 +523,6 @@ const CoachDashboard = () => {
     });
   };
   
-  // Format location for training sessions
-  const formatLocation = (court) => {
-    if (!court) return 'Location not specified';
-    
-    // If court is an ID string
-    if (typeof court === 'string') {
-      return 'Court not loaded'; // Don't show raw IDs to users
-    }
-    
-    // If court is an object with _id only
-    if (court._id && !court.name) {
-      return 'Court details pending';
-    }
-    
-    // If court has name and location
-    if (court.name) {
-      return `${court.name}${court.location ? `, ${court.location}` : ''}`;
-    }
-    
-    // Handle more deeply nested court object
-    if (court.court && court.court.name) {
-      return `${court.court.name}${court.court.location ? `, ${court.court.location}` : ''}`;
-    }
-    
-    return 'Location details unavailable';
-  };
-  
-  // Convert training sessions to calendar events
-  const convertToCalendarEvents = () => {
-    const events = [];
-    
-    // Add booking-based training sessions
-    trainingSessions
-      .filter(session => session.startTime && session.endTime)
-      .forEach(session => {
-        try {
-          const teamName = session.team && session.team.name ? session.team.name : 'Personal Training';
-          const location = formatLocation(session.court);
-          
-          // Define colors with better contrast and visibility
-          const statusColors = {
-            Confirmed: {
-              bg: '#2e7d32', // darker green
-              border: '#1b5e20'
-            },
-            Pending: {
-              bg: '#ed6c02', // darker orange
-              border: '#c24e00'
-            },
-            Cancelled: {
-              bg: '#d32f2f', // darker red
-              border: '#b71c1c'
-            },
-            Default: {
-              bg: '#757575',
-              border: '#616161'
-            }
-          };
-          
-          const color = session.status === 'Confirmed' ? statusColors.Confirmed.bg : 
-                        session.status === 'Pending' ? statusColors.Pending.bg : 
-                        session.status === 'Cancelled' ? statusColors.Cancelled.bg : 
-                        statusColors.Default.bg;
-          
-          events.push({
-            id: `session-${session._id}`,
-            title: `${teamName} - Training Session`,
-            start: new Date(session.startTime),
-            end: new Date(session.endTime),
-            location: location,
-            status: session.status,
-            type: 'session',
-            color: color,
-            textColor: '#fff',
-            borderColor: color,
-            extendedProps: {
-              location: location,
-              status: session.status,
-              teamName: teamName,
-              durationHours: ((new Date(session.endTime) - new Date(session.startTime)) / (1000 * 60 * 60)).toFixed(1),
-              paymentStatus: session.paymentStatus || 'Not specified',
-              purpose: session.purpose || 'Training',
-              notes: session.notes || 'No additional notes'
-            }
-          });
-        } catch (err) {
-          console.error('Error converting session to event:', err, session);
-        }
-      });
-    
-    // Add training plans
-    trainingSchedules
-      .filter(schedule => schedule.date)
-      .forEach(schedule => {
-        try {
-          // Make sure we have a team name
-          let teamName = 'Basketball Team';
-          if (schedule.team) {
-            if (typeof schedule.team === 'object' && schedule.team.name) {
-              teamName = schedule.team.name;
-            } else if (typeof schedule.team === 'string') {
-              // Try to find the team in coachTeams
-              const team = coachTeams.find(t => t._id === schedule.team);
-              if (team) {
-                teamName = team.name;
-              }
-            }
-          }
-          
-          const scheduleDate = new Date(schedule.date);
-          const endDate = new Date(scheduleDate);
-          
-          // Check if schedule has a title, use a default if not
-          const title = schedule.title || 'Training Session';
-          
-          // Assume duration is in minutes and add to end date
-          endDate.setMinutes(scheduleDate.getMinutes() + (schedule.duration || 60));
-          
-          // Debug logging for court information
-          console.log('Schedule data for location:', {
-            id: schedule._id,
-            title: schedule.title,
-            scheduleId: schedule.scheduleId,
-            court: schedule.court
-          });
-          
-          // Get location from schedule if it exists
-          let location = 'Basketball Court'; // Default to a fixed court name for now
-          
-          // Check if there's a populated scheduleId (booking reference)
-          if (schedule.scheduleId && typeof schedule.scheduleId === 'object') {
-            console.log('Schedule has populated scheduleId object:', schedule.scheduleId);
-            if (schedule.scheduleId.court) {
-              // If the court object is populated directly
-              location = formatLocation(schedule.scheduleId.court);
-              console.log('Using court from scheduleId:', schedule.scheduleId.court);
-            }
-          } 
-          // Check if we have a court directly on the plan
-          else if (schedule.court) {
-            location = formatLocation(schedule.court);
-            console.log('Using court directly from schedule:', schedule.court);
-          }
-          
-          console.log('Final location for event:', location);
-          
-          // Set color based on status with better contrast
-          let color;
-          switch(schedule.status) {
-            case 'Draft': color = '#616161'; break; // darker gray
-            case 'Assigned': color = '#1976d2'; break; // darker blue
-            case 'InProgress': color = '#ed6c02'; break; // darker orange
-            case 'Completed': color = '#2e7d32'; break; // darker green
-            default: color = '#616161'; // darker gray
-          }
-          
-          events.push({
-            id: `plan-${schedule._id}`,
-            title: `${teamName} - ${title}`,
-            start: scheduleDate,
-            end: endDate,
-            location: location,
-            status: schedule.status,
-            type: 'plan',
-            color: color,
-            textColor: '#fff',
-            borderColor: color,
-            extendedProps: {
-              location: location,
-              status: schedule.status,
-              teamName: teamName,
-              durationHours: (schedule.duration / 60).toFixed(1),
-              description: schedule.description || 'No description provided',
-              activitiesCount: schedule.activities ? schedule.activities.length : 0,
-              createdBy: schedule.createdBy ? 
-                (typeof schedule.createdBy === 'object' ? 
-                  `${schedule.createdBy.firstName} ${schedule.createdBy.lastName}` : 
-                  'Coach') : 
-                'Coach',
-              notes: schedule.notes || 'No additional notes',
-              courtDetails: schedule.court || schedule.scheduleId?.court || { name: 'Basketball Court' }
-            }
-          });
-        } catch (err) {
-          console.error('Error converting schedule to event:', err, schedule);
-        }
-      });
-    
-    return events;
-  };
-  
-  // Remove the mouse movement useEffect and update handleEventMouseEnter
-  useEffect(() => {
-    // We no longer need a mousemove handler since tooltip will be positioned above the event
-    return () => {};
-  }, [showTooltip]);
-  
-  // Update the handleEventMouseEnter function
-  const handleEventMouseEnter = (info) => {
-    setHoveredEvent(info.event);
-    
-    // Calculate position based on the event element
-    const rect = info.el.getBoundingClientRect();
-    
-    if (tooltipRef.current) {
-      const tooltipWidth = 300; // Our max-width from styles
-      
-      // Initial positioning - center above the event
-      let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
-      let top = rect.top - 10;
-      
-      // Check if tooltip would go off screen to the left
-      if (left < 10) {
-        left = 10;
-      }
-      
-      // Check if tooltip would go off screen to the right
-      const windowWidth = window.innerWidth;
-      if (left + tooltipWidth > windowWidth - 10) {
-        left = windowWidth - tooltipWidth - 10;
-      }
-      
-      // Apply the positioning
-      tooltipRef.current.style.left = `${left}px`;
-      tooltipRef.current.style.top = `${top}px`;
-      tooltipRef.current.style.transform = 'translateY(-100%)';
-    }
-    
-    setShowTooltip(true);
-  };
-  
-  // Add the missing handleEventClick function
-  const handleEventClick = (clickInfo) => {
-    // Navigate to appropriate detail page based on event type
-    const eventId = clickInfo.event.id;
-    
-    if (eventId.startsWith('plan-')) {
-      // Extract the plan ID (remove 'plan-' prefix)
-      const planId = eventId.substring(5);
-      // Navigate to training plan details
-      window.location.href = `/training-plans/${planId}`;
-    } else if (eventId.startsWith('session-')) {
-      // For training sessions, we could navigate to a session details page
-      // or handle in another appropriate way
-      console.log('Session clicked:', clickInfo.event);
-    }
-  };
-  
   // Render teams and players tab
   const renderTeamsTab = () => (
     <Grid container spacing={3}>
@@ -809,23 +545,15 @@ const CoachDashboard = () => {
               />
               <Divider />
               <CardContent>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    {team.description || 'No description provided'}
-                  </Typography>
-                  <Chip 
-                    icon={<People />} 
-                    label={`${getTeamPlayersCount(team)} Players`}
-                    size="small"
-                    sx={{ mt: 1 }}
-                  />
-                </Box>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  {team.description || 'No description provided'}
+                </Typography>
                 
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
                   Team Players
                 </Typography>
                 
-                <List dense sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
+                <List sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
                   {team.players && team.players.length > 0 ? (
                     team.players.map((playerObj, index) => {
                       // Add null check for player object
@@ -876,252 +604,305 @@ const CoachDashboard = () => {
       ) : (
         <Grid item xs={12}>
           <Paper sx={{ p: 3, textAlign: 'center' }}>
-            <Typography>You are not assigned to any teams yet.</Typography>
+            <Typography variant="body1">
+              You are not assigned as a coach to any teams yet.
+            </Typography>
           </Paper>
         </Grid>
       )}
     </Grid>
   );
   
-  // Add this inside the CoachDashboard component, right after state declarations
-  const tooltipRef = useRef(null);
+  // Get upcoming training plans
+  const getUpcomingPlans = () => {
+    const today = new Date();
+    return trainingPlans
+      .filter(plan => new Date(plan.date) >= today)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+  };
   
-  // Update the renderSchedulesTab function to remove the useEffect hook
+  // Get training plans by status
+  const getPlansByStatus = (status) => {
+    return trainingPlans.filter(plan => plan.status === status);
+  };
+  
+  // Get filtered plans based on selected tab
+  const getFilteredPlans = () => {
+    switch(plansTab) {
+      case 0: // Upcoming
+        return trainingPlans.filter(plan => 
+          plan.status === 'Draft' || plan.status === 'Assigned'
+        ).sort((a, b) => new Date(a.date) - new Date(b.date));
+      case 1: // In Progress
+        return trainingPlans.filter(plan => plan.status === 'InProgress');
+      case 2: // Completed
+        return trainingPlans.filter(plan => plan.status === 'Completed');
+      default:
+        return trainingPlans;
+    }
+  };
+  
+  // Render training schedules tab
   const renderSchedulesTab = () => {
-    const refreshSchedules = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Refresh both training plans and booking-based sessions
-        const [schedulesData, sessionsData] = await Promise.all([
-          getCoachTrainingSchedules(),
-          getCoachTrainingSessions()
-        ]);
-        
-        console.log('Refreshed training schedules:', schedulesData);
-        console.log('Refreshed training sessions:', sessionsData);
-        
-        setTrainingSchedules(schedulesData);
-        setTrainingSessions(sessionsData);
-        
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error refreshing training data:', error);
-        setError('Failed to refresh training data. Please try again.');
-        setIsLoading(false);
-      }
-    };
+    // Filter sessions if date filter is active
+    const filteredSessions = filterSessionsByDate([...trainingSessions]);
+    const filteredSchedules = [...trainingSchedules];
     
     return (
-      <Grid container spacing={3}>
-        {isLoading ? (
-          <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-            <CircularProgress />
-          </Grid>
-        ) : (
-          <>
-            <Grid item xs={12}>
-              <Paper 
-                elevation={0}
-                sx={{ 
-                  p: 2.5, 
-                  borderRadius: 2,
-                  bgcolor: alpha(theme.palette.primary.light, 0.1),
-                  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  mb: 2,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+      <Box sx={{ mt: 2 }}>
+        {/* Calendar view for schedules and sessions */}
+        <Paper sx={{ mb: 3, p: 2, borderRadius: 2 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' }, 
+            justifyContent: 'space-between',
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            mb: 2,
+            gap: 1
+          }}>
+            <Typography variant="h6" component="h2">
+              Training Schedule Calendar
+            </Typography>
+            
+            <Button 
+              variant="outlined" 
+              size="small"
+              startIcon={<FilterAlt />}
+              onClick={() => setDateFilterOpen(!dateFilterOpen)}
+              color={isFilterActive ? "primary" : "inherit"}
+            >
+              {isFilterActive ? "Filter Active" : "Filter by Date"}
+            </Button>
+          </Box>
+          
+          {dateFilterOpen && (
+            <Paper sx={{ mb: 2, p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.background.paper, 0.6) }}>
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <FormControl component="fieldset">
+                    <FormControlLabel
+                      control={
+                        <Switch 
+                          checked={filterMode === 'range'} 
+                          onChange={(e) => setFilterMode(e.target.checked ? 'range' : 'single')}
+                        />
+                      }
+                      label="Date Range Filter"
+                    />
+                    <FormHelperText>Toggle between single date and date range</FormHelperText>
+                  </FormControl>
+                  
+                  {filterMode === 'single' ? (
+                    <DatePicker
+                      label="Filter by date"
+                      value={singleDateFilter}
+                      onChange={(newDate) => setSingleDateFilter(newDate)}
+                      renderInput={(params) => <TextField {...params} fullWidth />}
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                      <DatePicker
+                        label="Start date"
+                        value={dateRangeStart}
+                        onChange={(newDate) => setDateRangeStart(newDate)}
+                        renderInput={(params) => <TextField {...params} fullWidth />}
+                      />
+                      <DatePicker
+                        label="End date"
+                        value={dateRangeEnd}
+                        onChange={(newDate) => setDateRangeEnd(newDate)}
+                        renderInput={(params) => <TextField {...params} fullWidth />}
+                      />
+                    </Box>
+                  )}
+                  
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                    <Button 
+                      variant="outlined" 
+                      startIcon={<Clear />}
+                      onClick={() => {
+                        setDateRangeStart(null);
+                        setDateRangeEnd(null);
+                        setSingleDateFilter(null);
+                        setIsFilterActive(false);
+                      }}
+                    >
+                      Clear
+                    </Button>
+                    <Button 
+                      variant="contained" 
+                      startIcon={<Event />}
+                      onClick={() => {
+                        setIsFilterActive(true);
+                        setDateFilterOpen(false);
+                      }}
+                      disabled={(filterMode === 'single' && !singleDateFilter) || 
+                               (filterMode === 'range' && !dateRangeStart && !dateRangeEnd)}
+                    >
+                      Apply Filter
+                    </Button>
+                  </Box>
+                </Box>
+              </LocalizationProvider>
+            </Paper>
+          )}
+          
+          <CalendarLegend />
+          
+          {isLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box sx={calendarStyles}>
+              <FullCalendar
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                initialView="dayGridMonth"
+                headerToolbar={{
+                  left: 'prev,next today',
+                  center: 'title',
+                  right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 }}
-              >
-                <Box>
-                  <Typography variant="h6" sx={{ 
-                    fontWeight: 'bold', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    color: theme.palette.primary.dark
-                  }}>
-                    {coachTeams.length > 0 ?
-                      React.cloneElement(getSportIcon(coachTeams[0]?.sportType || 'Sports'), { 
-                        sx: { mr: 1.5, fontSize: '1.8rem', color: theme.palette.primary.main } 
-                      }) :
-                      <FitnessCenter sx={{ mr: 1.5, fontSize: '1.8rem', color: theme.palette.primary.main }} />
-                    }
-                    Training Schedule Calendar
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.8, ml: 0.5 }}>
-                    View all your training sessions and plans in a calendar view
+                height="auto"
+                eventTimeFormat={{
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  meridiem: 'short'
+                }}
+                events={[
+                  // Training sessions events
+                  ...filteredSessions.map(session => ({
+                    id: `session-${session._id}`,
+                    title: `Training: ${session.purpose}`,
+                    start: session.startTime,
+                    end: session.endTime,
+                    extendedProps: {
+                      type: 'session',
+                      court: session.court?.name || 'No court specified',
+                      location: session.court?.location || 'No location',
+                      teams: session.teams?.map(t => t.name || 'Unnamed team').join(', '),
+                      status: session.status
+                    },
+                    backgroundColor: session.status === 'confirmed' ? '#2e7d32' : 
+                                    session.status === 'pending' ? '#ed6c02' : 
+                                    session.status === 'cancelled' ? '#d32f2f' : '#1976d2',
+                    borderColor: 'transparent',
+                  })),
+                  
+                  // Training plans/schedules events
+                  ...filteredSchedules.map(plan => ({
+                    id: `plan-${plan._id}`,
+                    title: `Plan: ${plan.title}`,
+                    start: plan.scheduleId?.startTime || plan.date,
+                    end: plan.scheduleId?.endTime || null,
+                    extendedProps: {
+                      type: 'plan',
+                      status: plan.status,
+                      court: plan.court?.name || 'No court specified',
+                      location: plan.court?.location || 'No location',
+                      team: plan.team?.name || 'No team specified'
+                    },
+                    backgroundColor: plan.status === 'Draft' ? '#616161' : 
+                                    plan.status === 'Assigned' ? '#1976d2' : 
+                                    plan.status === 'InProgress' ? '#ed6c02' : 
+                                    plan.status === 'Completed' ? '#2e7d32' : '#1976d2',
+                    borderColor: 'transparent',
+                  }))
+                ]}
+                eventClick={(info) => {
+                  // Set hovered event when clicked
+                  setHoveredEvent(info.event);
+                  
+                  // Redirect to appropriate page when event is clicked
+                  if (info.event.extendedProps.type === 'plan') {
+                    const planId = info.event.id.replace('plan-', '');
+                    window.location.href = `/training-plans/${planId}`;
+                  }
+                }}
+                eventMouseEnter={(info) => {
+                  setHoveredEvent(info.event);
+                  const rect = info.el.getBoundingClientRect();
+                  setTooltipPosition({
+                    top: rect.bottom + window.scrollY,
+                    left: rect.left + window.scrollX
+                  });
+                  setShowTooltip(true);
+                }}
+                eventMouseLeave={(info) => {
+                  setShowTooltip(false);
+                }}
+              />
+            </Box>
+          )}
+          
+          {/* Tooltip for event details */}
+          <Box 
+            sx={{ 
+              ...styles.tooltip, 
+              ...(showTooltip ? styles.visible : styles.hidden),
+              top: tooltipPosition.top + 'px',
+              left: tooltipPosition.left + 'px'
+            }}
+          >
+            {hoveredEvent && (
+              <>
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  {hoveredEvent.title}
+                </Typography>
+                
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                  <AccessTime sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                  <Typography variant="body2">
+                    {format(new Date(hoveredEvent.start), 'h:mm a')}
+                    {hoveredEvent.end && ` - ${format(new Date(hoveredEvent.end), 'h:mm a')}`}
                   </Typography>
                 </Box>
-                <Button 
-                  variant="contained" 
-                  size="medium"
-                  color="primary"
-                  onClick={refreshSchedules}
-                  disabled={isLoading}
-                  startIcon={<CalendarMonth />}
-                  sx={{ 
-                    px: 2.5, 
-                    py: 1, 
-                    borderRadius: 1.5,
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    fontWeight: 500
-                  }}
-                >
-                  Refresh Calendar
-                </Button>
-              </Paper>
-            </Grid>
-            
-            <Grid item xs={12}>
-              <CalendarLegend />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Paper variant="outlined" sx={{ 
-                p: 2, 
-                borderRadius: 2, 
-                height: '650px',
-                ...calendarStyles,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-              }}>
-                <FullCalendar
-                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                  initialView="timeGridWeek"
-                  headerToolbar={{
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                  }}
-                  events={convertToCalendarEvents()}
-                  eventClick={handleEventClick}
-                  eventMouseEnter={handleEventMouseEnter}
-                  eventMouseLeave={() => setShowTooltip(false)}
-                  height="600px"
-                  eventTimeFormat={{
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    meridiem: 'short'
-                  }}
-                  eventContent={renderEventContent}
-                  slotLabelFormat={{
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                  }}
-                  dayHeaderFormat={{
-                    weekday: 'short',
-                    month: 'numeric',
-                    day: 'numeric',
-                    omitCommas: true
-                  }}
-                  allDaySlot={true}
-                  allDayText="All Day"
-                  slotMinTime="06:00:00"
-                  slotMaxTime="22:00:00"
-                  nowIndicator={true}
-                  stickyHeaderDates={true}
-                  dayMaxEvents={3}
-                  eventMaxStack={3}
-                  expandRows={true}
-                  contentHeight="auto"
-                  handleWindowResize={true}
-                  views={{
-                    timeGridWeek: {
-                      dayHeaderFormat: { weekday: 'short', month: 'numeric', day: 'numeric', omitCommas: true },
-                      slotDuration: '01:00:00',
-                      slotLabelInterval: '01:00:00'
-                    },
-                    dayGridMonth: {
-                      dayMaxEvents: 3,
-                      fixedWeekCount: false
-                    },
-                    timeGridDay: {
-                      dayHeaderFormat: { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }
+                
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                  <LocationOn sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                  <Typography variant="body2">
+                    {hoveredEvent.extendedProps.court} ({hoveredEvent.extendedProps.location})
+                  </Typography>
+                </Box>
+                
+                {hoveredEvent.extendedProps.type === 'plan' && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                    <People sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                    <Typography variant="body2">
+                      {hoveredEvent.extendedProps.team}
+                    </Typography>
+                  </Box>
+                )}
+                
+                {hoveredEvent.extendedProps.type === 'session' && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                    <People sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                    <Typography variant="body2">
+                      {hoveredEvent.extendedProps.teams || 'No teams specified'}
+                    </Typography>
+                  </Box>
+                )}
+                
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  <Chip 
+                    label={hoveredEvent.extendedProps.status}
+                    size="small"
+                    color={
+                      hoveredEvent.extendedProps.status === 'Draft' ? 'default' :
+                      hoveredEvent.extendedProps.status === 'Assigned' || 
+                      hoveredEvent.extendedProps.status === 'confirmed' ? 'primary' :
+                      hoveredEvent.extendedProps.status === 'InProgress' || 
+                      hoveredEvent.extendedProps.status === 'pending' ? 'warning' :
+                      hoveredEvent.extendedProps.status === 'Completed' ? 'success' :
+                      hoveredEvent.extendedProps.status === 'cancelled' ? 'error' : 'default'
                     }
-                  }}
-                  businessHours={{
-                    daysOfWeek: [1, 2, 3, 4, 5], // Monday - Friday
-                    startTime: '08:00',
-                    endTime: '20:00',
-                  }}
-                  themeSystem="standard"
-                  firstDay={1} // Start calendar from Monday
-                  buttonText={{
-                    today: 'Today',
-                    month: 'Month',
-                    week: 'Week',
-                    day: 'Day'
-                  }}
-                  slotLabelClassNames="slot-label"
-                  dayHeaderClassNames="day-header"
-                  dayMaxEventRows={true}
-                  slotEventOverlap={false}
-                  eventDisplay="block"
-                  slotDuration="01:00:00"
-                  slotLabelInterval="01:00:00"
-                  scrollTimeReset={false}
-                  scrollTime="08:00:00"
-                  weekNumbers={false}
-                  weekText="W"
-                  weekNumberFormat={{ week: 'numeric' }}
-                  fixedWeekCount={false}
-                  showNonCurrentDates={false}
-                />
-                <div 
-                  ref={tooltipRef}
-                  style={{
-                    ...styles.tooltip,
-                    ...(showTooltip && hoveredEvent ? styles.visible : styles.hidden),
-                    borderLeft: hoveredEvent ? `4px solid ${hoveredEvent.backgroundColor}` : 'none'
-                  }}
-                >
-                  {hoveredEvent && (
-                    <>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                        {hoveredEvent.title}
-                      </Typography>
-                      
-                      <Chip 
-                        label={hoveredEvent.extendedProps.status}
-                        size="small"
-                        sx={{ 
-                          mb: 1.5, 
-                          bgcolor: hoveredEvent.backgroundColor,
-                          color: 'white', 
-                          fontWeight: 'bold',
-                          fontSize: '0.7rem'
-                        }}
-                      />
-                      
-                      <Box sx={{ mb: 1 }}>
-                        <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                          <CalendarMonth sx={{ fontSize: '0.9rem', mr: 0.5, color: 'text.secondary' }} />
-                          {format(hoveredEvent.start, 'EEE, MMM d')} • {format(hoveredEvent.start, 'h:mm a')} - {format(hoveredEvent.end, 'h:mm a')}
-                        </Typography>
-                        
-                        <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                          <LocationOn sx={{ fontSize: '0.9rem', mr: 0.5, color: 'text.secondary' }} />
-                          {hoveredEvent.extendedProps.location}
-                        </Typography>
-                        
-                        {hoveredEvent.extendedProps.description && (
-                          <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary', fontSize: '0.8rem' }}>
-                            {hoveredEvent.extendedProps.description.length > 100 ? 
-                              hoveredEvent.extendedProps.description.substring(0, 100) + '...' : 
-                              hoveredEvent.extendedProps.description}
-                          </Typography>
-                        )}
-                      </Box>
-                    </>
-                  )}
-                </div>
-              </Paper>
-            </Grid>
-          </>
-        )}
-      </Grid>
+                  />
+                </Box>
+              </>
+            )}
+          </Box>
+        </Paper>
+      </Box>
     );
   };
   
@@ -1258,6 +1039,269 @@ const CoachDashboard = () => {
     </Box>
   );
   
+  // New function to render the Team Player Stats tab
+  const renderTeamStatsTab = () => {
+    return (
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2, 
+              mb: 3, 
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.primary.main, 0.05),
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between',
+              alignItems: { xs: 'stretch', sm: 'center' },
+              gap: 2
+            }}
+          >
+            <Box>
+              <Typography variant="h6" sx={{ 
+                fontWeight: 'bold', 
+                display: 'flex', 
+                alignItems: 'center', 
+                color: theme.palette.primary.dark
+              }}>
+                <BarChart sx={{ mr: 1.5, fontSize: '1.8rem', color: theme.palette.primary.main }} />
+                Team Player Performance Statistics
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.8, ml: 0.5 }}>
+                View performance metrics for players in your teams
+              </Typography>
+            </Box>
+            
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel>Select Team</InputLabel>
+              <Select
+                value={selectedTeam}
+                label="Select Team"
+                onChange={handleTeamChange}
+                disabled={coachTeams.length === 0}
+              >
+                {coachTeams.map(team => (
+                  <MenuItem value={team._id} key={team._id}>
+                    {team.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Paper>
+          
+          {statsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : !selectedTeam ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1">
+                Please select a team to view player statistics.
+              </Typography>
+            </Paper>
+          ) : !teamPlayerStats ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1">
+                No data available. Please select a team to view player statistics.
+              </Typography>
+            </Paper>
+          ) : teamPlayerStats.playersWithStats.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1">
+                No players found in this team.
+              </Typography>
+            </Paper>
+          ) : teamPlayerStats.playersWithStats.every(player => !player.stats || player.stats.length === 0) ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1">
+                No statistics have been recorded for any players in this team.
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                component={Link}
+                to="/player-stats"
+                sx={{ mt: 2 }}
+              >
+                Add Player Statistics
+              </Button>
+            </Paper>
+          ) : (
+            teamPlayerStats.playersWithStats.map(player => {
+              // Only render players that have stats
+              if (!player.stats || player.stats.length === 0) return null;
+              
+              return (
+                <Card 
+                  key={player._id} 
+                  sx={{ 
+                    mb: 3, 
+                    borderRadius: 2,
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <CardHeader
+                    title={
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Avatar sx={{ mr: 1.5, bgcolor: theme.palette.primary.main }}>
+                          <Person />
+                        </Avatar>
+                        <Typography variant="h6">
+                          {player.firstName} {player.lastName}
+                        </Typography>
+                      </Box>
+                    }
+                    subheader={player.email}
+                  />
+                  <Divider />
+                  
+                  {player.stats.map(stat => (
+                    <Box key={stat._id} sx={{ p: 2 }}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        mb: 2, 
+                        pb: 1, 
+                        borderBottom: `1px dashed ${alpha(theme.palette.divider, 0.5)}`
+                      }}>
+                        <Chip 
+                          label={stat.sportType} 
+                          color="primary" 
+                          size="small" 
+                          sx={{ mr: 1.5 }}
+                        />
+                        <Typography variant="subtitle1" fontWeight="medium">
+                          {stat.sportType} Statistics
+                        </Typography>
+                        <Typography 
+                          variant="caption" 
+                          color="text.secondary" 
+                          sx={{ ml: 'auto' }}
+                        >
+                          Last Updated: {formatLastUpdated(stat.updatedAt)}
+                        </Typography>
+                      </Box>
+                      
+                      <Grid container spacing={3}>
+                        {/* Physical Info */}
+                        <Grid item xs={12} md={3}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ 
+                            fontWeight: 'bold', 
+                            display: 'flex', 
+                            alignItems: 'center',
+                            gap: 1
+                          }}>
+                            <FitnessCenter fontSize="small" />
+                            Physical Info
+                          </Typography>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            gap: 1, 
+                            background: alpha(theme.palette.primary.light, 0.05),
+                            p: 1.5,
+                            borderRadius: 1
+                          }}>
+                            <Typography variant="body2">
+                              <strong>Height:</strong> {stat.common.height.value} {stat.common.height.unit}
+                            </Typography>
+                            <Typography variant="body2">
+                              <strong>Weight:</strong> {stat.common.weight.value} {stat.common.weight.unit}
+                            </Typography>
+                            {stat.common.notes && (
+                              <Typography variant="body2" sx={{ fontStyle: 'italic', mt: 1 }}>
+                                "{stat.common.notes}"
+                              </Typography>
+                            )}
+                          </Box>
+                        </Grid>
+                        
+                        {/* Performance Metrics - Radar Chart */}
+                        <Grid item xs={12} md={5}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ 
+                            fontWeight: 'bold',
+                            display: 'flex', 
+                            alignItems: 'center',
+                            gap: 1
+                          }}>
+                            <DonutLarge fontSize="small" />
+                            Performance Metrics
+                          </Typography>
+                          <Box sx={{ height: 220, width: '100%' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <RadarChart 
+                                outerRadius="80%" 
+                                data={createRadarData(
+                                  stat.sportType.toLowerCase(), 
+                                  stat[stat.sportType.toLowerCase().replace(/\s+/g, '')]
+                                )}
+                              >
+                                <PolarGrid strokeDasharray="3 3" />
+                                <PolarAngleAxis dataKey="subject" />
+                                <PolarRadiusAxis domain={[0, 10]} />
+                                <Radar 
+                                  name="Skills" 
+                                  dataKey="A" 
+                                  stroke={theme.palette.primary.main} 
+                                  fill={theme.palette.primary.main} 
+                                  fillOpacity={0.6} 
+                                />
+                              </RadarChart>
+                            </ResponsiveContainer>
+                          </Box>
+                        </Grid>
+                        
+                        {/* Grades - Bar Chart */}
+                        <Grid item xs={12} md={4}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ 
+                            fontWeight: 'bold',
+                            display: 'flex', 
+                            alignItems: 'center',
+                            gap: 1
+                          }}>
+                            <BarChart fontSize="small" />
+                            Overall Grades
+                          </Typography>
+                          <Box sx={{ height: 220, width: '100%' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <ReBarChart data={createBarData(stat.grades)} layout="vertical">
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis type="number" domain={[0, 10]} />
+                                <YAxis dataKey="name" type="category" width={100} />
+                                <ReTooltip />
+                                <Bar dataKey="value" fill={theme.palette.secondary.main} barSize={20} />
+                              </ReBarChart>
+                            </ResponsiveContainer>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                      
+                      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button 
+                          component={Link}
+                          to={`/player-stats`}
+                          variant="outlined"
+                          size="small"
+                          startIcon={<BarChart />}
+                          sx={{ mr: 1 }}
+                        >
+                          Manage Stats
+                        </Button>
+                      </Box>
+                    </Box>
+                  ))}
+                </Card>
+              );
+            })
+          )}
+        </Grid>
+      </Grid>
+    );
+  };
+  
   // If not a coach, show access denied
   if (!coach) {
     return (
@@ -1288,7 +1332,7 @@ const CoachDashboard = () => {
           Coach Dashboard
         </Typography>
         <Typography variant="subtitle1" color="text.secondary">
-          Manage your teams, schedules, and training plans
+          Manage your teams, schedules, training plans and player statistics
         </Typography>
       </Box>
       
@@ -1298,6 +1342,8 @@ const CoachDashboard = () => {
           value={activeTab}
           onChange={handleTabChange}
           aria-label="coach dashboard tabs"
+          variant="scrollable"
+          scrollButtons="auto"
         >
           <Tab 
             label="Teams & Players" 
@@ -1312,6 +1358,11 @@ const CoachDashboard = () => {
           <Tab 
             label="Training Plans" 
             icon={<Assignment />} 
+            iconPosition="start"
+          />
+          <Tab 
+            label="Team Player Stats" 
+            icon={<BarChart />} 
             iconPosition="start"
           />
         </Tabs>
@@ -1353,6 +1404,19 @@ const CoachDashboard = () => {
             return (
               <Paper sx={{ p: 3, textAlign: 'center' }}>
                 <Typography color="error">There was an error loading the Training Plans tab. Please try again later.</Typography>
+              </Paper>
+            );
+          }
+        })()}
+        
+        {activeTab === 3 && (() => {
+          try {
+            return renderTeamStatsTab();
+          } catch (err) {
+            console.error('Error rendering Team Player Stats tab:', err);
+            return (
+              <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Typography color="error">There was an error loading the Team Player Stats tab. Please try again later.</Typography>
               </Paper>
             );
           }
