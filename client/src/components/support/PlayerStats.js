@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Container,
   Typography,
@@ -34,7 +34,18 @@ import {
   alpha,
   Chip,
   Divider,
-  useMediaQuery
+  useMediaQuery,
+  Card,
+  CardContent,
+  CardHeader,
+  CardActions,
+  Pagination,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Menu,
+  Tooltip,
+  Fade
 } from '@mui/material';
 import {
   Search,
@@ -45,12 +56,39 @@ import {
   PersonSearch,
   Person,
   Sports,
-  DirectionsRun
+  DirectionsRun,
+  FitnessCenter,
+  BarChart,
+  DonutLarge,
+  Sort,
+  FilterList,
+  Group,
+  GroupWork,
+  SportsBasketball,
+  SportsSoccer,
+  ExpandMore,
+  ViewList,
+  ViewModule
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import api from '../../services/api';
 import { getStoredUser } from '../../services/authService';
+import { 
+  RadarChart, 
+  PolarGrid, 
+  PolarAngleAxis, 
+  PolarRadiusAxis, 
+  Radar, 
+  ResponsiveContainer,
+  BarChart as ReBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as ReTooltip,
+  Legend
+} from 'recharts';
 
 // Custom slider with value display
 const StatSlider = ({ name, value, onChange, min = 1, max = 10, step = 1 }) => {
@@ -80,6 +118,299 @@ const StatSlider = ({ name, value, onChange, min = 1, max = 10, step = 1 }) => {
   );
 };
 
+// Create radar chart data for player skills
+const createRadarData = (sport, sportData) => {
+  if (!sportData) return [];
+  
+  return Object.entries(sportData)
+    .filter(([key]) => key !== '_id') // Exclude _id field
+    .map(([key, value]) => ({
+      subject: key.charAt(0).toUpperCase() + key.slice(1),
+      A: value,
+      fullMark: 10,
+    }));
+};
+
+// Create bar chart data for grades
+const createBarData = (grades) => {
+  if (!grades) return [];
+  
+  return Object.entries(grades)
+    .filter(([key]) => key !== '_id') // Exclude _id field
+    .map(([key, value]) => ({
+      name: key === "improvement" || key === "nprovement" ? "Progress" : key.charAt(0).toUpperCase() + key.slice(1),
+      value: value,
+    }));
+};
+
+// Player card component for better organization
+const PlayerCard = ({ player, stats, sportTypes, theme, handleOpenAddDialog, handleOpenEditDialog, handleOpenDeleteDialog, formatLastUpdated, createRadarData, createBarData }) => {
+  const playerStats = stats.filter(
+    stat => stat.player === player._id || stat.player._id === player._id
+  );
+  const hasStats = playerStats.length > 0;
+  
+  return (
+    <Paper sx={{ 
+      overflow: 'hidden',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      boxShadow: 3
+    }}>
+      {/* Player Header - Horizontal */}
+      <Box sx={{ 
+        p: 2, 
+        backgroundColor: theme.palette.primary.main,
+        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+          <Person sx={{ mr: 1, flexShrink: 0 }} />
+          <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <Typography variant="h6" noWrap>
+              {player.firstName} {player.lastName}
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.8 }} noWrap>
+              {player.email}
+            </Typography>
+          </Box>
+        </Box>
+        
+        <Tooltip title="Add Stats" arrow>
+          <Button
+            variant="contained"
+            size="small" 
+            color="secondary"
+            onClick={() => handleOpenAddDialog(player, 'Football')}
+            startIcon={<Add />}
+          >
+            Add Stats
+          </Button>
+        </Tooltip>
+      </Box>
+
+      {/* Player Content */}
+      <Box sx={{ p: 2, flexGrow: 1 }}>
+        {!hasStats ? (
+          <Box sx={{ 
+            p: 4, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            backgroundColor: alpha(theme.palette.background.default, 0.5)
+          }}>
+            <BarChart sx={{ fontSize: 60, color: alpha(theme.palette.text.secondary, 0.3), mb: 2 }} />
+            <Typography variant="h6" gutterBottom>No Stats Recorded</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
+              This player doesn't have any statistics recorded yet.
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 1 }}>
+              {sportTypes.slice(0, 5).map(sport => (
+                <Chip
+                  key={sport.value}
+                  label={sport.label}
+                  size="small"
+                  variant="outlined"
+                  onClick={() => handleOpenAddDialog(player, sport.value)}
+                  sx={{ cursor: 'pointer' }}
+                />
+              ))}
+              {sportTypes.length > 5 && (
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={() => handleOpenAddDialog(player, 'Football')}
+                >
+                  More Sports...
+                </Button>
+              )}
+            </Box>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {playerStats.map((stat) => (
+              <Card 
+                key={stat._id} 
+                sx={{ 
+                  mb: 2, 
+                  boxShadow: 2,
+                  height: '100%'
+                }}
+              >
+                <CardHeader
+                  title={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Chip 
+                        label={stat.sportType} 
+                        color="primary" 
+                        size="small" 
+                      />
+                      <Typography variant="h6">
+                        {stat.sportType} Stats
+                      </Typography>
+                    </Box>
+                  }
+                  subheader={`Last Updated: ${formatLastUpdated(stat.updatedAt)}`}
+                  action={
+                    <Box>
+                      <Tooltip title="Edit" arrow>
+                        <IconButton 
+                          size="small" 
+                          color="primary"
+                          onClick={() => handleOpenEditDialog(stat._id)}
+                          aria-label="Edit"
+                        >
+                          <Edit />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete" arrow>
+                        <IconButton 
+                          size="small" 
+                          color="error"
+                          onClick={() => handleOpenDeleteDialog(stat._id)}
+                          aria-label="Delete"
+                        >
+                          <Delete />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  }
+                />
+                
+                <Divider />
+                
+                <CardContent>
+                  {/* Horizontal layout for physical info, radar chart and grades */}
+                  <Grid container spacing={2}>
+                    {/* Physical Info */}
+                    <Grid item xs={12} md={3}>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ 
+                        fontWeight: 'bold', 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        gap: 1
+                      }}>
+                        <FitnessCenter fontSize="small" />
+                        Physical Info
+                      </Typography>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        gap: 1, 
+                        background: alpha(theme.palette.primary.light, 0.05),
+                        p: 1.5,
+                        borderRadius: 1
+                      }}>
+                        <Typography variant="body2">
+                          <strong>Height:</strong> {stat.common.height.value} {stat.common.height.unit}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>Weight:</strong> {stat.common.weight.value} {stat.common.weight.unit}
+                        </Typography>
+                        {stat.common.notes && (
+                          <Typography variant="body2" sx={{ fontStyle: 'italic', mt: 1 }}>
+                            "{stat.common.notes}"
+                          </Typography>
+                        )}
+                      </Box>
+                    </Grid>
+                    
+                    {/* Performance Metrics - Radar Chart */}
+                    <Grid item xs={12} md={5}>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ 
+                        fontWeight: 'bold',
+                        display: 'flex', 
+                        alignItems: 'center',
+                        gap: 1
+                      }}>
+                        <DonutLarge fontSize="small" />
+                        Performance Metrics
+                      </Typography>
+                      <Box sx={{ height: 200, width: '100%' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RadarChart 
+                            outerRadius="80%" 
+                            data={createRadarData(
+                              stat.sportType.toLowerCase(), 
+                              stat[stat.sportType.toLowerCase().replace(/\s+/g, '')]
+                            )}
+                          >
+                            <PolarGrid strokeDasharray="3 3" />
+                            <PolarAngleAxis dataKey="subject" />
+                            <PolarRadiusAxis domain={[0, 10]} />
+                            <Radar 
+                              name="Skills" 
+                              dataKey="A" 
+                              stroke={theme.palette.primary.main} 
+                              fill={theme.palette.primary.main} 
+                              fillOpacity={0.6} 
+                            />
+                          </RadarChart>
+                        </ResponsiveContainer>
+                      </Box>
+                    </Grid>
+                    
+                    {/* Grades - Bar Chart */}
+                    <Grid item xs={12} md={4}>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ 
+                        fontWeight: 'bold',
+                        display: 'flex', 
+                        alignItems: 'center',
+                        gap: 1
+                      }}>
+                        <BarChart fontSize="small" />
+                        Overall Grades
+                      </Typography>
+                      <Box sx={{ height: 200, width: '100%' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <ReBarChart data={createBarData(stat.grades)} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis type="number" domain={[0, 10]} />
+                            <YAxis dataKey="name" type="category" width={100} />
+                            <ReTooltip />
+                            <Bar dataKey="value" fill={theme.palette.secondary.main} barSize={20} />
+                          </ReBarChart>
+                        </ResponsiveContainer>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+
+                <Divider />
+                
+                <CardActions sx={{ justifyContent: 'flex-end', p: 1.5 }}>
+                  <Button 
+                    startIcon={<Edit />}
+                    variant="outlined"
+                    size="small" 
+                    onClick={() => handleOpenEditDialog(stat._id)}
+                  >
+                    Edit
+                  </Button>
+                  <Button 
+                    startIcon={<Delete />}
+                    variant="outlined"
+                    size="small" 
+                    color="error" 
+                    onClick={() => handleOpenDeleteDialog(stat._id)}
+                  >
+                    Delete
+                  </Button>
+                </CardActions>
+              </Card>
+            ))}
+          </Box>
+        )}
+      </Box>
+    </Paper>
+  );
+};
+
 const PlayerStats = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -92,6 +423,21 @@ const PlayerStats = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [playersPerPage, setPlayersPerPage] = useState(6);
+  
+  // Sorting and filtering
+  const [sortBy, setSortBy] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [filterHasStats, setFilterHasStats] = useState('all'); // 'all', 'withStats', 'withoutStats'
+  const [filterSport, setFilterSport] = useState('all');
+  const [viewMode, setViewMode] = useState('grid');
+  
+  // Sorting menu state
+  const [sortMenuAnchor, setSortMenuAnchor] = useState(null);
+  const [filterMenuAnchor, setFilterMenuAnchor] = useState(null);
   
   // State for player stats form
   const [formDialog, setFormDialog] = useState({
@@ -167,8 +513,8 @@ const PlayerStats = () => {
   
   // Sport Types
   const sportTypes = [
-    { value: 'Basketball', label: 'Basketball' },
-    { value: 'Football', label: 'Football' },
+    { value: 'Basketball', label: 'Basketball', icon: <SportsBasketball fontSize="small" /> },
+    { value: 'Football', label: 'Football', icon: <SportsSoccer fontSize="small" /> },
     { value: 'Volleyball', label: 'Volleyball' },
     { value: 'Self Defense', label: 'Self Defense' },
     { value: 'Karate', label: 'Karate' },
@@ -190,6 +536,7 @@ const PlayerStats = () => {
         player.email.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredPlayers(filtered);
+      setPage(1); // Reset to first page when searching
     } else {
       setFilteredPlayers(players);
     }
@@ -216,8 +563,115 @@ const PlayerStats = () => {
     }
   };
   
+  // Apply sorting and filtering
+  const sortedAndFilteredPlayers = useMemo(() => {
+    let result = [...filteredPlayers];
+    
+    // Apply filtering by stats
+    if (filterHasStats === 'withStats') {
+      result = result.filter(player => 
+        stats.some(stat => stat.player === player._id || stat.player._id === player._id)
+      );
+    } else if (filterHasStats === 'withoutStats') {
+      result = result.filter(player => 
+        !stats.some(stat => stat.player === player._id || stat.player._id === player._id)
+      );
+    }
+    
+    // Apply filtering by sport
+    if (filterSport !== 'all') {
+      result = result.filter(player => 
+        stats.some(stat => 
+          (stat.player === player._id || stat.player._id === player._id) && 
+          stat.sportType === filterSport
+        )
+      );
+    }
+    
+    // Apply sorting
+    result.sort((a, b) => {
+      let comparison = 0;
+      
+      if (sortBy === 'name') {
+        const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+        const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+        comparison = nameA.localeCompare(nameB);
+      } else if (sortBy === 'email') {
+        comparison = a.email.localeCompare(b.email);
+      } else if (sortBy === 'statCount') {
+        const countA = stats.filter(stat => stat.player === a._id || stat.player._id === a._id).length;
+        const countB = stats.filter(stat => stat.player === b._id || stat.player._id === b._id).length;
+        comparison = countA - countB;
+      } else if (sortBy === 'lastUpdated') {
+        const playerStatsA = stats.filter(stat => stat.player === a._id || stat.player._id === a._id);
+        const playerStatsB = stats.filter(stat => stat.player === b._id || stat.player._id === b._id);
+        
+        const latestA = playerStatsA.length ? Math.max(...playerStatsA.map(s => new Date(s.updatedAt).getTime())) : 0;
+        const latestB = playerStatsB.length ? Math.max(...playerStatsB.map(s => new Date(s.updatedAt).getTime())) : 0;
+        
+        comparison = latestA - latestB;
+      }
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+    
+    return result;
+  }, [filteredPlayers, stats, sortBy, sortDirection, filterHasStats, filterSport]);
+  
+  // Get paginated players
+  const paginatedPlayers = useMemo(() => {
+    const startIndex = (page - 1) * playersPerPage;
+    return sortedAndFilteredPlayers.slice(startIndex, startIndex + playersPerPage);
+  }, [sortedAndFilteredPlayers, page, playersPerPage]);
+  
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
+  };
+  
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
+  };
+  
+  const handleSortMenuOpen = (event) => {
+    setSortMenuAnchor(event.currentTarget);
+  };
+  
+  const handleSortMenuClose = () => {
+    setSortMenuAnchor(null);
+  };
+  
+  const handleFilterMenuOpen = (event) => {
+    setFilterMenuAnchor(event.currentTarget);
+  };
+  
+  const handleFilterMenuClose = () => {
+    setFilterMenuAnchor(null);
+  };
+  
+  const handleSortChange = (newSortBy) => {
+    if (sortBy === newSortBy) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(newSortBy);
+      setSortDirection('asc');
+    }
+    handleSortMenuClose();
+  };
+  
+  const handleFilterHasStatsChange = (value) => {
+    setFilterHasStats(value);
+    setPage(1); // Reset to first page when filtering
+  };
+  
+  const handleFilterSportChange = (value) => {
+    setFilterSport(value);
+    setPage(1); // Reset to first page when filtering
+  };
+  
+  const handleViewModeChange = (event, newViewMode) => {
+    if (newViewMode !== null) {
+      setViewMode(newViewMode);
+    }
   };
   
   // Open the dialog to add new stats
@@ -347,6 +801,7 @@ const PlayerStats = () => {
   
   // Save the form data (create new or update existing)
   const handleSaveStats = async () => {
+    setError(null); // Clear any previous errors
     try {
       let response;
       
@@ -370,7 +825,9 @@ const PlayerStats = () => {
       }, 3000);
     } catch (err) {
       console.error('Error saving stats:', err);
-      setError(err.response?.data?.msg || 'Failed to save stats. Please try again.');
+      const errorMessage = err.response?.data?.msg || 'Failed to save stats. Please try again.';
+      setError(errorMessage);
+      // Keep dialog open when there's an error so user can try again
     }
   };
   
@@ -414,7 +871,7 @@ const PlayerStats = () => {
   // Get player stats by player ID and sport type
   const getPlayerStatsBySport = (playerId, sportType) => {
     return stats.find(stat => 
-      stat.player._id === playerId && 
+      (stat.player === playerId || stat.player._id === playerId) && 
       stat.sportType === sportType
     );
   };
@@ -437,11 +894,17 @@ const PlayerStats = () => {
           </Typography>
         </Box>
         
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, width: { xs: '100%', sm: 'auto' } }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' }, 
+          gap: 2,
+          width: { xs: '100%', sm: 'auto' } 
+        }}>
           <TextField
             placeholder="Search players..."
             variant="outlined"
             fullWidth
+            size="small"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
@@ -468,6 +931,139 @@ const PlayerStats = () => {
         </Alert>
       )}
 
+      {/* Controls and Filters */}
+      <Paper elevation={2} sx={{ mb: 3, p: 2, borderRadius: 2 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6} md={4}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button 
+                variant="outlined" 
+                startIcon={<Sort />}
+                onClick={handleSortMenuOpen}
+                size="small"
+              >
+                Sort
+              </Button>
+              <Menu
+                anchorEl={sortMenuAnchor}
+                open={Boolean(sortMenuAnchor)}
+                onClose={handleSortMenuClose}
+              >
+                <MenuItem 
+                  onClick={() => handleSortChange('name')}
+                  selected={sortBy === 'name'}
+                >
+                  <Typography variant="body2">
+                    Name {sortBy === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </Typography>
+                </MenuItem>
+                <MenuItem 
+                  onClick={() => handleSortChange('email')}
+                  selected={sortBy === 'email'}
+                >
+                  <Typography variant="body2">
+                    Email {sortBy === 'email' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </Typography>
+                </MenuItem>
+                <MenuItem 
+                  onClick={() => handleSortChange('statCount')}
+                  selected={sortBy === 'statCount'}
+                >
+                  <Typography variant="body2">
+                    Number of Stats {sortBy === 'statCount' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </Typography>
+                </MenuItem>
+                <MenuItem 
+                  onClick={() => handleSortChange('lastUpdated')}
+                  selected={sortBy === 'lastUpdated'}
+                >
+                  <Typography variant="body2">
+                    Last Updated {sortBy === 'lastUpdated' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </Typography>
+                </MenuItem>
+              </Menu>
+              
+              <Button 
+                variant="outlined" 
+                startIcon={<FilterList />}
+                onClick={handleFilterMenuOpen}
+                size="small"
+              >
+                Filter
+              </Button>
+              <Menu
+                anchorEl={filterMenuAnchor}
+                open={Boolean(filterMenuAnchor)}
+                onClose={handleFilterMenuClose}
+              >
+                <Box sx={{ px: 2, pb: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    Stats
+                  </Typography>
+                  <ToggleButtonGroup
+                    value={filterHasStats}
+                    exclusive
+                    onChange={(e, value) => value && handleFilterHasStatsChange(value)}
+                    size="small"
+                    sx={{ mb: 2 }}
+                  >
+                    <ToggleButton value="all">All</ToggleButton>
+                    <ToggleButton value="withStats">With Stats</ToggleButton>
+                    <ToggleButton value="withoutStats">Without Stats</ToggleButton>
+                  </ToggleButtonGroup>
+                  
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    Sport
+                  </Typography>
+                  <FormControl fullWidth size="small" sx={{ minWidth: 200 }}>
+                    <Select
+                      value={filterSport}
+                      onChange={(e) => handleFilterSportChange(e.target.value)}
+                    >
+                      <MenuItem value="all">All Sports</MenuItem>
+                      {sportTypes.map((sport) => (
+                        <MenuItem key={sport.value} value={sport.value}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {sport.icon}
+                            <Typography>{sport.label}</Typography>
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+              </Menu>
+            </Box>
+          </Grid>
+          
+          <Grid item xs={12} sm={6} md={4}>
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <ToggleButtonGroup
+                value={viewMode}
+                exclusive
+                onChange={handleViewModeChange}
+                size="small"
+              >
+                <ToggleButton value="grid" aria-label="grid view">
+                  <ViewModule />
+                </ToggleButton>
+                <ToggleButton value="list" aria-label="list view">
+                  <ViewList />
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+          </Grid>
+          
+          <Grid item xs={12} md={4}>
+            <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+              <Typography variant="body2" color="text.secondary">
+                Showing {paginatedPlayers.length} of {sortedAndFilteredPlayers.length} players
+              </Typography>
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
+
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
           <CircularProgress />
@@ -480,238 +1076,58 @@ const PlayerStats = () => {
             {searchTerm ? 'Try a different search term' : 'No players are available in the system'}
           </Typography>
         </Paper>
-      ) : (
-        <Paper sx={{ mb: 4, overflow: 'hidden' }}>
-          <TableContainer sx={{ 
-            maxHeight: {
-              xs: '350px',
-              md: '500px'
-            },
-            overflowX: 'auto' 
-          }}>
-            <Table stickyHeader sx={{ minWidth: { xs: 650, md: 800 } }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Player</TableCell>
-                  {!isMobile && <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Email</TableCell>}
-                  <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Sport Type</TableCell>
-                  {!isMobile && <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Last Updated</TableCell>}
-                  <TableCell align="center" sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Overall Rating</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredPlayers.map((player) => (
-                  <React.Fragment key={player._id}>
-                    <TableRow hover>
-                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Person sx={{ mr: 1, color: 'primary.main' }} />
-                          <Typography variant="body2">
-                            {player.firstName} {player.lastName}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      
-                      {!isMobile && (
-                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                          <Typography variant="body2">{player.email}</Typography>
-                        </TableCell>
-                      )}
-                      
-                      <TableCell>
-                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1 }}>
-                          {sportTypes.map((sport) => {
-                            const playerStats = stats.find(
-                              (stat) => 
-                                stat.player === player._id && 
-                                stat.sportType === sport.value
-                            );
-                            
-                            return playerStats ? (
-                              <Chip
-                                key={sport.value}
-                                label={sport.label}
-                                size="small"
-                                color="primary"
-                                variant="outlined"
-                                sx={{ mr: 0.5 }}
-                              />
-                            ) : (
-                              <Chip
-                                key={sport.value}
-                                label={sport.label}
-                                size="small"
-                                color="default"
-                                variant="outlined"
-                                sx={{ 
-                                  mr: 0.5, 
-                                  opacity: 0.5,
-                                  cursor: 'pointer',
-                                  display: { xs: playerStats ? 'flex' : 'none', md: 'flex' }
-                                }}
-                                onClick={() => handleOpenAddDialog(player, sport.value)}
-                              />
-                            );
-                          })}
-                        </Box>
-                      </TableCell>
-                      
-                      {!isMobile && (
-                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                          {stats.some(stat => stat.player === player._id) ? (
-                            <>
-                              {formatLastUpdated(
-                                stats
-                                  .filter(stat => stat.player === player._id)
-                                  .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0]?.updatedAt
-                              )}
-                            </>
-                          ) : (
-                            <Typography variant="body2" color="text.disabled">
-                              No stats added
-                            </Typography>
-                          )}
-                        </TableCell>
-                      )}
-                      
-                      <TableCell align="center">
-                        {stats.some(stat => stat.player === player._id) ? (
-                          <Rating
-                            value={Math.max(
-                              ...stats
-                                .filter(stat => stat.player === player._id)
-                                .map(stat => stat.grades.overall)
-                            ) / 2}
-                            precision={0.5}
-                            readOnly
-                            size="small"
-                          />
-                        ) : (
-                          <Typography variant="body2" color="text.disabled">
-                            Not rated
-                          </Typography>
-                        )}
-                      </TableCell>
-                      
-                      <TableCell align="right">
-                        <Button
-                          startIcon={<Add />}
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleOpenAddDialog(player, 'Football')}
-                          sx={{ whiteSpace: 'nowrap', mr: 1, display: { xs: 'none', sm: 'inline-flex' } }}
-                        >
-                          Add Stats
-                        </Button>
-                        
-                        <IconButton
-                          color="primary"
-                          onClick={() => handleOpenAddDialog(player, 'Football')}
-                          sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
-                          size="small"
-                        >
-                          <Add />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                    
-                    {/* Player stats rows */}
-                    {stats
-                      .filter(stat => stat.player === player._id)
-                      .map(stat => (
-                        <TableRow key={stat._id} sx={{ backgroundColor: alpha(theme.palette.primary.main, 0.04) }}>
-                          <TableCell 
-                            colSpan={isMobile ? 2 : 4} 
-                            sx={{ 
-                              pl: 7,
-                              borderBottom: 0
-                            }}
-                          >
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                              <Chip 
-                                label={stat.sportType} 
-                                size="small" 
-                                color="primary" 
-                                sx={{ mr: 1 }} 
-                              />
-                              <Typography variant="body2" color="text.secondary">
-                                Height: {stat.common.height.value}{stat.common.height.unit} | 
-                                Weight: {stat.common.weight.value}{stat.common.weight.unit}
-                              </Typography>
-                            </Box>
-                            
-                            {isMobile && (
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                                Updated: {formatLastUpdated(stat.updatedAt)}
-                              </Typography>
-                            )}
-                            
-                            {stat.common.notes && (
-                              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontSize: '0.8rem', fontStyle: 'italic' }}>
-                                "{stat.common.notes}"
-                              </Typography>
-                            )}
-                          </TableCell>
-                          
-                          <TableCell 
-                            colSpan={isMobile ? 4 : 2} 
-                            align="right" 
-                            sx={{ 
-                              borderBottom: 0,
-                              pt: 1, 
-                              pb: 1 
-                            }}
-                          >
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                              <Button
-                                startIcon={<Edit />}
-                                variant="outlined"
-                                size="small"
-                                onClick={() => handleOpenEditDialog(stat._id)}
-                                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
-                              >
-                                Edit
-                              </Button>
-                              
-                              <IconButton
-                                color="primary"
-                                onClick={() => handleOpenEditDialog(stat._id)}
-                                sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
-                                size="small"
-                              >
-                                <Edit />
-                              </IconButton>
-                              
-                              <Button
-                                startIcon={<Delete />}
-                                variant="outlined"
-                                color="error"
-                                size="small"
-                                onClick={() => handleOpenDeleteDialog(stat._id)}
-                                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
-                              >
-                                Delete
-                              </Button>
-                              
-                              <IconButton
-                                color="error"
-                                onClick={() => handleOpenDeleteDialog(stat._id)}
-                                sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
-                                size="small"
-                              >
-                                <Delete />
-                              </IconButton>
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+      ) : sortedAndFilteredPlayers.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <FilterList sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6">No players match your filters</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Try adjusting your filter settings to see more players.
+          </Typography>
+          <Button 
+            variant="outlined" 
+            onClick={() => {
+              setFilterHasStats('all');
+              setFilterSport('all');
+            }}
+          >
+            Reset Filters
+          </Button>
         </Paper>
+      ) : (
+        <>
+          <Grid container spacing={3}>
+            {paginatedPlayers.map((player) => (
+              <Grid item xs={12} key={player._id}>
+                <PlayerCard 
+                  player={player}
+                  stats={stats}
+                  sportTypes={sportTypes}
+                  theme={theme}
+                  handleOpenAddDialog={handleOpenAddDialog}
+                  handleOpenEditDialog={handleOpenEditDialog}
+                  handleOpenDeleteDialog={handleOpenDeleteDialog}
+                  formatLastUpdated={formatLastUpdated}
+                  createRadarData={createRadarData}
+                  createBarData={createBarData}
+                />
+              </Grid>
+            ))}
+          </Grid>
+          
+          {/* Pagination */}
+          {sortedAndFilteredPlayers.length > playersPerPage && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+              <Pagination 
+                count={Math.ceil(sortedAndFilteredPlayers.length / playersPerPage)} 
+                page={page} 
+                onChange={handlePageChange}
+                color="primary"
+                showFirstButton
+                showLastButton
+              />
+            </Box>
+          )}
+        </>
       )}
 
       {/* Player Stats Dialog */}
@@ -924,7 +1340,7 @@ const PlayerStats = () => {
                   onChange={(e, newValue) => handleGradeChange('overall', e, newValue)}
                 />
                 <StatSlider
-                  name="Improvement"
+                  name="Progress"
                   value={formData.grades.improvement}
                   onChange={(e, newValue) => handleGradeChange('improvement', e, newValue)}
                 />

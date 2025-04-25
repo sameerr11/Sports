@@ -16,7 +16,7 @@ exports.getAllPlayerStats = async (req, res) => {
     res.json(playerStats);
   } catch (err) {
     console.error('Error getting player stats:', err.message);
-    res.status(500).send('Server Error');
+    res.status(500).json({ msg: 'Failed to load stats. Please try again.' });
   }
 };
 
@@ -75,10 +75,19 @@ exports.createPlayerStats = async (req, res) => {
   try {
     const {
       player,
-      sport,
-      matchDate,
-      metrics,
-      notes
+      sportType,
+      common,
+      basketball,
+      football,
+      volleyball,
+      selfDefense,
+      karate,
+      gymnastics,
+      gym,
+      zumba,
+      swimming,
+      pingPong,
+      grades
     } = req.body;
 
     // Check if player exists
@@ -87,12 +96,31 @@ exports.createPlayerStats = async (req, res) => {
       return res.status(404).json({ msg: 'Player not found' });
     }
 
+    // Check if stats already exist for this player and sport
+    const existingStats = await PlayerStats.findOne({ 
+      player: player, 
+      sportType: sportType 
+    });
+    
+    if (existingStats) {
+      return res.status(400).json({ msg: 'Stats for this player and sport already exist' });
+    }
+
     const playerStats = new PlayerStats({
       player,
-      sport,
-      matchDate,
-      metrics,
-      notes,
+      sportType,
+      common,
+      basketball,
+      football,
+      volleyball,
+      selfDefense,
+      karate,
+      gymnastics,
+      gym,
+      zumba,
+      swimming,
+      pingPong,
+      grades,
       createdBy: req.user.id
     });
 
@@ -102,38 +130,23 @@ exports.createPlayerStats = async (req, res) => {
     await playerStats.populate('player', 'firstName lastName');
     await playerStats.populate('createdBy', 'firstName lastName');
 
-    // Notify other coaches about the player performance
-    if (playerUser.role === 'player') {
-      // Notify other coaches about the player stats update
-      await notificationService.notifyCoachesAboutPlayer({
-        playerId: player,
-        type: 'player_performance',
-        title: 'Player Stats Updated',
-        message: `Performance metrics have been updated for ${playerUser.firstName} ${playerUser.lastName}`,
-        relatedTo: {
-          model: 'PlayerStats',
-          id: playerStats._id
-        }
-      });
-      
-      // Also notify the player about their updated stats
+    // Notify player about their updated stats
       await notificationService.createNotification({
         recipientId: player,
         senderId: req.user.id,
         type: 'player_performance',
         title: 'Your Performance Stats',
-        message: `Coach has updated your performance metrics for ${new Date(matchDate).toLocaleDateString()}`,
+      message: `Your performance metrics have been updated for ${sportType}`,
         relatedTo: {
           model: 'PlayerStats',
           id: playerStats._id
         }
       });
-    }
 
     res.status(201).json(playerStats);
   } catch (err) {
     console.error('Error creating player stats:', err.message);
-    res.status(500).send('Server Error');
+    res.status(500).json({ msg: 'Failed to save stats. Please try again.' });
   }
 };
 
@@ -171,10 +184,23 @@ exports.updatePlayerStats = async (req, res) => {
     ).populate('player', 'firstName lastName email profilePicture')
      .populate('createdBy', 'firstName lastName');
     
+    // Notify the player about their updated stats
+    await notificationService.createNotification({
+      recipientId: updatedPlayerStats.player._id,
+      senderId: req.user.id,
+      type: 'player_performance',
+      title: 'Your Performance Stats',
+      message: `Your performance metrics have been updated for ${updatedPlayerStats.sportType}`,
+      relatedTo: {
+        model: 'PlayerStats',
+        id: updatedPlayerStats._id
+      }
+    });
+    
     res.json(updatedPlayerStats);
   } catch (err) {
     console.error('Error updating player stats:', err.message);
-    res.status(500).send('Server Error');
+    res.status(500).json({ msg: 'Failed to save stats. Please try again.' });
   }
 };
 
@@ -194,6 +220,6 @@ exports.deletePlayerStats = async (req, res) => {
     res.json({ msg: 'Player stats removed' });
   } catch (err) {
     console.error('Error deleting player stats:', err.message);
-    res.status(500).send('Server Error');
+    res.status(500).json({ msg: 'Failed to delete stats. Please try again.' });
   }
 }; 
