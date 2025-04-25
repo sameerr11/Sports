@@ -10,7 +10,7 @@ const mongoose = require('mongoose');
 const { checkRegistrationExpiry, checkExpiredRegistrations } = require('../utils/registrationExpiryChecker');
 
 // MongoDB connection string (copied from db.js)
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://sameersaif2002:KrgxJfAZ0t2PlcXz@sportsmanagement.mwplt.mongodb.net/sports?retryWrites=true&w=majority";
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://192.158.236.68:27017/sports";
 
 // Connect to MongoDB
 mongoose.connect(MONGODB_URI, {
