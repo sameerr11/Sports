@@ -57,7 +57,9 @@ import {
   KeyboardArrowRight,
   People,
   FilterAlt,
-  Clear
+  Clear,
+  BarChart,
+  DonutLarge
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -65,6 +67,46 @@ import api from '../../services/api';
 import { getStoredUser, isParent } from '../../services/authService';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import { 
+  RadarChart, 
+  PolarGrid, 
+  PolarAngleAxis, 
+  PolarRadiusAxis, 
+  Radar, 
+  ResponsiveContainer,
+  BarChart as ReBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as ReTooltip,
+  Legend
+} from 'recharts';
+
+// Create radar chart data for player skills
+const createRadarData = (sport, sportData) => {
+  if (!sportData) return [];
+  
+  return Object.entries(sportData)
+    .filter(([key]) => key !== '_id') // Exclude _id field
+    .map(([key, value]) => ({
+      subject: key.charAt(0).toUpperCase() + key.slice(1),
+      A: value,
+      fullMark: 10,
+    }));
+};
+
+// Create bar chart data for grades
+const createBarData = (grades) => {
+  if (!grades) return [];
+  
+  return Object.entries(grades)
+    .filter(([key]) => key !== '_id') // Exclude _id field
+    .map(([key, value]) => ({
+      name: key === "improvement" || key === "nprovement" ? "Progress" : key.charAt(0).toUpperCase() + key.slice(1),
+      value: value,
+    }));
+};
 
 const ParentDashboard = () => {
   const theme = useTheme();
@@ -75,7 +117,9 @@ const ParentDashboard = () => {
   const [trainingPlans, setTrainingPlans] = useState([]);
   const [children, setChildren] = useState([]);
   const [selectedChild, setSelectedChild] = useState('');
+  const [childStats, setChildStats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [error, setError] = useState(null);
   
   // Add state for date range filter
@@ -155,40 +199,42 @@ const ParentDashboard = () => {
         );
         setUpcomingMatches(matchSessions);
         
-        // 5. Fetch training plans for the child's teams
-        if (teamIds.length > 0) {
-          try {
-            const trainingPlansPromises = teamIds.map(teamId => 
-              retryApiCall(() => api.get(`/training-plans/team/${teamId}`))
-            );
-            
-            const trainingPlansResponses = await Promise.all(trainingPlansPromises);
-            
-            // Combine all training plans and filter for assigned or in progress
-            const allPlans = trainingPlansResponses.flatMap(res => res.data)
-              .filter(plan => ['Assigned', 'InProgress'].includes(plan.status));
-            
-            setTrainingPlans(allPlans);
-          } catch (trainingPlanError) {
-            console.error('Error fetching training plans:', trainingPlanError);
-            setError('Could not load training plans. Please try again later.');
-            // Still set empty training plans to avoid undefined errors
-            setTrainingPlans([]);
-          }
-        }
+        // 5. Fetch child stats
+        fetchChildStats(childrenRes.data[0]._id);
       }
       
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching parent data:', error);
+      console.error('Error in fetchParentData:', error);
       setError(error.toString());
       setLoading(false);
     }
   };
-
+  
+  // Fetch stats for the selected child
+  const fetchChildStats = async (childId) => {
+    if (!childId) return;
+    
+    setStatsLoading(true);
+    try {
+      const response = await retryApiCall(() => api.get(`/player-stats/player/${childId}`));
+      setChildStats(response.data);
+      setStatsLoading(false);
+    } catch (error) {
+      console.error('Error fetching child stats:', error);
+      setStatsLoading(false);
+    }
+  };
+  
   useEffect(() => {
-    fetchParentData();
-  }, []);
+    if (parentAccess) {
+      fetchParentData();
+    }
+  }, [parentAccess]);
+  
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
   
   // Handle child selection change
   const handleChildChange = async (event) => {
@@ -224,102 +270,85 @@ const ParentDashboard = () => {
       );
       setUpcomingMatches(matchSessions);
       
-      // Fetch training plans for the selected child's teams
-      if (teamIds.length > 0) {
-        try {
-          const trainingPlansPromises = teamIds.map(teamId => 
-            retryApiCall(() => api.get(`/training-plans/team/${teamId}`))
-          );
-          
-          const trainingPlansResponses = await Promise.all(trainingPlansPromises);
-          
-          // Combine all training plans and filter for assigned or in progress
-          const allPlans = trainingPlansResponses.flatMap(res => res.data)
-            .filter(plan => ['Assigned', 'InProgress'].includes(plan.status));
-          
-          setTrainingPlans(allPlans);
-        } catch (trainingPlanError) {
-          console.error('Error fetching training plans:', trainingPlanError);
-          setError('Could not load training plans. Please try again later.');
-          setTrainingPlans([]);
-        }
-      } else {
-        setTrainingPlans([]);
-      }
+      // Fetch stats for the newly selected child
+      fetchChildStats(childId);
       
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching child data:', error);
+      console.error('Error changing child:', error);
       setError(error.toString());
       setLoading(false);
     }
   };
   
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
+  // Format location
+  const formatLocation = (court) => {
+    if (!court) return 'Location not specified';
+    return `${court.name}, ${court.location || 'No specific location'}`;
   };
   
-  const formatLocation = (court) => {
-    if (!court) return 'TBD';
-    return `${court.name}, ${court.location}`;
+  // Format last updated date
+  const formatLastUpdated = (dateString) => {
+    if (!dateString) return 'Never';
+    return format(new Date(dateString), 'MMM dd, yyyy');
+  };
+  
+  // Handle date filter functions
+  const handleOpenDateFilter = () => {
+    setDateFilterOpen(true);
+  };
+
+  const handleCloseDateFilter = () => {
+    setDateFilterOpen(false);
+  };
+
+  const applyDateFilter = () => {
+    setIsFilterActive(true);
+    setDateFilterOpen(false);
+  };
+
+  const clearDateFilter = () => {
+    setDateRangeStart(null);
+    setDateRangeEnd(null);
+    setSingleDateFilter(null);
+    setIsFilterActive(false);
+    setDateFilterOpen(false);
+  };
+  
+  // Filter sessions based on selected date range
+  const filterSessionsByDate = (sessions) => {
+    if (!isFilterActive) return sessions;
+    
+    return sessions.filter(session => {
+      const sessionDate = new Date(session.startTime);
+      
+      if (filterMode === 'single' && singleDateFilter) {
+        // When single date filter is active
+        const filterDate = new Date(singleDateFilter);
+        return sessionDate.getFullYear() === filterDate.getFullYear() &&
+               sessionDate.getMonth() === filterDate.getMonth() &&
+               sessionDate.getDate() === filterDate.getDate();
+      } else if (filterMode === 'range') {
+        // When range filter is active
+        if (dateRangeStart && dateRangeEnd) {
+          // When both start and end dates are set
+          return sessionDate >= new Date(dateRangeStart) && 
+                 sessionDate <= new Date(dateRangeEnd);
+        } else if (dateRangeStart) {
+          // When only start date is set
+          return sessionDate >= new Date(dateRangeStart);
+        } else if (dateRangeEnd) {
+          // When only end date is set
+          return sessionDate <= new Date(dateRangeEnd);
+        }
+      }
+      
+      // If no date criteria matches or if filter is not properly set
+      return true;
+    });
   };
   
   const renderTrainingScheduleTab = () => {
-    // Date filter handlers
-    const handleOpenDateFilter = () => {
-      setDateFilterOpen(true);
-    };
-
-    const handleCloseDateFilter = () => {
-      setDateFilterOpen(false);
-    };
-
-    const applyDateFilter = () => {
-      setIsFilterActive(true);
-      setDateFilterOpen(false);
-    };
-
-    const clearDateFilter = () => {
-      setDateRangeStart(null);
-      setDateRangeEnd(null);
-      setSingleDateFilter(null);
-      setIsFilterActive(false);
-      setDateFilterOpen(false);
-    };
-
-    // Filter sessions based on selected date range if filter is active
-    const filterSessionsByDate = (sessions) => {
-      if (!isFilterActive) return sessions;
-      
-      return sessions.filter(session => {
-        const sessionDate = new Date(session.startTime);
-        
-        if (filterMode === 'single' && singleDateFilter) {
-          // When single date filter is active
-          const filterDate = new Date(singleDateFilter);
-          return sessionDate.getFullYear() === filterDate.getFullYear() &&
-                 sessionDate.getMonth() === filterDate.getMonth() &&
-                 sessionDate.getDate() === filterDate.getDate();
-        } else if (filterMode === 'range') {
-          // When range filter is active
-          if (dateRangeStart && dateRangeEnd) {
-            // When both start and end dates are set
-            return sessionDate >= new Date(dateRangeStart) && 
-                   sessionDate <= new Date(dateRangeEnd);
-          } else if (dateRangeStart) {
-            // When only start date is set
-            return sessionDate >= new Date(dateRangeStart);
-          } else if (dateRangeEnd) {
-            // When only end date is set
-            return sessionDate <= new Date(dateRangeEnd);
-          }
-        }
-        
-        // If no date criteria matches or if filter is not properly set
-        return true;
-      });
-    };
-
     // Filter the sessions based on the date range
     const filteredSessions = filterSessionsByDate(trainingSessions);
     
@@ -771,6 +800,200 @@ const ParentDashboard = () => {
     </Box>
   );
   
+  // Render the child stats tab
+  const renderStatsTab = () => {
+    const selectedChildName = children.find(child => child._id === selectedChild)?.firstName || 'Child';
+    
+    return (
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2, 
+              mb: 3, 
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.primary.main, 0.05),
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+              <BarChart sx={{ mr: 1 }} />
+              {`${selectedChildName}'s Performance Statistics`}
+            </Typography>
+          </Paper>
+          
+          {statsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : childStats.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1">
+                Your child doesn't have any statistics recorded yet.
+              </Typography>
+            </Paper>
+          ) : (
+            childStats.map((stat) => (
+              <Card 
+                key={stat._id} 
+                sx={{ 
+                  mb: 3, 
+                  borderRadius: 2,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 5,
+                    bgcolor: theme.palette.primary.main
+                  }
+                }}
+              >
+                <CardHeader
+                  title={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Chip 
+                        label={stat.sportType} 
+                        color="primary" 
+                        size="small" 
+                      />
+                      <Typography variant="h6">
+                        {stat.sportType} Statistics
+                      </Typography>
+                    </Box>
+                  }
+                  subheader={`Last Updated: ${formatLastUpdated(stat.updatedAt)}`}
+                />
+                <Divider />
+                <CardContent>
+                  <Grid container spacing={3}>
+                    {/* Physical Info */}
+                    <Grid item xs={12} md={3}>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ 
+                        fontWeight: 'bold', 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        gap: 1
+                      }}>
+                        <FitnessCenter fontSize="small" />
+                        Physical Info
+                      </Typography>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        gap: 1, 
+                        background: alpha(theme.palette.primary.light, 0.05),
+                        p: 1.5,
+                        borderRadius: 1
+                      }}>
+                        <Typography variant="body2">
+                          <strong>Height:</strong> {stat.common.height.value} {stat.common.height.unit}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>Weight:</strong> {stat.common.weight.value} {stat.common.weight.unit}
+                        </Typography>
+                        {stat.common.notes && (
+                          <Typography variant="body2" sx={{ fontStyle: 'italic', mt: 1 }}>
+                            "{stat.common.notes}"
+                          </Typography>
+                        )}
+                      </Box>
+                    </Grid>
+                    
+                    {/* Performance Metrics - Radar Chart */}
+                    <Grid item xs={12} md={5}>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ 
+                        fontWeight: 'bold',
+                        display: 'flex', 
+                        alignItems: 'center',
+                        gap: 1
+                      }}>
+                        <DonutLarge fontSize="small" />
+                        Performance Metrics
+                      </Typography>
+                      <Box sx={{ height: 220, width: '100%' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RadarChart 
+                            outerRadius="80%" 
+                            data={createRadarData(
+                              stat.sportType.toLowerCase(), 
+                              stat[stat.sportType.toLowerCase().replace(/\s+/g, '')]
+                            )}
+                          >
+                            <PolarGrid strokeDasharray="3 3" />
+                            <PolarAngleAxis dataKey="subject" />
+                            <PolarRadiusAxis domain={[0, 10]} />
+                            <Radar 
+                              name="Skills" 
+                              dataKey="A" 
+                              stroke={theme.palette.primary.main} 
+                              fill={theme.palette.primary.main} 
+                              fillOpacity={0.6} 
+                            />
+                          </RadarChart>
+                        </ResponsiveContainer>
+                      </Box>
+                    </Grid>
+                    
+                    {/* Grades - Bar Chart */}
+                    <Grid item xs={12} md={4}>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ 
+                        fontWeight: 'bold',
+                        display: 'flex', 
+                        alignItems: 'center',
+                        gap: 1
+                      }}>
+                        <BarChart fontSize="small" />
+                        Overall Grades
+                      </Typography>
+                      <Box sx={{ height: 220, width: '100%' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <ReBarChart data={createBarData(stat.grades)} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis type="number" domain={[0, 10]} />
+                            <YAxis dataKey="name" type="category" width={100} />
+                            <ReTooltip />
+                            <Bar dataKey="value" fill={theme.palette.secondary.main} barSize={20} />
+                          </ReBarChart>
+                        </ResponsiveContainer>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </Grid>
+      </Grid>
+    );
+  };
+  
+  // If not a parent, show access denied
+  if (!parentAccess) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        minHeight: '50vh',
+        textAlign: 'center',
+        p: 3
+      }}>
+        <Typography variant="h5" color="error" gutterBottom>
+          Access Restricted
+        </Typography>
+        <Typography variant="body1">
+          You need parent permissions to access the parent dashboard.
+        </Typography>
+      </Box>
+    );
+  }
+  
   // Add a retry button component to refresh data
   const RetryButton = () => (
     <Button 
@@ -808,7 +1031,7 @@ const ParentDashboard = () => {
             Parent Dashboard
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Track your child's training schedule and match details
+            Track your child's training schedule, matches and performance
           </Typography>
         </Box>
         <Box sx={{ mt: { xs: 2, sm: 0 }, minWidth: 200 }}>
@@ -863,6 +1086,11 @@ const ParentDashboard = () => {
                 icon={<SportsScore />} 
                 iconPosition="start"
               />
+              <Tab 
+                label="Child Stats" 
+                icon={<BarChart />} 
+                iconPosition="start"
+              />
             </Tabs>
           </Box>
           
@@ -871,6 +1099,7 @@ const ParentDashboard = () => {
             {activeTab === 0 && renderTrainingScheduleTab()}
             {activeTab === 1 && renderTrainingPlansTab()}
             {activeTab === 2 && renderMatchesTab()}
+            {activeTab === 3 && renderStatsTab()}
           </Box>
         </>
       )}
