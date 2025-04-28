@@ -32,7 +32,8 @@ import {
   PlayArrow as StartIcon,
   Stop as StopIcon,
   Refresh as RefreshIcon,
-  Dashboard as DashboardIcon
+  Dashboard as DashboardIcon,
+  History as HistoryIcon
 } from '@mui/icons-material';
 import { getItems, createOrder, getSetting, createSessionSummary, updateReceiptsSession } from '../../services/cafeteriaService';
 import { isSupervisor } from '../../services/authService';
@@ -432,16 +433,18 @@ const Cafeteria = () => {
             Refresh Stock
           </Button>
           {isSupervisor() && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<EditIcon />}
-              component="a"
-              href="/cafeteria/manage"
-              sx={{ mr: 2 }}
-            >
-              Manage Items
-            </Button>
+            <>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<EditIcon />}
+                component="a"
+                href="/cafeteria/manage"
+                sx={{ mr: 2 }}
+              >
+                Manage Items
+              </Button>
+            </>
           )}
           <Button
             variant="contained"

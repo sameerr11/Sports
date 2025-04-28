@@ -33,6 +33,8 @@ import {
   Edit as EditIcon,
   Assessment as AssessmentIcon,
   Warning as WarningIcon,
+  Save as SaveIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -45,6 +47,7 @@ import {
   getInventoryReport 
 } from '../../services/cafeteriaService';
 import { formatCurrency } from '../../utils/format';
+import { Link } from 'react-router-dom';
 
 const CATEGORIES = ['Food', 'Beverage', 'Snack', 'Other'];
 
@@ -216,8 +219,10 @@ const CafeteriaManagement = () => {
 
   return (
     <Box sx={{ maxWidth: 1200, margin: '0 auto', p: 3 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Cafeteria Management</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" component="h1">
+          Cafeteria Management
+        </Typography>
         <Box>
           <Button
             variant="contained"
@@ -230,7 +235,7 @@ const CafeteriaManagement = () => {
           </Button>
           <Button
             variant="contained"
-            color="primary"
+            color="success"
             startIcon={<AddIcon />}
             onClick={() => handleOpenDialog('create')}
           >
