@@ -240,6 +240,7 @@ router.post(
 router.get('/training-plans', [auth, teamSupervisor], trainingPlanController.getAllTrainingPlans);
 router.get('/training-plans/coach', [auth, coach], trainingPlanController.getCoachTrainingPlans);
 router.get('/training-plans/team/:teamId', auth, trainingPlanController.getTeamTrainingPlans);
+router.get('/training-plans/attendance-report', auth, trainingPlanController.generateAttendanceReport);
 router.get('/training-plans/:id', auth, trainingPlanController.getTrainingPlanById);
 router.put('/training-plans/:id', [auth, teamSupervisor], trainingPlanController.updateTrainingPlan);
 router.put('/training-plans/:id/status', auth, trainingPlanController.updateTrainingPlanStatus);

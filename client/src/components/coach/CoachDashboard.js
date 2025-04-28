@@ -65,7 +65,8 @@ import {
   Clear,
   Event,
   BarChart,
-  DonutLarge
+  DonutLarge,
+  AssignmentInd
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router-dom';
@@ -81,6 +82,7 @@ import { getStoredUser, isCoach } from '../../services/authService';
 import { getSportIcon } from '../../utils/sportIcons';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import AttendanceReport from '../training/AttendanceReport';
 
 // Import FullCalendar components
 import FullCalendar from '@fullcalendar/react';
@@ -1365,6 +1367,11 @@ const CoachDashboard = () => {
             icon={<BarChart />} 
             iconPosition="start"
           />
+          <Tab 
+            label="Attendance Report" 
+            icon={<AssignmentInd />} 
+            iconPosition="start"
+          />
         </Tabs>
       </Box>
       
@@ -1417,6 +1424,19 @@ const CoachDashboard = () => {
             return (
               <Paper sx={{ p: 3, textAlign: 'center' }}>
                 <Typography color="error">There was an error loading the Team Player Stats tab. Please try again later.</Typography>
+              </Paper>
+            );
+          }
+        })()}
+        
+        {activeTab === 4 && (() => {
+          try {
+            return <AttendanceReport />;
+          } catch (err) {
+            console.error('Error rendering Attendance Report tab:', err);
+            return (
+              <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Typography color="error">There was an error loading the Attendance Report tab. Please try again later.</Typography>
               </Paper>
             );
           }

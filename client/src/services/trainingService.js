@@ -282,9 +282,10 @@ export const updateTrainingPlanStatus = async (id, status) => {
 export const getTrainingPlanAttendance = async (id) => {
   try {
     const response = await api.get(`/training-plans/${id}/attendance`);
-    return response.data;
+    return { success: true, attendance: response.data.attendance || [] };
   } catch (error) {
-    throw error.response?.data?.msg || 'Failed to fetch attendance';
+    console.error('Error fetching training plan attendance:', error);
+    return { success: false, error: error.response?.data?.msg || 'Failed to fetch attendance' };
   }
 };
 
@@ -292,9 +293,10 @@ export const getTrainingPlanAttendance = async (id) => {
 export const updateTrainingPlanAttendance = async (id, attendance) => {
   try {
     const response = await api.put(`/training-plans/${id}/attendance`, { attendance });
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    throw error.response?.data?.msg || 'Failed to update attendance';
+    console.error('Error updating training plan attendance:', error);
+    return { success: false, error: error.response?.data?.msg || 'Failed to update attendance' };
   }
 };
 
@@ -329,5 +331,34 @@ export const getTeamPlayerStats = async (teamId) => {
   } catch (error) {
     console.error('Error fetching team player stats:', error);
     throw error.response?.data?.msg || 'Failed to fetch team player stats';
+  }
+};
+
+export const getAttendanceReport = async (teamId, startDate, endDate, playerId) => {
+  try {
+    // Build query parameters
+    const params = new URLSearchParams();
+    params.append('teamId', teamId);
+    
+    if (startDate) {
+      params.append('startDate', startDate);
+    }
+    
+    if (endDate) {
+      params.append('endDate', endDate);
+    }
+    
+    if (playerId) {
+      params.append('playerId', playerId);
+    }
+    
+    const response = await api.get(`/training-plans/attendance-report?${params.toString()}`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error fetching attendance report:', error);
+    return { 
+      success: false, 
+      error: error.response?.data?.msg || 'Failed to generate attendance report' 
+    };
   }
 }; 

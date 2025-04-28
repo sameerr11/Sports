@@ -663,7 +663,7 @@ exports.updateAttendance = async (req, res) => {
 
 // @desc    Get player attendance for a training plan
 // @route   GET /api/training-plans/:id/attendance
-// @access  Private (Coaches of team, Supervisor, Admin)
+// @access  Private (Coach of team, Admin, Supervisor)
 exports.getAttendance = async (req, res) => {
   try {
     const plan = await TrainingPlan.findById(req.params.id)
@@ -699,5 +699,166 @@ exports.getAttendance = async (req, res) => {
   } catch (err) {
     console.error('Error getting attendance:', err.message);
     res.status(500).json({ msg: 'Server Error', error: err.message });
+  }
+};
+
+// @desc    Generate attendance report for players
+// @route   GET /api/training-plans/attendance-report
+// @access  Private (Coach, Admin, Supervisor)
+exports.generateAttendanceReport = async (req, res) => {
+  try {
+    const { teamId, startDate, endDate, playerId } = req.query;
+    
+    // Validate required parameters
+    if (!teamId) {
+      return res.status(400).json({ msg: 'Team ID is required' });
+    }
+    
+    // Convert string dates to Date objects
+    const startDateObj = startDate ? new Date(startDate) : new Date(0); // Default to epoch
+    const endDateObj = endDate ? new Date(endDate) : new Date(); // Default to current date
+    
+    // Set end of day for end date
+    endDateObj.setHours(23, 59, 59, 999);
+    
+    // Build query object
+    const query = { 
+      team: teamId,
+      date: { $gte: startDateObj, $lte: endDateObj },
+      // Only include completed and in-progress plans
+      status: { $in: ['InProgress', 'Completed'] }
+    };
+    
+    // Get training plans for the team within date range
+    const trainingPlans = await TrainingPlan.find(query)
+      .populate('team', 'name sportType')
+      .sort({ date: 1 });
+    
+    if (!trainingPlans.length) {
+      return res.status(404).json({ 
+        msg: 'No training plans found for this team in the specified date range' 
+      });
+    }
+
+    // Get all plans with attendance data
+    const plansWithAttendance = await Promise.all(
+      trainingPlans.map(async (plan) => {
+        const planWithAttendance = await TrainingPlan.findById(plan._id)
+          .populate('attendance.player', 'firstName lastName email profilePicture')
+          .populate('assignedTo', 'firstName lastName')
+          .lean();
+        
+        return planWithAttendance;
+      })
+    );
+    
+    // Filter by player if playerId is provided
+    const filteredPlans = playerId 
+      ? plansWithAttendance.map(plan => ({
+          ...plan,
+          attendance: plan.attendance.filter(a => 
+            a.player && a.player._id.toString() === playerId
+          )
+        })).filter(plan => plan.attendance.length > 0)
+      : plansWithAttendance;
+    
+    if (playerId && !filteredPlans.length) {
+      return res.status(404).json({ 
+        msg: 'No attendance records found for this player' 
+      });
+    }
+    
+    // Generate player-based attendance summary
+    let playerAttendanceSummary = {};
+    
+    // Process each plan's attendance data
+    filteredPlans.forEach(plan => {
+      plan.attendance.forEach(record => {
+        const playerId = record.player._id.toString();
+        
+        // Initialize player record if not exists
+        if (!playerAttendanceSummary[playerId]) {
+          playerAttendanceSummary[playerId] = {
+            player: {
+              _id: record.player._id,
+              name: `${record.player.firstName} ${record.player.lastName}`,
+              email: record.player.email,
+              profilePicture: record.player.profilePicture
+            },
+            totalSessions: 0,
+            present: 0,
+            absent: 0,
+            late: 0,
+            excused: 0,
+            attendanceRate: 0,
+            sessions: []
+          };
+        }
+        
+        // Increment counters based on status
+        playerAttendanceSummary[playerId].totalSessions++;
+        
+        switch (record.status) {
+          case 'Present':
+            playerAttendanceSummary[playerId].present++;
+            break;
+          case 'Absent':
+            playerAttendanceSummary[playerId].absent++;
+            break;
+          case 'Late':
+            playerAttendanceSummary[playerId].late++;
+            break;
+          case 'Excused':
+            playerAttendanceSummary[playerId].excused++;
+            break;
+          default:
+            break;
+        }
+        
+        // Add session details
+        playerAttendanceSummary[playerId].sessions.push({
+          trainingPlanId: plan._id,
+          title: plan.title,
+          date: plan.date,
+          status: record.status,
+          notes: record.notes || '',
+          coach: plan.assignedTo ? `${plan.assignedTo.firstName} ${plan.assignedTo.lastName}` : 'Unassigned'
+        });
+      });
+    });
+    
+    // Calculate attendance rate for each player
+    Object.keys(playerAttendanceSummary).forEach(playerId => {
+      const player = playerAttendanceSummary[playerId];
+      const countedSessions = player.present + player.late; // Count present and late as attended
+      player.attendanceRate = player.totalSessions > 0 
+        ? (countedSessions / player.totalSessions * 100).toFixed(2) 
+        : 0;
+    });
+    
+    // Convert to array and sort by attendance rate (descending)
+    const attendanceReport = Object.values(playerAttendanceSummary).sort(
+      (a, b) => parseFloat(b.attendanceRate) - parseFloat(a.attendanceRate)
+    );
+    
+    // Additional team metadata
+    const team = await Team.findById(teamId).select('name sportType');
+    
+    // Create response object
+    const reportData = {
+      team: team || { name: 'Unknown Team' },
+      dateRange: {
+        start: startDateObj,
+        end: endDateObj
+      },
+      totalTrainingPlans: filteredPlans.length,
+      playerReports: attendanceReport,
+      generatedAt: new Date()
+    };
+    
+    res.json(reportData);
+  } catch (err) {
+    console.error('Error generating attendance report:', err.message);
+    res.status(500).send('Server Error');
   }
 }; 

@@ -153,7 +153,8 @@ const TrainingPlanDetail = () => {
           playerName: `${item.player.firstName} ${item.player.lastName}`,
           status: item.status,
           notes: item.notes || '',
-          markedBy: item.markedBy ? `${item.markedBy.firstName} ${item.markedBy.lastName}` : null,
+          markedBy: item.markedBy?._id || '',
+          markedByName: item.markedBy ? `${item.markedBy.firstName} ${item.markedBy.lastName}` : '',
           markedAt: item.markedAt
         }));
         
@@ -221,20 +222,22 @@ const TrainingPlanDetail = () => {
       const attendanceData = attendance.map(item => ({
         player: item.player,
         status: item.status,
-        notes: item.notes
+        notes: item.notes || ''
       }));
       
       const response = await updateTrainingPlanAttendance(id, attendanceData);
       
       if (response.success) {
         setAttendanceSaved(true);
+      } else {
+        setError(response.error || 'Failed to save attendance');
       }
     } catch (err) {
       console.error('Error saving attendance:', err);
       setError('Failed to save attendance');
-    } finally {
-      setIsSavingAttendance(false);
     }
+    
+    setIsSavingAttendance(false);
   };
   
   const getStatusColor = (status) => {
