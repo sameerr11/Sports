@@ -315,7 +315,8 @@ export const getTeamPlayerStats = async (teamId) => {
     const playersWithStats = team.players.map(playerObj => {
       const player = playerObj.player;
       const playerStats = allStats.filter(stat => 
-        stat.player._id === player._id || stat.player === player._id
+        (stat.player._id === player._id || stat.player === player._id) &&
+        stat.sportType === team.sportType  // Filter stats by the team's sport type
       );
       
       return {

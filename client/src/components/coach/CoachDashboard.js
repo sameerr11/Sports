@@ -416,10 +416,9 @@ const CoachDashboard = () => {
     const teamId = event.target.value;
     setSelectedTeam(teamId);
     
-    // Fetch stats for the selected team if we're on the team stats tab
-    if (activeTab === 3) {
-      fetchTeamPlayerStats(teamId);
-    }
+    // Always fetch stats for the selected team when team changes
+    // regardless of which tab we're on
+    fetchTeamPlayerStats(teamId);
   };
   
   const fetchTeamPlayerStats = async (teamId) => {
@@ -1043,6 +1042,10 @@ const CoachDashboard = () => {
   
   // New function to render the Team Player Stats tab
   const renderTeamStatsTab = () => {
+    // Get selected team details
+    const selectedTeamDetails = coachTeams.find(team => team._id === selectedTeam);
+    const sportType = selectedTeamDetails?.sportType || '';
+    
     return (
       <Grid container spacing={3}>
         <Grid item xs={12}>
@@ -1069,7 +1072,7 @@ const CoachDashboard = () => {
                 color: theme.palette.primary.dark
               }}>
                 <BarChart sx={{ mr: 1.5, fontSize: '1.8rem', color: theme.palette.primary.main }} />
-                Team Player Performance Statistics
+                Team Player Performance Statistics {sportType && `(${sportType})`}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.8, ml: 0.5 }}>
                 View performance metrics for players in your teams
@@ -1086,7 +1089,7 @@ const CoachDashboard = () => {
               >
                 {coachTeams.map(team => (
                   <MenuItem value={team._id} key={team._id}>
-                    {team.name}
+                    {team.name} ({team.sportType})
                   </MenuItem>
                 ))}
               </Select>
