@@ -48,4 +48,14 @@ export const getUnreadCount = async () => {
   } catch (error) {
     throw error.response?.data?.msg || 'Failed to get unread count';
   }
+};
+
+// Send notification to users
+export const sendNotification = async (notificationData) => {
+  try {
+    const response = await api.post('/notifications/send', notificationData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'Failed to send notification';
+  }
 }; 

@@ -47,7 +47,8 @@ import {
     Add,
     AttachMoney as AttachMoneyIcon,
     BarChart as BarChartIcon,
-    MonetizationOn as MonetizationOnIcon
+    MonetizationOn as MonetizationOnIcon,
+    Notifications as NotificationsIcon
 } from '@mui/icons-material';
 import { 
     isAdmin, 
@@ -136,7 +137,8 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'Registration Fees', icon: <ReceiptIcon />, path: '/admin/registration-fees' },
         { text: 'Salary Invoices', icon: <PaymentIcon />, path: '/registrations/salary/list' },
         { text: 'User Salary Config', icon: <SettingsIcon />, path: '/admin/user-salary-config' },
-        { text: 'Utility Bills', icon: <ReceiptIcon />, path: '/utilities' }
+        { text: 'Utility Bills', icon: <ReceiptIcon />, path: '/utilities' },
+        { text: 'Send Notification', icon: <NotificationsIcon />, path: '/admin/send-notification' }
     ];
 
     const adminRevenueItems = [

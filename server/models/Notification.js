@@ -1,65 +1,38 @@
 const mongoose = require('mongoose');
 
-const NotificationSchema = new mongoose.Schema({
-  recipient: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  sender: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  type: {
-    type: String,
-    enum: [
-      'new_registration', 
-      'role_change', 
-      'document_upload', 
-      'system', 
-      'child_account_linked', 
-      'training_scheduled', 
-      'training_updated', 
-      'training_cancelled',
-      'match_scheduled',
-      'match_updated',
-      'match_result',
-      'player_performance',
-      'coach_feedback',
-      'team_announcement',
-      'payment_reminder',
-      'attendance_update',
-      'registration_expiry'
-    ],
-    required: true
-  },
-  title: {
-    type: String,
-    required: true
-  },
-  message: {
-    type: String,
-    required: true
-  },
-  relatedTo: {
-    model: {
-      type: String,
-      enum: ['User', 'Team', 'Match', 'Training', 'Payment', 'PlayerRegistration', 'TrainingPlan', 'PlayerStats']
+const notificationSchema = new mongoose.Schema({
+    message: {
+        type: String,
+        required: true
     },
-    id: {
-      type: mongoose.Schema.Types.ObjectId
+    recipients: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    sender: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    read: {
+        type: Boolean,
+        default: false
+    },
+    type: {
+        type: String,
+        enum: ['all', 'role', 'specific'],
+        required: true
+    },
+    role: {
+        type: String,
+        required: function() {
+            return this.type === 'role';
+        }
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
-  },
-  isRead: {
-    type: Boolean,
-    default: false
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-}, {
-  timestamps: true
 });
 
-module.exports = mongoose.model('Notification', NotificationSchema); 
+module.exports = mongoose.model('Notification', notificationSchema); 

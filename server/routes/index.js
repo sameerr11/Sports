@@ -39,6 +39,9 @@ const recurringScheduleController = require('../controllers/recurringScheduleCon
 // Middleware
 const { auth, admin, supervisor, coach, player, parent, adminOrSupport, adminSupportOrAccounting, support, teamSupervisor, checkRole } = require('../middleware/auth');
 
+// Import notification routes
+const notificationRoutes = require('./notificationRoutes');
+
 // Auth routes
 router.post(
   '/auth/login',
@@ -97,12 +100,7 @@ router.delete(
 );
 
 // Notification routes
-router.get('/notifications', auth, notificationController.getUserNotifications);
-router.get('/notifications/unread-count', auth, notificationController.getUnreadCount);
-router.put('/notifications/read-all', auth, notificationController.markAllAsRead);
-router.put('/notifications/:id', auth, notificationController.markAsRead);
-router.delete('/notifications/:id', auth, notificationController.deleteNotification);
-router.post('/notifications', [auth, adminOrSupport], notificationController.createNotification);
+router.use('/notifications', notificationRoutes);
 
 // Court routes
 router.post(

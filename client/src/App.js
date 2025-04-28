@@ -53,6 +53,7 @@ import RegistrationFeeConfig from './components/admin/RegistrationFeeConfig';
 // Import the RevenueDashboard component
 import RevenueDashboard from './components/revenue/RevenueDashboard';
 import GuestBookingPage from './components/guestBooking/GuestBookingPage';
+import SendNotification from './components/admin/SendNotification';
 
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
@@ -558,7 +559,7 @@ function AppContent() {
         } />
         
         <Route path="/admin/user-salary-config" element={
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute requiredRole="admin">
             <MainLayout>
               <UserSalaryConfig />
             </MainLayout>
@@ -569,6 +570,14 @@ function AppContent() {
           <ProtectedRoute requiredRole="admin">
             <MainLayout>
               <RegistrationFeeConfig />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/admin/send-notification" element={
+          <ProtectedRoute requiredRole="admin">
+            <MainLayout>
+              <SendNotification />
             </MainLayout>
           </ProtectedRoute>
         } />
