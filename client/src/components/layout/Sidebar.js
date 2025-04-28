@@ -138,7 +138,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'Salary Invoices', icon: <PaymentIcon />, path: '/registrations/salary/list' },
         { text: 'User Salary Config', icon: <SettingsIcon />, path: '/admin/user-salary-config' },
         { text: 'Utility Bills', icon: <ReceiptIcon />, path: '/utilities' },
-        { text: 'Send Notification', icon: <NotificationsIcon />, path: '/admin/send-notification' }
+        { text: 'Broadcast', icon: <NotificationsIcon />, path: '/admin/send-notification' }
     ];
 
     const adminRevenueItems = [
