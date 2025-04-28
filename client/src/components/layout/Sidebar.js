@@ -9,6 +9,7 @@ import {
     Divider, 
     IconButton, 
     Box, 
+    Description,
     Typography, 
     Avatar,
     useTheme,
@@ -35,6 +36,7 @@ import {
     SportsBasketball,
     FitnessCenter as FitnessCenterIcon,
     Fastfood as FastfoodIcon,
+    Description as DescriptionIcon,
     HealthAndSafety as HealthAndSafetyIcon,
     Payment as PaymentIcon,
     LocationOn as LocationOnIcon,
@@ -163,7 +165,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
         {
             text: 'Players',
             path: '/users/role/player',
-            icon: <SportsSoccerIcon />
+            icon: <PeopleIcon />
         },
         {
             text: 'Feedback Management',
@@ -171,9 +173,9 @@ const Sidebar = ({ open, toggleSidebar }) => {
             icon: <FeedbackIcon />
         },
         {
-            text: 'Health Documents',
+            text: 'Documents',
             path: '/support/documents',
-            icon: <HealthAndSafetyIcon />
+            icon: <DescriptionIcon />
         }
     ];
 
