@@ -378,7 +378,15 @@ exports.updateSetting = async (req, res) => {
 // @access  Private
 exports.createSessionSummary = async (req, res) => {
   try {
-    const { startTime, endTime, startingBalance, totalSales, finalBalance } = req.body;
+    const { 
+      startTime, 
+      endTime, 
+      startingBalance, 
+      totalSales, 
+      finalBalance,
+      startingStock,
+      endingStock
+    } = req.body;
 
     if (!startTime || !endTime || startingBalance === undefined || totalSales === undefined || finalBalance === undefined) {
       return ApiResponse.error(res, 'Missing required session data', 400);
@@ -390,7 +398,9 @@ exports.createSessionSummary = async (req, res) => {
       startingBalance,
       totalSales,
       finalBalance,
-      cashier: req.user.id
+      cashier: req.user.id,
+      startingStock: startingStock || [],
+      endingStock: endingStock || []
     });
 
     const savedSummary = await sessionSummary.save();

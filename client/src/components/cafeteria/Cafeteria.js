@@ -16,7 +16,13 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
-  Paper
+  Paper,
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -72,6 +78,7 @@ const Cafeteria = () => {
   const [endSessionError, setEndSessionError] = useState('');
   const [receiptData, setReceiptData] = useState(null);
   const [receiptDialog, setReceiptDialog] = useState(false);
+  const [startingStock, setStartingStock] = useState([]);
 
   // Save session data to localStorage whenever it changes
   useEffect(() => {
@@ -122,9 +129,19 @@ const Cafeteria = () => {
       setError(null);
       const data = await getItems();
       setItems(data);
-    } catch (error) {
-      setError(error.message || 'Failed to fetch items');
-    } finally {
+      
+      // If this is the first fetch (session start), save starting stock
+      if (!sessionStarted || startingStock.length === 0) {
+        setStartingStock(data.map(item => ({
+          _id: item._id,
+          name: item.name,
+          stock: item.stock
+        })));
+      }
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching items:', err);
+      setError('Failed to load items. Please refresh the page.');
       setLoading(false);
     }
   };
@@ -286,7 +303,13 @@ const Cafeteria = () => {
         endTime: endTime,
         startingBalance: parseFloat(startingBalance),
         totalSales: totalSales,
-        finalBalance: parseFloat(startingBalance) + totalSales
+        finalBalance: parseFloat(startingBalance) + totalSales,
+        startingStock: startingStock,
+        endingStock: items.map(item => ({
+          _id: item._id,
+          name: item.name,
+          stock: item.stock
+        }))
       };
 
       // Save to database
@@ -596,7 +619,12 @@ const Cafeteria = () => {
       )}
 
       {/* End Session Dialog */}
-      <Dialog open={endSessionDialog} onClose={() => !endingSession && setEndSessionDialog(false)}>
+      <Dialog 
+        open={endSessionDialog} 
+        onClose={() => !endingSession && setEndSessionDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>Session Summary</DialogTitle>
         <DialogContent>
           <Box sx={{ mb: 2 }}>
@@ -610,6 +638,41 @@ const Cafeteria = () => {
               <strong>Remaining Balance:</strong> {formatCurrency(parseFloat(startingBalance) + totalSales)}
             </Typography>
           </Box>
+          
+          {/* Starting Stock Summary */}
+          <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+            Inventory Summary
+          </Typography>
+          <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Item</TableCell>
+                  <TableCell align="center">Starting Stock</TableCell>
+                  <TableCell align="center">Current Stock</TableCell>
+                  <TableCell align="center">Units Sold</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {startingStock.map(startItem => {
+                  // Find current item stock
+                  const currentItem = items.find(item => item._id === startItem._id);
+                  const currentStock = currentItem ? currentItem.stock : 0;
+                  const soldUnits = startItem.stock - currentStock;
+                  
+                  return (
+                    <TableRow key={startItem._id}>
+                      <TableCell>{startItem.name}</TableCell>
+                      <TableCell align="center">{startItem.stock}</TableCell>
+                      <TableCell align="center">{currentStock}</TableCell>
+                      <TableCell align="center">{soldUnits > 0 ? soldUnits : 0}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          
           {endSessionError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {endSessionError}

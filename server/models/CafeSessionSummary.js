@@ -31,7 +31,37 @@ const CafeSessionSummarySchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
-  }
+  },
+  startingStock: [{
+    _id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CafeteriaItem',
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
+    },
+    stock: {
+      type: Number,
+      required: true
+    }
+  }],
+  endingStock: [{
+    _id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CafeteriaItem',
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
+    },
+    stock: {
+      type: Number,
+      required: true
+    }
+  }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('CafeSessionSummary', CafeSessionSummarySchema); 
