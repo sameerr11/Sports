@@ -34,7 +34,8 @@ import {
   Assessment as AssessmentIcon,
   Warning as WarningIcon,
   Save as SaveIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  CloudUpload as UploadIcon
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -71,6 +72,8 @@ const CafeteriaManagement = () => {
     isAvailable: true
   });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -104,6 +107,8 @@ const CafeteriaManagement = () => {
         minStockLevel: item.minStockLevel?.toString() || '10',
         isAvailable: item.isAvailable
       });
+      
+      setImagePreview(item.image || '');
     } else {
       setFormData({
         name: '',
@@ -114,12 +119,18 @@ const CafeteriaManagement = () => {
         minStockLevel: '10',
         isAvailable: true
       });
+      
+      setImagePreview('');
+      setImageFile(null);
     }
+    
     setDialog({ open: true, type, item });
   };
 
   const handleCloseDialog = () => {
     setDialog({ open: false, type: 'create', item: null });
+    setImageFile(null);
+    setImagePreview('');
   };
 
   const validateForm = () => {
@@ -128,6 +139,19 @@ const CafeteriaManagement = () => {
     if (!formData.stock || formData.stock < 0) return 'Stock cannot be negative';
     if (!formData.minStockLevel || formData.minStockLevel < 0) return 'Minimum stock level cannot be negative';
     return null;
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async () => {
@@ -148,6 +172,10 @@ const CafeteriaManagement = () => {
         stock: parseInt(formData.stock, 10),
         minStockLevel: parseInt(formData.minStockLevel, 10)
       };
+      
+      if (imageFile) {
+        itemData.imageFile = imageFile;
+      }
 
       if (dialog.type === 'create') {
         await createItem(itemData);
@@ -399,6 +427,51 @@ const CafeteriaManagement = () => {
             <MenuItem value={true}>Available</MenuItem>
             <MenuItem value={false}>Unavailable</MenuItem>
           </TextField>
+          
+          <Box sx={{ mt: 2, mb: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Item Image
+            </Typography>
+            
+            {imagePreview && (
+              <Box 
+                sx={{ 
+                  width: '100%',
+                  height: 200,
+                  mb: 2,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: '#f5f5f5'
+                }}
+              >
+                <img 
+                  src={imagePreview} 
+                  alt="Item preview" 
+                  style={{ 
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain'
+                  }} 
+                />
+              </Box>
+            )}
+            
+            <Button
+              variant="outlined"
+              component="label"
+              startIcon={<UploadIcon />}
+              fullWidth
+            >
+              {imagePreview ? 'Change Image' : 'Upload Image'}
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleImageChange}
+              />
+            </Button>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>

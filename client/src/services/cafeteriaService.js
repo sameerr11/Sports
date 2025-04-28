@@ -15,8 +15,33 @@ export const getItems = async () => {
 
 export const createItem = async (itemData) => {
   try {
-    const response = await api.post('/cafeteria/items', itemData);
-    return response.data.data;
+    // Check if it contains an image file
+    if (itemData.imageFile) {
+      // Create FormData and append all other fields
+      const formData = new FormData();
+      formData.append('name', itemData.name);
+      formData.append('description', itemData.description || '');
+      formData.append('price', itemData.price);
+      formData.append('category', itemData.category);
+      formData.append('stock', itemData.stock);
+      formData.append('minStockLevel', itemData.minStockLevel || '10');
+      formData.append('isAvailable', itemData.isAvailable ? 'true' : 'false');
+      
+      // Append the image file
+      formData.append('image', itemData.imageFile);
+      
+      const response = await api.post('/cafeteria/items', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      return response.data.data;
+    } else {
+      // Standard JSON request
+      const response = await api.post('/cafeteria/items', itemData);
+      return response.data.data;
+    }
   } catch (error) {
     console.error('Error creating item:', error);
     throw error.response?.data?.message || 'Failed to create item';
@@ -25,8 +50,33 @@ export const createItem = async (itemData) => {
 
 export const updateItem = async (id, itemData) => {
   try {
-    const response = await api.put(`/cafeteria/items/${id}`, itemData);
-    return response.data.data;
+    // Check if it contains an image file
+    if (itemData.imageFile) {
+      // Create FormData and append all other fields
+      const formData = new FormData();
+      formData.append('name', itemData.name);
+      formData.append('description', itemData.description || '');
+      formData.append('price', itemData.price);
+      formData.append('category', itemData.category);
+      formData.append('stock', itemData.stock);
+      formData.append('minStockLevel', itemData.minStockLevel || '10');
+      formData.append('isAvailable', itemData.isAvailable ? 'true' : 'false');
+      
+      // Append the image file
+      formData.append('image', itemData.imageFile);
+      
+      const response = await api.put(`/cafeteria/items/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      return response.data.data;
+    } else {
+      // Standard JSON request
+      const response = await api.put(`/cafeteria/items/${id}`, itemData);
+      return response.data.data;
+    }
   } catch (error) {
     console.error('Error updating item:', error);
     throw error.response?.data?.message || 'Failed to update item';

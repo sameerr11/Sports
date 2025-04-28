@@ -21,7 +21,12 @@ const cafeteriaItemSchema = new mongoose.Schema({
     enum: ['Food', 'Beverage', 'Snack', 'Other']
   },
   image: {
-    type: String
+    data: {
+      type: Buffer
+    },
+    contentType: {
+      type: String
+    }
   },
   isAvailable: {
     type: Boolean,

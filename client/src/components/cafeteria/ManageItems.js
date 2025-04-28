@@ -23,7 +23,8 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  CloudUpload as UploadIcon
 } from '@mui/icons-material';
 import { getItems, createItem, updateItem } from '../../services/cafeteriaService';
 import { formatCurrency } from '../../utils/format';
@@ -45,6 +46,8 @@ const ManageItems = () => {
     isAvailable: true
   });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
 
   useEffect(() => {
     fetchItems();
@@ -74,6 +77,8 @@ const ManageItems = () => {
         minStockLevel: item.minStockLevel?.toString() || '10',
         isAvailable: item.isAvailable
       });
+      
+      setImagePreview(item.image || '');
     } else {
       setFormData({
         name: '',
@@ -84,12 +89,31 @@ const ManageItems = () => {
         minStockLevel: '10',
         isAvailable: true
       });
+      
+      setImagePreview('');
+      setImageFile(null);
     }
+    
     setDialog({ open: true, type, item });
   };
 
   const handleCloseDialog = () => {
     setDialog({ open: false, type: 'create', item: null });
+    setImageFile(null);
+    setImagePreview('');
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const validateForm = () => {
@@ -118,6 +142,10 @@ const ManageItems = () => {
         stock: parseInt(formData.stock, 10),
         minStockLevel: parseInt(formData.minStockLevel, 10)
       };
+      
+      if (imageFile) {
+        itemData.imageFile = imageFile;
+      }
 
       if (dialog.type === 'create') {
         await createItem(itemData);
@@ -180,6 +208,7 @@ const ManageItems = () => {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>Image</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Category</TableCell>
               <TableCell>Price</TableCell>
@@ -192,6 +221,23 @@ const ManageItems = () => {
           <TableBody>
             {items.map((item) => (
               <TableRow key={item._id}>
+                <TableCell>
+                  {item.image ? (
+                    <Box sx={{ width: 50, height: 50 }}>
+                      <img 
+                        src={item.image} 
+                        alt={item.name}
+                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                      />
+                    </Box>
+                  ) : (
+                    <Box sx={{ width: 50, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f5' }}>
+                      <Typography variant="caption" color="text.secondary">
+                        No Image
+                      </Typography>
+                    </Box>
+                  )}
+                </TableCell>
                 <TableCell>{item.name}</TableCell>
                 <TableCell>{item.category}</TableCell>
                 <TableCell>{formatCurrency(item.price)}</TableCell>
@@ -257,6 +303,52 @@ const ManageItems = () => {
               </MenuItem>
             ))}
           </TextField>
+          
+          <Box sx={{ mt: 2, mb: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Item Image
+            </Typography>
+            
+            {imagePreview && (
+              <Box 
+                sx={{ 
+                  width: '100%',
+                  height: 200,
+                  mb: 2,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: '#f5f5f5'
+                }}
+              >
+                <img 
+                  src={imagePreview} 
+                  alt="Item preview" 
+                  style={{ 
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain'
+                  }} 
+                />
+              </Box>
+            )}
+            
+            <Button
+              variant="outlined"
+              component="label"
+              startIcon={<UploadIcon />}
+              fullWidth
+            >
+              {imagePreview ? 'Change Image' : 'Upload Image'}
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleImageChange}
+              />
+            </Button>
+          </Box>
+          
           <TextField
             margin="dense"
             label="Stock"
@@ -274,28 +366,25 @@ const ManageItems = () => {
             value={formData.minStockLevel}
             onChange={(e) => setFormData({ ...formData, minStockLevel: e.target.value })}
             inputProps={{ min: 0 }}
-            helperText="Alert will be shown when stock falls below this level"
           />
           <TextField
             select
             margin="dense"
-            label="Status"
+            label="Availability"
             fullWidth
             value={formData.isAvailable}
-            onChange={(e) => setFormData({ ...formData, isAvailable: e.target.value })}
+            onChange={(e) => setFormData({ ...formData, isAvailable: e.target.value === 'true' })}
           >
-            <MenuItem value={true}>Available</MenuItem>
-            <MenuItem value={false}>Unavailable</MenuItem>
+            <MenuItem value="true">Available</MenuItem>
+            <MenuItem value="false">Unavailable</MenuItem>
           </TextField>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" color="primary">
-            {dialog.type === 'create' ? 'Add Item' : 'Save Changes'}
-          </Button>
+          <Button onClick={handleSubmit} color="primary">Save</Button>
         </DialogActions>
       </Dialog>
-
+      
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

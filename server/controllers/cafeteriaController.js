@@ -10,17 +10,24 @@ const User = require('../models/User');
 // @access  Private (Supervisor)
 exports.createItem = async (req, res) => {
   try {
-    const { name, description, price, category, image, stock } = req.body;
+    const { name, description, price, category, stock } = req.body;
 
     const newItem = new CafeteriaItem({
       name,
       description,
       price,
       category,
-      image,
       stock,
       createdBy: req.user.id
     });
+
+    // Handle image upload if present
+    if (req.file) {
+      newItem.image = {
+        data: req.file.buffer,
+        contentType: req.file.mimetype
+      };
+    }
 
     const item = await newItem.save();
     return ApiResponse.success(res, item, 'Item created successfully', 201);
@@ -37,7 +44,20 @@ exports.getItems = async (req, res) => {
   try {
     const items = await CafeteriaItem.find({ isAvailable: true })
       .sort({ category: 1, name: 1 });
-    return ApiResponse.success(res, items);
+    
+    // Convert buffer image data to base64 format for each item
+    const itemsWithFormattedImages = items.map(item => {
+      const itemObj = item.toObject();
+      
+      if (itemObj.image && itemObj.image.data && itemObj.image.contentType) {
+        const base64Data = itemObj.image.data.toString('base64');
+        itemObj.image = `data:${itemObj.image.contentType};base64,${base64Data}`;
+      }
+      
+      return itemObj;
+    });
+    
+    return ApiResponse.success(res, itemsWithFormattedImages);
   } catch (error) {
     console.error('Error fetching cafeteria items:', error);
     return ApiResponse.error(res, 'Error fetching cafeteria items', 500);
@@ -49,24 +69,34 @@ exports.getItems = async (req, res) => {
 // @access  Private (Supervisor)
 exports.updateItem = async (req, res) => {
   try {
-    const { name, description, price, category, image, isAvailable, stock } = req.body;
+    const { name, description, price, category, isAvailable, stock } = req.body;
 
     const item = await CafeteriaItem.findById(req.params.id);
     if (!item) {
       return ApiResponse.error(res, 'Item not found', 404);
     }
 
+    // Create update object
+    const updateData = {
+      name,
+      description,
+      price,
+      category,
+      isAvailable,
+      stock
+    };
+
+    // Handle image upload if present
+    if (req.file) {
+      updateData.image = {
+        data: req.file.buffer,
+        contentType: req.file.mimetype
+      };
+    }
+
     const updatedItem = await CafeteriaItem.findByIdAndUpdate(
       req.params.id,
-      {
-        name,
-        description,
-        price,
-        category,
-        image,
-        isAvailable,
-        stock
-      },
+      updateData,
       { new: true }
     );
 

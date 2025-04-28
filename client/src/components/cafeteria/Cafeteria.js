@@ -460,35 +460,118 @@ const Cafeteria = () => {
       <Grid container spacing={3}>
         {/* Items Grid */}
         <Grid item xs={12} md={8}>
-          <Grid container spacing={2}>
+          <Grid container spacing={2} sx={{ mt: 2, mb: 4 }}>
             {items.map((item) => (
-              <Grid item xs={12} sm={6} md={4} key={item._id}>
-                <Card className="item-card">
-                  <CardContent>
-                    <Typography variant="h6" component="h2">
+              <Grid item xs={6} sm={4} md={4} lg={3} key={item._id}>
+                <Card 
+                  className="cafeteria-item-card" 
+                  sx={{ 
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    cursor: 'pointer',
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: '0 8px 20px rgba(0,0,0,0.15)'
+                    }
+                  }}
+                  onClick={() => handleAddToCart(item)}
+                >
+                  {/* Show the image if available */}
+                  {item.image ? (
+                    <Box 
+                      sx={{ 
+                        height: 180, 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center',
+                        overflow: 'hidden',
+                        bgcolor: '#f9f9f9',
+                        position: 'relative'
+                      }}
+                    >
+                      <img 
+                        src={item.image} 
+                        alt={item.name}
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover'
+                        }}
+                      />
+                      {item.stock <= 0 && (
+                        <Box 
+                          sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            bgcolor: 'rgba(0,0,0,0.6)',
+                            color: 'white',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            fontWeight: 'bold',
+                            fontSize: '1.2rem'
+                          }}
+                        >
+                          OUT OF STOCK
+                        </Box>
+                      )}
+                    </Box>
+                  ) : (
+                    <Box 
+                      sx={{ 
+                        height: 180, 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        bgcolor: '#f2f2f2'
+                      }}
+                    >
+                      <Typography variant="body2" color="text.secondary" align="center">
+                        No Image Available
+                      </Typography>
+                    </Box>
+                  )}
+                  <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                    <Typography variant="h6" gutterBottom noWrap fontWeight="bold">
                       {item.name}
                     </Typography>
-                    <Typography color="textSecondary" gutterBottom>
+                    <Typography variant="body2" color="text.secondary" mb={1.5}>
                       {item.category}
                     </Typography>
-                    <Typography variant="body2" component="p">
-                      {item.description}
-                    </Typography>
-                    <Typography variant="h6" color="primary" gutterBottom>
-                      {formatCurrency(item.price)}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Stock: {item.stock}
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      fullWidth
-                      disabled={!item.isAvailable || item.stock === 0}
-                      onClick={() => handleAddToCart(item)}
+                    <Box 
+                      sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        mt: 'auto' 
+                      }}
                     >
-                      Add to Cart
-                    </Button>
+                      <Typography variant="h6" color="primary" fontWeight="bold">
+                        {formatCurrency(item.price)}
+                      </Typography>
+                      <Typography 
+                        variant="body2" 
+                        sx={{
+                          bgcolor: item.stock > 0 ? 'success.100' : 'error.100',
+                          color: item.stock > 0 ? 'success.800' : 'error.800',
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: 1,
+                          fontSize: '0.75rem',
+                          fontWeight: 'medium'
+                        }}
+                      >
+                        {item.stock > 0 ? `Stock: ${item.stock}` : 'Out of Stock'}
+                      </Typography>
+                    </Box>
                   </CardContent>
                 </Card>
               </Grid>

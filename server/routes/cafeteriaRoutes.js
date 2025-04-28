@@ -1,6 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const { check } = require('express-validator');
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max file size
+  },
+  fileFilter: (req, file, cb) => {
+    // Only allow images
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 const { auth, supervisor } = require('../middleware/auth');
 const cafeteriaController = require('../controllers/cafeteriaController');
 
@@ -10,6 +26,7 @@ router.post(
   [
     auth,
     supervisor,
+    upload.single('image'),
     check('name', 'Name is required').not().isEmpty(),
     check('price', 'Price is required and must be a number').isNumeric(),
     check('category', 'Category is required').isIn(['Food', 'Beverage', 'Snack', 'Other']),
@@ -25,6 +42,7 @@ router.put(
   [
     auth,
     supervisor,
+    upload.single('image'),
     check('name', 'Name is required').optional().not().isEmpty(),
     check('price', 'Price must be a number').optional().isNumeric(),
     check('category', 'Invalid category').optional().isIn(['Food', 'Beverage', 'Snack', 'Other']),
