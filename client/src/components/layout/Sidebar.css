@@ -99,7 +99,7 @@
 
 .sidebar .MuiListItemIcon-root {
     min-width: 40px;
-    color: #1976d2;
+    color: #ec8c14 !important;
 }
 
 .sidebar .MuiListItemText-root {

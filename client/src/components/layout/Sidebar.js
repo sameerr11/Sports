@@ -237,7 +237,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 flexShrink: 0
                             }}
                         >
-                            <Sports sx={{ color: 'white' }} />
+                            <Sports sx={{ color: '#ec8c14' }} />
                         </Avatar>
                         <Box sx={{ ml: 1, overflow: 'hidden', whiteSpace: 'nowrap' }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2, color: 'white' }}>
@@ -248,7 +248,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                             </Typography>
                         </Box>
                     </Box>
-                    <IconButton onClick={toggleSidebar} className="close-sidebar-btn" sx={{ flexShrink: 0, color: 'white' }}>
+                    <IconButton onClick={toggleSidebar} className="close-sidebar-btn" sx={{ flexShrink: 0, color: '#ec8c14' }}>
                         <ChevronLeftIcon />
                     </IconButton>
                 </Box>
@@ -294,7 +294,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                             }}
                         >
                             <ListItemIcon sx={{ 
-                                color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
+                                color: '#ec8c14 !important',
                                 minWidth: 40,
                                 flexShrink: 0
                             }}>
@@ -354,7 +354,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                             }}
                         >
                             <ListItemIcon sx={{ 
-                                color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
+                                color: '#ec8c14 !important',
                                 minWidth: 40,
                                 flexShrink: 0
                             }}>
@@ -414,7 +414,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                             }}
                         >
                             <ListItemIcon sx={{ 
-                                color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
+                                color: '#ec8c14 !important',
                                 minWidth: 40,
                                 flexShrink: 0
                             }}>
@@ -474,7 +474,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
+                                    color: '#ec8c14 !important',
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -506,7 +506,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 primary="Management" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'white',
+                                    color: '#ec8c14',
                                     fontWeight: 700,
                                     noWrap: true
                                 }} 
@@ -548,7 +548,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
+                                    color: '#ec8c14 !important',
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -580,7 +580,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 primary="Registration" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'white',
+                                    color: '#ec8c14',
                                     fontWeight: 700,
                                     noWrap: true
                                 }} 
@@ -622,7 +622,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
+                                    color: '#ec8c14 !important',
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -653,7 +653,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 primary="Administration" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'white',
+                                    color: '#ec8c14',
                                     fontWeight: 700,
                                     noWrap: true
                                 }} 
@@ -695,7 +695,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
+                                    color: '#ec8c14 !important',
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -721,7 +721,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 primary="Revenue Management" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'white',
+                                    color: '#ec8c14',
                                     fontWeight: 700,
                                     noWrap: true
                                 }} 
@@ -763,7 +763,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
+                                    color: '#ec8c14 !important',
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -795,7 +795,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 primary="Coach Tools" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'white',
+                                    color: '#ec8c14',
                                     fontWeight: 700,
                                     noWrap: true
                                 }} 
@@ -839,7 +839,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
+                                    color: '#ec8c14 !important',
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -870,7 +870,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 primary="Parent Dashboard" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'white',
+                                    color: '#ec8c14',
                                     fontWeight: 700,
                                     noWrap: true
                                 }} 
@@ -912,7 +912,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
+                                    color: '#ec8c14 !important',
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -944,7 +944,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 primary="Support Tools" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'white',
+                                    color: '#ec8c14',
                                     fontWeight: 700,
                                     noWrap: true
                                 }} 
@@ -986,7 +986,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
+                                    color: '#ec8c14 !important',
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
@@ -1018,7 +1018,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 primary="Revenue Management" 
                                 primaryTypographyProps={{ 
                                     variant: 'overline',
-                                    color: 'white',
+                                    color: '#ec8c14',
                                     fontWeight: 700,
                                     noWrap: true
                                 }} 
@@ -1060,7 +1060,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
                                 }}
                             >
                                 <ListItemIcon sx={{ 
-                                    color: location.pathname === item.path ? 'white' : alpha(theme.palette.common.white, 0.7),
+                                    color: '#ec8c14 !important',
                                     minWidth: 40,
                                     flexShrink: 0
                                 }}>
