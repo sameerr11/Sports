@@ -62,6 +62,8 @@ const CafeDashboard = () => {
   const [receiptDialog, setReceiptDialog] = useState(false);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [sessionDetailDialog, setSessionDetailDialog] = useState(false);
 
   useEffect(() => {
     // Load PIN from database
@@ -319,6 +321,11 @@ const CafeDashboard = () => {
     }, 500);
   };
 
+  const handleViewSessionDetail = (session) => {
+    setSelectedSession(session);
+    setSessionDetailDialog(true);
+  };
+
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
       <Typography variant="h4" gutterBottom>
@@ -485,6 +492,7 @@ const CafeDashboard = () => {
                       <TableCell>Starting Balance</TableCell>
                       <TableCell>Sales</TableCell>
                       <TableCell>Final Balance</TableCell>
+                      <TableCell align="right">Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -505,6 +513,15 @@ const CafeDashboard = () => {
                         <TableCell>{formatCurrency(session.startingBalance)}</TableCell>
                         <TableCell>{formatCurrency(session.totalSales)}</TableCell>
                         <TableCell>{formatCurrency(session.finalBalance)}</TableCell>
+                        <TableCell align="right">
+                          <Button
+                            size="small"
+                            onClick={() => handleViewSessionDetail(session)}
+                            color="primary"
+                          >
+                            View Details
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -704,6 +721,210 @@ const CafeDashboard = () => {
           onClose={() => setReceiptDialog(false)}
         />
       )}
+
+      {/* Session Detail Dialog */}
+      <Dialog
+        open={sessionDetailDialog}
+        onClose={() => setSessionDetailDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Session Summary
+          <Typography variant="subtitle2" color="textSecondary">
+            {selectedSession && formatDateTime(selectedSession.startTime)}
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers>
+          {selectedSession && (
+            <>
+              <Typography variant="h6" gutterBottom>Financial Summary</Typography>
+              <Box sx={{ mb: 3 }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={4}>
+                    <Typography variant="body1">
+                      <strong>Starting Balance:</strong> {formatCurrency(selectedSession.startingBalance)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Typography variant="body1">
+                      <strong>Total Sales:</strong> {formatCurrency(selectedSession.totalSales)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Typography variant="body1">
+                      <strong>Final Balance:</strong> {formatCurrency(selectedSession.finalBalance)}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Typography variant="h6" gutterBottom>Inventory Summary</Typography>
+              {selectedSession.startingStock && selectedSession.startingStock.length > 0 ? (
+                <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Item</TableCell>
+                        <TableCell align="center">Starting Stock</TableCell>
+                        <TableCell align="center">Ending Stock</TableCell>
+                        <TableCell align="center">Units Sold</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {selectedSession.startingStock.map(startItem => {
+                        // Find corresponding ending stock
+                        const endItem = selectedSession.endingStock.find(
+                          item => item._id.toString() === startItem._id.toString()
+                        );
+                        const endingStock = endItem ? endItem.stock : 0;
+                        const soldUnits = startItem.stock - endingStock;
+                        
+                        return (
+                          <TableRow key={startItem._id}>
+                            <TableCell>{startItem.name}</TableCell>
+                            <TableCell align="center">{startItem.stock}</TableCell>
+                            <TableCell align="center">{endingStock}</TableCell>
+                            <TableCell align="center">{soldUnits > 0 ? soldUnits : 0}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Typography color="textSecondary">No inventory data available for this session.</Typography>
+              )}
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+                <Typography variant="body2">
+                  <strong>Session Duration:</strong> {calculateDuration(selectedSession.startTime, selectedSession.endTime)}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Cashier:</strong> {selectedSession.cashier ? 
+                    (selectedSession.cashier.firstName && selectedSession.cashier.lastName ? 
+                      `${selectedSession.cashier.firstName} ${selectedSession.cashier.lastName}` : 
+                      (selectedSession.cashier.name || 'Unknown')
+                    ) : 'Unknown'
+                  }
+                </Typography>
+              </Box>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSessionDetailDialog(false)}>Close</Button>
+          <Button 
+            variant="contained" 
+            color="primary"
+            onClick={() => {
+              if (!selectedSession) return;
+              
+              const printWindow = window.open('', '_blank');
+              printWindow.document.write(`
+                <html>
+                  <head>
+                    <title>Session Summary - ${formatDate(selectedSession.date)}</title>
+                    <style>
+                      body { font-family: Arial, sans-serif; padding: 20px; }
+                      table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                      th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                      th { background-color: #f2f2f2; }
+                      h2, h3 { margin-top: 20px; }
+                      .header { text-align: center; margin-bottom: 30px; }
+                      .summary-section { margin-bottom: 30px; }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="header">
+                      <h2>Cafe Session Summary</h2>
+                      <p><strong>Date:</strong> ${formatDate(selectedSession.date)}</p>
+                    </div>
+                    
+                    <div class="summary-section">
+                      <h3>Financial Summary</h3>
+                      <table>
+                        <tr>
+                          <th>Starting Balance</th>
+                          <th>Total Sales</th>
+                          <th>Final Balance</th>
+                        </tr>
+                        <tr>
+                          <td>${formatCurrency(selectedSession.startingBalance)}</td>
+                          <td>${formatCurrency(selectedSession.totalSales)}</td>
+                          <td>${formatCurrency(selectedSession.finalBalance)}</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <div class="summary-section">
+                      <h3>Session Details</h3>
+                      <table>
+                        <tr>
+                          <th>Start Time</th>
+                          <th>End Time</th>
+                          <th>Duration</th>
+                          <th>Cashier</th>
+                        </tr>
+                        <tr>
+                          <td>${formatDateTime(selectedSession.startTime)}</td>
+                          <td>${formatDateTime(selectedSession.endTime)}</td>
+                          <td>${calculateDuration(selectedSession.startTime, selectedSession.endTime)}</td>
+                          <td>${selectedSession.cashier ? 
+                            (selectedSession.cashier.firstName && selectedSession.cashier.lastName ? 
+                              `${selectedSession.cashier.firstName} ${selectedSession.cashier.lastName}` : 
+                              (selectedSession.cashier.name || 'Unknown')
+                            ) : 'Unknown'
+                          }</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    ${selectedSession.startingStock && selectedSession.startingStock.length > 0 ? `
+                      <div class="summary-section">
+                        <h3>Inventory Summary</h3>
+                        <table>
+                          <tr>
+                            <th>Item</th>
+                            <th>Starting Stock</th>
+                            <th>Ending Stock</th>
+                            <th>Units Sold</th>
+                          </tr>
+                          ${selectedSession.startingStock.map(startItem => {
+                            const endItem = selectedSession.endingStock.find(
+                              item => item._id.toString() === startItem._id.toString()
+                            );
+                            const endingStock = endItem ? endItem.stock : 0;
+                            const soldUnits = startItem.stock - endingStock;
+                            
+                            return `
+                              <tr>
+                                <td>${startItem.name}</td>
+                                <td>${startItem.stock}</td>
+                                <td>${endingStock}</td>
+                                <td>${soldUnits > 0 ? soldUnits : 0}</td>
+                              </tr>
+                            `;
+                          }).join('')}
+                        </table>
+                      </div>
+                    ` : '<p>No inventory data available for this session.</p>'}
+                    
+                    <div style="margin-top: 30px; font-size: 12px; text-align: center;">
+                      <p>Report generated on ${formatDateTime(new Date())}</p>
+                    </div>
+                  </body>
+                </html>
+              `);
+              
+              printWindow.document.close();
+              setTimeout(() => printWindow.print(), 500);
+            }}
+          >
+            Print
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
