@@ -16,6 +16,7 @@ exports.createUtilityBill = async (req, res) => {
       billNumber,
       billType,
       customBillType,
+      sportType,
       amount,
       vendor,
       billDate,
@@ -39,6 +40,7 @@ exports.createUtilityBill = async (req, res) => {
       billNumber,
       billType,
       customBillType,
+      sportType: sportType || 'General',
       amount,
       vendor,
       billDate,
@@ -106,7 +108,7 @@ exports.updateUtilityBill = async (req, res) => {
   }
 
   try {
-    const { paymentStatus } = req.body;
+    const { paymentStatus, sportType } = req.body;
 
     // Find the utility bill
     const utilityBill = await UtilityBill.findById(req.params.id);
@@ -123,6 +125,11 @@ exports.updateUtilityBill = async (req, res) => {
         utilityBill.paidDate = new Date();
         utilityBill.paidBy = req.user.id;
       }
+    }
+
+    // Update sport type if provided
+    if (sportType) {
+      utilityBill.sportType = sportType;
     }
 
     // Payment method is always Cash

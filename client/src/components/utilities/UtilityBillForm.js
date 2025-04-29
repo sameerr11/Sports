@@ -20,6 +20,21 @@ import { Save as SaveIcon } from '@mui/icons-material';
 import { createUtilityBill, getBillTypes } from '../../services/utilityService';
 import { formatCurrency } from '../../utils/format';
 
+// Sport types available in the system
+const SPORT_TYPES = [
+  { value: 'General', label: 'General (Non-specific)' },
+  { value: 'Basketball', label: 'Basketball' },
+  { value: 'Football', label: 'Football' },
+  { value: 'Volleyball', label: 'Volleyball' },
+  { value: 'Self Defense', label: 'Self Defense' },
+  { value: 'Karate', label: 'Karate' },
+  { value: 'Gymnastics', label: 'Gymnastics' },
+  { value: 'Gym', label: 'Gym' },
+  { value: 'Zumba', label: 'Zumba' },
+  { value: 'Swimming', label: 'Swimming' },
+  { value: 'Ping Pong', label: 'Ping Pong' }
+];
+
 const UtilityBillForm = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -36,6 +51,7 @@ const UtilityBillForm = () => {
   const [formData, setFormData] = useState({
     billNumber: generateBillNumber(),
     billType: '',
+    sportType: 'General',
     amount: '',
     vendor: '',
     billDate: new Date().toISOString().split('T')[0],
@@ -201,6 +217,25 @@ const UtilityBillForm = () => {
                 />
               </Grid>
             )}
+
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Sport Type</InputLabel>
+                <Select
+                  name="sportType"
+                  value={formData.sportType}
+                  onChange={handleChange}
+                  label="Sport Type"
+                >
+                  {SPORT_TYPES.map((sport) => (
+                    <MenuItem key={sport.value} value={sport.value}>
+                      {sport.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <FormHelperText>Select the sport type this bill is associated with</FormHelperText>
+              </FormControl>
+            </Grid>
 
             <Grid item xs={12} md={6}>
               <TextField

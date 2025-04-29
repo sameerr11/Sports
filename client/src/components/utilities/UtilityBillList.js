@@ -32,7 +32,8 @@ import {
   Print as PrintIcon,
   Payments as PaymentsIcon,
   Warning as WarningIcon,
-  DeleteOutline as DeleteIcon
+  DeleteOutline as DeleteIcon,
+  SportsSoccerOutlined as SportIcon
 } from '@mui/icons-material';
 import { getUtilityBills, updateUtilityBill, deleteUtilityBill } from '../../services/utilityService';
 import { formatCurrency } from '../../utils/format';
@@ -242,6 +243,7 @@ const UtilityBillList = () => {
                 <TableRow>
                   <TableCell>Bill #</TableCell>
                   <TableCell>Type</TableCell>
+                  <TableCell>Sport</TableCell>
                   <TableCell>Vendor</TableCell>
                   <TableCell>Amount</TableCell>
                   <TableCell>Due Date</TableCell>
@@ -256,6 +258,7 @@ const UtilityBillList = () => {
                     <TableRow key={bill._id}>
                       <TableCell>{bill.billNumber}</TableCell>
                       <TableCell>{bill.billType}</TableCell>
+                      <TableCell>{bill.sportType || 'General'}</TableCell>
                       <TableCell>{bill.vendor}</TableCell>
                       <TableCell>{formatCurrency(bill.amount)}</TableCell>
                       <TableCell>{formatDate(bill.dueDate)}</TableCell>
@@ -343,9 +346,14 @@ const UtilityBillList = () => {
                     <Typography variant="body2" color="textSecondary" sx={{ margin: '4px 0' }}>
                       Date: {formatDate(selectedBill.billDate)}
                     </Typography>
+                    {selectedBill.sportType && selectedBill.sportType !== 'General' && (
+                      <Typography variant="body2" color="textSecondary" sx={{ margin: '4px 0' }}>
+                        Sport: {selectedBill.sportType}
+                      </Typography>
+                    )}
                   </Box>
                   
-                  <Box display="flex" justifyContent="space-between" mb={3}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                     <Box>
                       <Typography variant="subtitle1" gutterBottom>Vendor:</Typography>
                       <Typography variant="body1">
@@ -371,6 +379,7 @@ const UtilityBillList = () => {
                     <Typography variant="subtitle1" gutterBottom>Description:</Typography>
                     <Typography variant="body1">
                       Payment for {selectedBill.billType} services
+                      {selectedBill.sportType && selectedBill.sportType !== 'General' && ` (${selectedBill.sportType} department)`}
                     </Typography>
                   </Box>
                   
@@ -384,33 +393,6 @@ const UtilityBillList = () => {
                         </Typography>
                       </Grid>
                     </Grid>
-                  </Box>
-                  
-                  <Box mt={4}>
-                    <Typography variant="body2" color="textSecondary">
-                      Payment Method: Cash
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Created By: {selectedBill.createdBy ? 
-                        `${selectedBill.createdBy.firstName} ${selectedBill.createdBy.lastName}` : 
-                        'Unknown'}
-                    </Typography>
-                    {selectedBill.paidDate && (
-                      <Typography variant="body2" color="textSecondary">
-                        Paid Date: {formatDate(selectedBill.paidDate)}
-                      </Typography>
-                    )}
-                    {selectedBill.paidBy && (
-                      <Typography variant="body2" color="textSecondary">
-                        Paid By: {`${selectedBill.paidBy.firstName} ${selectedBill.paidBy.lastName}`}
-                      </Typography>
-                    )}
-                  </Box>
-                  
-                  <Box mt={4} textAlign="center">
-                    <Typography variant="body2">
-                      Thank you for your service.
-                    </Typography>
                   </Box>
                 </CardContent>
               </Card>
@@ -443,152 +425,10 @@ const UtilityBillList = () => {
           )}
           
           <Button onClick={() => setDetailsOpen(false)}>Close</Button>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<PrintIcon />}
-            onClick={() => {
-              const content = document.getElementById('bill-to-print');
-              
-              if (!content) {
-                console.error('Bill content not found');
-                return;
-              }
-              
-              // Create a new iframe
-              const printFrame = document.createElement('iframe');
-              
-              // Make it invisible
-              printFrame.style.position = 'fixed';
-              printFrame.style.right = '0';
-              printFrame.style.bottom = '0';
-              printFrame.style.width = '0';
-              printFrame.style.height = '0';
-              printFrame.style.border = '0';
-              
-              // Add to document
-              document.body.appendChild(printFrame);
-              
-              // Get the iframe document
-              const frameDoc = printFrame.contentWindow || printFrame.contentDocument.document || printFrame.contentDocument;
-              
-              // Write the print content
-              frameDoc.document.write(`
-                <!DOCTYPE html>
-                <html>
-                  <head>
-                    <title>${selectedBill.billType} Bill #${selectedBill.billNumber}</title>
-                    <style>
-                      body {
-                        font-family: 'Arial', sans-serif;
-                        margin: 0;
-                        padding: 1cm;
-                        font-size: 12px;
-                      }
-                      .invoice {
-                        width: 21cm;
-                        margin: 0 auto;
-                      }
-                      .header {
-                        text-align: center;
-                        margin-bottom: 20px;
-                      }
-                      .logo {
-                        max-width: 80px;
-                        max-height: 80px;
-                        margin: 0 auto 10px;
-                        display: block;
-                      }
-                      .company-name {
-                        font-size: 24px;
-                        font-weight: bold;
-                        margin: 5px 0;
-                      }
-                      .invoice-title {
-                        font-size: 18px;
-                        font-weight: bold;
-                        margin: 8px 0;
-                      }
-                      .invoice-details {
-                        margin: 5px 0;
-                      }
-                      .divider {
-                        border-top: 1px solid #000;
-                        margin: 15px 0;
-                      }
-                      .flex-container {
-                        display: flex;
-                        justify-content: space-between;
-                        margin-bottom: 20px;
-                      }
-                      .flex-item {
-                        flex: 1;
-                      }
-                      .text-right {
-                        text-align: right;
-                      }
-                      .bold {
-                        font-weight: bold;
-                      }
-                      .mb-10 {
-                        margin-bottom: 10px;
-                      }
-                      .mt-20 {
-                        margin-top: 20px;
-                      }
-                      .text-center {
-                        text-align: center;
-                      }
-                      @media print {
-                        body {
-                          padding: 0;
-                        }
-                      }
-                    </style>
-                  </head>
-                  <body>
-                    <div class="invoice">
-                      <div class="header">
-                        <img src="${ultrasLogo}" alt="Ultras Logo" class="logo">
-                        <div class="company-name">SPORTS MANAGEMENT</div>
-                        <div class="invoice-title">${selectedBill.billType.toUpperCase()} BILL</div>
-                        <div class="invoice-details">Bill #: ${selectedBill.billNumber}</div>
-                        <div class="invoice-details">Date: ${new Date().toLocaleDateString()}</div>
-                        </div>
-                        
-                      <div class="flex-container">
-                        <div class="flex-item">
-                          <p class="bold">Description:</p>
-                          <p>Payment for ${selectedBill.billType} services</p>
-                        </div>
-                      </div>
-                      
-                      ${content.innerHTML}
-                    </div>
-                  </body>
-                </html>
-              `);
-              
-              frameDoc.document.close();
-              
-              // Print the iframe after it loads
-              setTimeout(() => {
-                frameDoc.focus();
-                frameDoc.print();
-                
-                // Remove the iframe after printing
-                setTimeout(() => {
-                  document.body.removeChild(printFrame);
-                }, 500);
-              }, 500);
-            }}
-          >
-            Print
-          </Button>
         </DialogActions>
       </Dialog>
-      
-      {/* Confirm Delete Dialog */}
+
+      {/* Confirm delete dialog */}
       <Dialog
         open={confirmDialogOpen}
         onClose={() => setConfirmDialogOpen(false)}
@@ -596,26 +436,31 @@ const UtilityBillList = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete this bill? This action cannot be undone.
+            Are you sure you want to delete this utility bill?
+            This action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmDialogOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={() => setConfirmDialogOpen(false)} 
+            disabled={updating}
+          >
+            Cancel
+          </Button>
           <Button 
             onClick={handleDeleteConfirm} 
             color="error" 
-            variant="contained"
             disabled={updating}
           >
             {updating ? <CircularProgress size={24} /> : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={4000}
+        autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
         <Alert
