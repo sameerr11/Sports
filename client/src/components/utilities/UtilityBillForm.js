@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -17,7 +17,7 @@ import {
   FormHelperText
 } from '@mui/material';
 import { Save as SaveIcon } from '@mui/icons-material';
-import { createUtilityBill } from '../../services/utilityService';
+import { createUtilityBill, getBillTypes } from '../../services/utilityService';
 import { formatCurrency } from '../../utils/format';
 
 const UtilityBillForm = () => {
@@ -30,6 +30,8 @@ const UtilityBillForm = () => {
     severity: 'success'
   });
   const [customBillType, setCustomBillType] = useState('');
+  const [billTypes, setBillTypes] = useState([]);
+  const [loadingBillTypes, setLoadingBillTypes] = useState(true);
 
   const [formData, setFormData] = useState({
     billNumber: generateBillNumber(),
@@ -41,6 +43,24 @@ const UtilityBillForm = () => {
     paymentMethod: 'Cash',
     paymentStatus: 'Pending'
   });
+
+  // Fetch bill types on component mount
+  useEffect(() => {
+    const fetchBillTypes = async () => {
+      try {
+        setLoadingBillTypes(true);
+        const types = await getBillTypes();
+        setBillTypes(types);
+      } catch (err) {
+        console.error('Error fetching bill types:', err);
+        setError('Failed to load bill types');
+      } finally {
+        setLoadingBillTypes(false);
+      }
+    };
+
+    fetchBillTypes();
+  }, []);
 
   // Generate a random bill number
   function generateBillNumber() {
@@ -85,8 +105,8 @@ const UtilityBillForm = () => {
         });
         return;
       }
-      // Use the custom bill type as the actual bill type
-      submissionData.billType = customBillType.trim();
+      // Store the original bill type as 'Other' for the backend
+      submissionData.customBillType = customBillType.trim();
     }
 
     if (!submissionData.billType || !submissionData.amount || !submissionData.vendor || !submissionData.dueDate) {
@@ -151,15 +171,19 @@ const UtilityBillForm = () => {
                   value={formData.billType}
                   onChange={handleChange}
                   label="Bill Type"
+                  disabled={loadingBillTypes}
                 >
-                  <MenuItem value="Electricity">Electricity</MenuItem>
-                  <MenuItem value="Water">Water</MenuItem>
-                  <MenuItem value="Gas">Gas</MenuItem>
-                  <MenuItem value="Internet">Internet</MenuItem>
-                  <MenuItem value="Phone">Phone</MenuItem>
-                  <MenuItem value="Maintenance">Maintenance</MenuItem>
-                  <MenuItem value="Equipment">Equipment</MenuItem>
-                  <MenuItem value="Other">Other</MenuItem>
+                  {loadingBillTypes ? (
+                    <MenuItem value="" disabled>
+                      Loading...
+                    </MenuItem>
+                  ) : (
+                    billTypes.map((type) => (
+                      <MenuItem key={type} value={type}>
+                        {type}
+                      </MenuItem>
+                    ))
+                  )}
                 </Select>
               </FormControl>
             </Grid>

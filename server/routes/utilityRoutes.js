@@ -31,6 +31,15 @@ router.get(
   utilityController.getUtilityBills
 );
 
+// @route   GET /api/utilities/bill-types
+// @desc    Get all bill types (default + custom)
+// @access  Admin, Accounting
+router.get(
+  '/bill-types',
+  [auth, roles(['admin', 'accounting'])],
+  utilityController.getBillTypes
+);
+
 // @route   GET /api/utilities/:id
 // @desc    Get utility bill by ID
 // @access  Admin, Accounting

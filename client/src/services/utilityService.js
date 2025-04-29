@@ -20,6 +20,16 @@ export const getUtilityBillById = async (id) => {
   }
 };
 
+// Get all bill types (default + custom)
+export const getBillTypes = async () => {
+  try {
+    const response = await api.get('/utilities/bill-types');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'Failed to fetch bill types';
+  }
+};
+
 // Create utility bill
 export const createUtilityBill = async (billData) => {
   try {

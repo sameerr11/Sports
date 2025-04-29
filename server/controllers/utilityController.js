@@ -1,4 +1,5 @@
 const UtilityBill = require('../models/UtilityBill');
+const UtilitySettings = require('../models/UtilitySettings');
 const { validationResult } = require('express-validator');
 
 // @desc    Create a new utility bill
@@ -26,6 +27,11 @@ exports.createUtilityBill = async (req, res) => {
     const existingBill = await UtilityBill.findOne({ billNumber });
     if (existingBill) {
       return res.status(400).json({ msg: 'Bill number already exists' });
+    }
+
+    // If custom bill type is provided, add it to the list of bill types
+    if (billType === 'Other' && customBillType && customBillType.trim() !== '') {
+      await addCustomBillType(customBillType.trim(), req.user.id);
     }
 
     // Create the utility bill
@@ -147,6 +153,71 @@ exports.deleteUtilityBill = async (req, res) => {
     return res.json({ msg: 'Utility bill removed' });
   } catch (err) {
     console.error('Error deleting utility bill:', err.message);
+    return res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+// Helper function to add a custom bill type
+async function addCustomBillType(customType, userId) {
+  try {
+    // Get the current bill types or create a new entry if it doesn't exist
+    let billTypesSettings = await UtilitySettings.findOne({ settingName: 'customBillTypes' });
+    
+    if (!billTypesSettings) {
+      // Create new settings with default bill types and the new custom type
+      billTypesSettings = new UtilitySettings({
+        settingName: 'customBillTypes',
+        arrayValue: [customType],
+        createdBy: userId
+      });
+    } else {
+      // Check if this custom type already exists
+      if (!billTypesSettings.arrayValue.includes(customType)) {
+        billTypesSettings.arrayValue.push(customType);
+        billTypesSettings.updatedBy = userId;
+      }
+    }
+    
+    await billTypesSettings.save();
+    return billTypesSettings;
+  } catch (error) {
+    console.error('Error adding custom bill type:', error);
+    throw error;
+  }
+}
+
+// @desc    Get all bill types (default + custom)
+// @route   GET /api/utilities/bill-types
+// @access  Admin, Accounting
+exports.getBillTypes = async (req, res) => {
+  try {
+    // Default bill types
+    const defaultBillTypes = [
+      'Electricity',
+      'Water',
+      'Gas',
+      'Internet',
+      'Phone',
+      'Maintenance',
+      'Equipment'
+    ];
+    
+    // Get custom bill types
+    const customBillTypesSettings = await UtilitySettings.findOne({ settingName: 'customBillTypes' });
+    
+    let allBillTypes = [...defaultBillTypes];
+    
+    // Add custom bill types if they exist
+    if (customBillTypesSettings && customBillTypesSettings.arrayValue.length > 0) {
+      allBillTypes = [...allBillTypes, ...customBillTypesSettings.arrayValue];
+    }
+    
+    // Always add "Other" as the last option
+    allBillTypes.push('Other');
+    
+    return res.json(allBillTypes);
+  } catch (err) {
+    console.error('Error fetching bill types:', err.message);
     return res.status(500).json({ msg: 'Server error' });
   }
 }; 
