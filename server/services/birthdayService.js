@@ -20,27 +20,42 @@ const checkBirthdays = async () => {
       }
     });
 
+    // Find a system admin to use as sender
+    const systemAdmin = await User.findOne({ role: 'admin' });
+    if (!systemAdmin) {
+      throw new Error('No admin user found to send birthday notifications');
+    }
+
     // Send notifications for each birthday user
     for (const user of birthdayUsers) {
-      const message = `Happy Birthday to you 🎉🎂`;
-      
       // Create notification for the birthday person
       await createNotification({
-        title: 'Happy Birthday!',
-        message,
-        type: 'birthday',
-        recipients: [user._id],
-        role: user.role
+        recipientId: user._id,
+        senderId: systemAdmin._id,
+        type: 'specific',
+        message: `Happy Birthday to you 🎉🎂`,
+        relatedTo: {
+          model: 'User',
+          id: user._id
+        }
       });
 
-      // Create notification for all users
-      await createNotification({
-        title: 'Birthday Celebration!',
-        message: `Today is ${user.firstName} ${user.lastName}'s birthday! 🎉`,
-        type: 'birthday',
-        recipients: 'all',
-        role: 'all'
-      });
+      // Get all users except the birthday person
+      const allUsers = await User.find({ _id: { $ne: user._id } });
+      
+      // Create notifications for all other users
+      for (const recipient of allUsers) {
+        await createNotification({
+          recipientId: recipient._id,
+          senderId: systemAdmin._id,
+          type: 'specific',
+          message: `Today is ${user.firstName} ${user.lastName}'s birthday! 🎉`,
+          relatedTo: {
+            model: 'User',
+            id: user._id
+          }
+        });
+      }
     }
 
     return birthdayUsers;

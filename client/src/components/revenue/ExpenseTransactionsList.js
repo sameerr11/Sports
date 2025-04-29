@@ -22,6 +22,9 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
+import Button from '@mui/material/Button';
+import DownloadIcon from '@mui/icons-material/Download';
+import ultrasLogo from '../../assets/images/ultras_logo.png';
 
 const ExpenseTransactionsList = ({ dateRange, onSuccess }) => {
   const [transactions, setTransactions] = useState([]);
@@ -120,6 +123,203 @@ const ExpenseTransactionsList = ({ dateRange, onSuccess }) => {
     );
   };
 
+  const handleGenerateReport = () => {
+    // Create a new window for the report
+    const printWindow = window.open('', '_blank');
+    
+    // Get filtered transactions data
+    const filteredTransactions = transactions;
+    
+    // Calculate totals by expense type
+    const expenseTypeTotal = {};
+    filteredTransactions.forEach(transaction => {
+      if (!expenseTypeTotal[transaction.expenseType]) {
+        expenseTypeTotal[transaction.expenseType] = 0;
+      }
+      expenseTypeTotal[transaction.expenseType] += transaction.amount;
+    });
+
+    // Generate the report content
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Expense Transactions Report</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              margin: 0;
+              padding: 20px;
+            }
+            .report-container {
+              max-width: 1000px;
+              margin: 0 auto;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+            }
+            .logo {
+              max-width: 80px;
+              max-height: 80px;
+              margin: 0 auto 10px;
+              display: block;
+            }
+            .company-name {
+              font-size: 24px;
+              font-weight: bold;
+              margin: 5px 0;
+            }
+            .report-title {
+              font-size: 20px;
+              margin: 10px 0;
+            }
+            .date-range {
+              color: #666;
+              margin: 10px 0;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 20px 0;
+            }
+            th, td {
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f5f5f5;
+            }
+            .summary-section {
+              margin: 30px 0;
+            }
+            .summary-title {
+              font-size: 18px;
+              font-weight: bold;
+              margin: 10px 0;
+            }
+            .chip {
+              display: inline-block;
+              padding: 4px 8px;
+              border-radius: 16px;
+              font-size: 12px;
+              font-weight: bold;
+              color: white;
+            }
+            .chip-salary { background-color: #f44336; }
+            .chip-utility { background-color: #ff9800; }
+            .chip-maintenance { background-color: #2196f3; }
+            .chip-equipment { background-color: #3f51b5; }
+            .chip-other { background-color: #9e9e9e; }
+            .chip-paid { background-color: #4caf50; }
+            .chip-pending { background-color: #ff9800; }
+            .total-row {
+              font-weight: bold;
+              background-color: #f5f5f5;
+            }
+            @media print {
+              body {
+                padding: 0;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="report-container">
+            <div class="header">
+              <img src="${ultrasLogo}" alt="Ultras Logo" class="logo" />
+              <div class="company-name">SPORTS MANAGEMENT</div>
+              <div class="report-title">EXPENSE TRANSACTIONS REPORT</div>
+              <div class="date-range">
+                ${filters.startDate ? `From: ${filters.startDate}` : ''} 
+                ${filters.startDate && filters.endDate ? ' - ' : ''}
+                ${filters.endDate ? `To: ${filters.endDate}` : ''}
+                ${!filters.startDate && !filters.endDate ? 'All Time' : ''}
+              </div>
+              ${filters.expenseType ? `<div>Expense Type: ${filters.expenseType}</div>` : ''}
+              ${filters.paymentStatus ? `<div>Payment Status: ${filters.paymentStatus}</div>` : ''}
+            </div>
+
+            <div class="summary-section">
+              <div class="summary-title">Summary by Expense Type</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Expense Type</th>
+                    <th style="text-align: right;">Total Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${Object.entries(expenseTypeTotal).map(([type, amount]) => `
+                    <tr>
+                      <td>${type}</td>
+                      <td style="text-align: right;">$${amount.toFixed(2)}</td>
+                    </tr>
+                  `).join('')}
+                  <tr class="total-row">
+                    <td>Total</td>
+                    <td style="text-align: right;">$${totalAmount.toFixed(2)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="transactions-section">
+              <div class="summary-title">Transaction Details</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Created By</th>
+                    <th style="text-align: right;">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${filteredTransactions.map(transaction => `
+                    <tr>
+                      <td>${formatDate(transaction.date)}</td>
+                      <td>
+                        <span class="chip chip-${transaction.expenseType.toLowerCase()}">
+                          ${transaction.expenseType}
+                        </span>
+                      </td>
+                      <td>${transaction.description}</td>
+                      <td>
+                        <span class="chip chip-${transaction.paymentStatus.toLowerCase()}">
+                          ${transaction.paymentStatus}
+                        </span>
+                      </td>
+                      <td>${transaction.createdBy ? 
+                        `${transaction.createdBy.firstName} ${transaction.createdBy.lastName}` : 
+                        'System'}</td>
+                      <td style="text-align: right;">$${transaction.amount.toFixed(2)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px; color: #666;">
+              <p>Report Generated: ${new Date().toLocaleString()}</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.focus();
+    
+    // Add slight delay to ensure content is loaded
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
@@ -131,14 +331,24 @@ const ExpenseTransactionsList = ({ dateRange, onSuccess }) => {
             View and filter expense transactions
           </Typography>
         </Box>
-        <Paper elevation={1} sx={{ p: 2, borderRadius: 2, minWidth: 200 }}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Total Amount
-          </Typography>
-          <Typography variant="h5" color="error.main">
-            ${totalAmount.toFixed(2)}
-          </Typography>
-        </Paper>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={handleGenerateReport}
+            disabled={loading || transactions.length === 0}
+          >
+            Generate Report
+          </Button>
+          <Paper elevation={1} sx={{ p: 2, borderRadius: 2, minWidth: 200 }}>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              Total Amount
+            </Typography>
+            <Typography variant="h5" color="error.main">
+              ${totalAmount.toFixed(2)}
+            </Typography>
+          </Paper>
+        </Box>
       </Box>
 
       <Paper sx={{ p: 2, mb: 3 }}>
