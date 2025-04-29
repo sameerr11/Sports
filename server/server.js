@@ -5,6 +5,7 @@ const connectDB = require('./db');
 const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
 const { initScheduler } = require('./utils/scheduler');
+const { startScheduledTasks } = require('./scheduledTasks');
 require('dotenv').config();
 
 const app = express();
@@ -14,6 +15,9 @@ connectDB();
 
 // Initialize scheduler for recurring bookings
 initScheduler();
+
+// Start scheduled tasks
+startScheduledTasks();
 
 // Middleware
 app.use(cors());

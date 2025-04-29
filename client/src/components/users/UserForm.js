@@ -69,6 +69,7 @@ const initialState = {
   lastName: '',
   email: '',
   password: '',
+  birthDate: '',
   role: '',
   supervisorType: 'general',
   supervisorSportTypes: [],
@@ -384,6 +385,19 @@ const UserForm = () => {
                 type="email"
                 value={formData.email}
                 onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Birth Date"
+                name="birthDate"
+                type="date"
+                value={formData.birthDate}
+                onChange={handleChange}
+                InputLabelProps={{
+                  shrink: true,
+                }}
               />
             </Grid>
             {!isEdit && (

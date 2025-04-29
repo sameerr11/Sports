@@ -15,7 +15,7 @@ exports.registerUser = async (req, res) => {
   }
 
   console.log('Register user request body:', req.body);
-  const { firstName, lastName, email, password, role, phoneNumber, address, parentId, supervisorType, supervisorSportTypes } = req.body;
+  const { firstName, lastName, email, password, role, phoneNumber, address, parentId, supervisorType, supervisorSportTypes, birthDate } = req.body;
 
   try {
     // Check if user already exists
@@ -38,7 +38,8 @@ exports.registerUser = async (req, res) => {
       password,
       role,
       phoneNumber,
-      address
+      address,
+      birthDate
     };
     
     // Add supervisor specific fields if role is supervisor
@@ -225,7 +226,7 @@ exports.getUserById = async (req, res) => {
 // @access  Admin, Support (with restrictions)
 exports.updateUser = async (req, res) => {
   console.log('Update user request body:', req.body);
-  const { firstName, lastName, email, role, phoneNumber, address, isActive, parentId, supervisorType, supervisorSportTypes } = req.body;
+  const { firstName, lastName, email, role, phoneNumber, address, isActive, parentId, supervisorType, supervisorSportTypes, birthDate } = req.body;
 
   try {
     let user = await User.findById(req.params.id);
@@ -244,8 +245,6 @@ exports.updateUser = async (req, res) => {
     
     // Support staff can only update contact details of players
     if (req.user.role === 'support') {
-      if (firstName) userFields.firstName = firstName;
-      if (lastName) userFields.lastName = lastName;
       if (phoneNumber) userFields.phoneNumber = phoneNumber;
       if (address) userFields.address = address;
       
@@ -255,6 +254,7 @@ exports.updateUser = async (req, res) => {
       if (firstName) userFields.firstName = firstName;
       if (lastName) userFields.lastName = lastName;
       if (email) userFields.email = email;
+      if (birthDate) userFields.birthDate = birthDate;
       
       // Validate role if provided
       if (role) {
