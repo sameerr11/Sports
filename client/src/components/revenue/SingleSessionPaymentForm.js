@@ -13,16 +13,22 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
-  Divider
+  Divider,
+  InputAdornment,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import { getRegistrationFees } from '../../services/registrationService';
 import { addRevenueTransaction } from '../../services/revenueService';
+import { getSingleSessionFees } from '../../services/singleSessionFeeService';
 import { isAdmin } from '../../services/authService';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 const SingleSessionPaymentForm = () => {
   const [loading, setLoading] = useState(false);
   const [feesLoading, setFeesLoading] = useState(false);
-  const [registrationFees, setRegistrationFees] = useState([]);
+  const [singleSessionFees, setSingleSessionFees] = useState([]);
+  const [feeInfo, setFeeInfo] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -42,17 +48,17 @@ const SingleSessionPaymentForm = () => {
   });
 
   useEffect(() => {
-    fetchRegistrationFees();
+    fetchSingleSessionFees();
   }, []);
 
-  const fetchRegistrationFees = async () => {
+  const fetchSingleSessionFees = async () => {
     try {
       setFeesLoading(true);
-      const fees = await getRegistrationFees();
-      setRegistrationFees(fees);
+      const fees = await getSingleSessionFees();
+      setSingleSessionFees(fees);
     } catch (error) {
-      console.error('Error fetching registration fees:', error);
-      showSnackbar('Failed to load registration fees', 'error');
+      console.error('Error fetching single session fees:', error);
+      showSnackbar('Failed to load single session fees', 'error');
     } finally {
       setFeesLoading(false);
     }
@@ -74,34 +80,47 @@ const SingleSessionPaymentForm = () => {
   };
 
   const updateFeeAmount = (sportValue, formState) => {
-    if (!sportValue) return;
+    if (!sportValue) {
+      setFeeInfo(null);
+      return;
+    }
     
     setFeesLoading(true);
     
     try {
-      // Find fee for this sport with "1 Month" period as a base reference
-      // This is arbitrary - we'll divide by 30 to get a daily rate
-      const matchingFee = registrationFees.find(
-        fee => fee.sportType === sportValue && 
-              fee.period === '1 Month' && 
-              fee.isActive
+      // Find the configured single session fee for this sport
+      const matchingFee = singleSessionFees.find(
+        fee => fee.sportType === sportValue && fee.isActive
       );
       
       if (matchingFee) {
-        // Calculate single session fee as 1/30 of the monthly fee with a minimum
-        const singleSessionFee = Math.max(5, Math.round(matchingFee.amount / 30));
+        // Directly update the formData state instead of relying on the formState parameter
+        setFormData(prevState => ({
+          ...prevState,
+          amount: matchingFee.amount
+        }));
         
-        setFormData({
-          ...formState,
-          amount: singleSessionFee
+        // Set fee info for display
+        setFeeInfo({
+          sport: sportValue,
+          amount: matchingFee.amount
         });
-        
-        showSnackbar(`Single session fee for ${sportValue}: $${singleSessionFee}`, 'info');
       } else {
+        // If no fee is configured, leave it blank for manual entry
+        setFormData(prevState => ({
+          ...prevState,
+          amount: ''
+        }));
+        
+        // Clear fee info
+        setFeeInfo(null);
+        
+        // Show warning in snackbar
         showSnackbar(`No fee configuration found for ${sportValue}. Please set manually.`, 'warning');
       }
     } catch (error) {
-      console.error('Error calculating fee:', error);
+      console.error('Error finding fee:', error);
+      setFeeInfo(null);
     } finally {
       setFeesLoading(false);
     }
@@ -162,6 +181,8 @@ const SingleSessionPaymentForm = () => {
     }
   };
 
+  const needsReset = feeInfo && Number(formData.amount) !== feeInfo.amount;
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" component="h1" gutterBottom>
@@ -170,6 +191,19 @@ const SingleSessionPaymentForm = () => {
       <Typography variant="body2" color="text.secondary" paragraph>
         Record payments for visitors participating in a single session/day
       </Typography>
+      
+      {isAdmin() && (
+        <Alert 
+          severity="info" 
+          sx={{ mb: 3 }}
+        >
+          You can configure single session fees in the{' '}
+          <a href="/admin/single-session-fees" style={{ color: 'inherit', fontWeight: 'bold' }}>
+            Single Session Fees
+          </a>{' '}
+          page.
+        </Alert>
+      )}
       
       <Paper sx={{ p: 3, mb: 3 }}>
         <form onSubmit={handleSubmit}>
@@ -215,7 +249,7 @@ const SingleSessionPaymentForm = () => {
             Session Details
           </Typography>
           
-          <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth required>
                 <InputLabel id="sport-label">Sport</InputLabel>
@@ -232,6 +266,7 @@ const SingleSessionPaymentForm = () => {
                 </Select>
               </FormControl>
             </Grid>
+            
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -241,13 +276,35 @@ const SingleSessionPaymentForm = () => {
                 type="number"
                 InputProps={{ 
                   inputProps: { min: 0, step: "0.01" },
-                  endAdornment: feesLoading && <CircularProgress size={20} />
+                  endAdornment: (
+                    <>
+                      {feesLoading && <CircularProgress size={20} />}
+                      {needsReset && (
+                        <InputAdornment position="end">
+                          <Tooltip title={`Reset to standard fee: $${feeInfo.amount}`}>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  amount: feeInfo.amount
+                                }));
+                              }}
+                            >
+                              <RefreshIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </InputAdornment>
+                      )}
+                    </>
+                  )
                 }}
                 value={formData.amount}
                 onChange={handleChange}
-                helperText="Amount will auto-calculate based on selected sport"
+                helperText={feeInfo ? `Standard fee for ${feeInfo.sport}: $${feeInfo.amount}` : "Amount will auto-populate when a sport is selected"}
               />
             </Grid>
+            
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth required>
                 <InputLabel id="payment-method-label">Payment Method</InputLabel>
@@ -279,7 +336,7 @@ const SingleSessionPaymentForm = () => {
             </Grid>
           </Grid>
           
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
             <Button
               variant="contained"
               color="primary"

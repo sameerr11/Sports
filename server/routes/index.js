@@ -35,6 +35,7 @@ const userSalaryRoutes = require('./userSalaryRoutes');
 const revenueRoutes = require('./revenueRoutes');
 const guestBookingRoutes = require('./guestBookingRoutes');
 const recurringScheduleController = require('../controllers/recurringScheduleController');
+const singleSessionFeeRoutes = require('./singleSessionFeeRoutes');
 
 // Middleware
 const { auth, admin, supervisor, coach, player, parent, adminOrSupport, adminSupportOrAccounting, support, teamSupervisor, checkRole } = require('../middleware/auth');
@@ -286,6 +287,9 @@ router.use('/revenue', revenueRoutes);
 
 // Guest Booking routes
 router.use('/guest-bookings', guestBookingRoutes);
+
+// Single Session Fee routes
+router.use('/single-session-fees', singleSessionFeeRoutes);
 
 // Recurring schedule routes
 router.post(

@@ -50,6 +50,7 @@ import UtilityBillForm from './components/utilities/UtilityBillForm';
 import UserSalaryConfig from './components/admin/UserSalaryConfig';
 // Import the RegistrationFeeConfig component
 import RegistrationFeeConfig from './components/admin/RegistrationFeeConfig';
+import SingleSessionFeeConfig from './components/admin/SingleSessionFeeConfig';
 // Import the RevenueDashboard component
 import RevenueDashboard from './components/revenue/RevenueDashboard';
 import GuestBookingPage from './components/guestBooking/GuestBookingPage';
@@ -571,6 +572,14 @@ function AppContent() {
           <ProtectedRoute requiredRole="admin">
             <MainLayout>
               <RegistrationFeeConfig />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/admin/single-session-fees" element={
+          <ProtectedRoute requiredRole="admin">
+            <MainLayout>
+              <SingleSessionFeeConfig />
             </MainLayout>
           </ProtectedRoute>
         } />
