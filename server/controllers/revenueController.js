@@ -326,7 +326,7 @@ const syncTransactionsFromSources = async () => {
 
 // @desc    Get revenue dashboard data
 // @route   GET /api/revenue/dashboard
-// @access  Revenue Manager, Admin
+// @access  Revenue Manager, Admin, Accounting
 exports.getDashboardData = async (req, res) => {
   try {
     // Sync transactions from other sources
@@ -538,9 +538,9 @@ exports.getDashboardData = async (req, res) => {
   }
 };
 
-// @desc    Get revenue transactions
+// @desc    Get revenue transactions with pagination and filters
 // @route   GET /api/revenue/transactions
-// @access  Revenue Manager, Admin
+// @access  Revenue Manager, Admin, Accounting
 exports.getRevenueTransactions = async (req, res) => {
   try {
     // Sync transactions from other sources
@@ -718,7 +718,7 @@ exports.updateExpenseStatus = async (req, res) => {
 
 // @desc    Add custom revenue transaction
 // @route   POST /api/revenue/transactions
-// @access  Revenue Manager, Admin
+// @access  Revenue Manager, Admin, Accounting
 exports.addRevenueTransaction = async (req, res) => {
   try {
     const errors = validationResult(req);

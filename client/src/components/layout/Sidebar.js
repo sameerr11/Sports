@@ -185,6 +185,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const accountingItems = [
         { text: 'Dashboard', icon: <DashboardIcon />, path: '/registrations' },
         { text: 'New Registration', icon: <HowToRegIcon />, path: '/registrations/new' },
+        { text: 'Single Session Payment', icon: <PaymentIcon />, path: '/revenue/single-session' },
         { text: 'Salary Invoices', icon: <PaymentIcon />, path: '/registrations/salary/list' },
         { text: 'New Salary Invoice', icon: <PaymentIcon />, path: '/registrations/salary' },
         { text: 'Utility Bills', icon: <ReceiptIcon />, path: '/utilities' },
@@ -194,6 +195,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     // Revenue Manager items
     const revenueManagerItems = [
         { text: 'Revenue Dashboard', icon: <BarChartIcon />, path: '/revenue/dashboard' },
+        { text: 'Single Session Payment', icon: <PaymentIcon />, path: '/revenue/single-session' },
     ];
 
     // Function to determine which supervisor items to show

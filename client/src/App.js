@@ -54,6 +54,7 @@ import RegistrationFeeConfig from './components/admin/RegistrationFeeConfig';
 import RevenueDashboard from './components/revenue/RevenueDashboard';
 import GuestBookingPage from './components/guestBooking/GuestBookingPage';
 import SendNotification from './components/admin/SendNotification';
+import SingleSessionPaymentForm from './components/revenue/SingleSessionPaymentForm';
 
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
@@ -661,6 +662,14 @@ function AppContent() {
           <ProtectedRoute requiredRole={['revenue_manager', 'admin']}>
             <MainLayout>
               <RevenueDashboard />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/revenue/single-session" element={
+          <ProtectedRoute requiredRole={['revenue_manager', 'admin', 'accounting']}>
+            <MainLayout>
+              <SingleSessionPaymentForm />
             </MainLayout>
           </ProtectedRoute>
         } />

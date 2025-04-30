@@ -8,31 +8,31 @@ const roles = require('../middleware/roles');
 // Revenue Manager Dashboard
 // @route   GET /api/revenue/dashboard
 // @desc    Get revenue dashboard data
-// @access  Revenue Manager, Admin
+// @access  Revenue Manager, Admin, Accounting
 router.get(
   '/dashboard',
-  [auth, roles(['revenue_manager', 'admin'])],
+  [auth, roles(['revenue_manager', 'admin', 'accounting'])],
   revenueController.getDashboardData
 );
 
 // Revenue Transactions
 // @route   GET /api/revenue/transactions
 // @desc    Get revenue transactions with pagination and filters
-// @access  Revenue Manager, Admin
+// @access  Revenue Manager, Admin, Accounting
 router.get(
   '/transactions',
-  [auth, roles(['revenue_manager', 'admin'])],
+  [auth, roles(['revenue_manager', 'admin', 'accounting'])],
   revenueController.getRevenueTransactions
 );
 
 // @route   POST /api/revenue/transactions
 // @desc    Add custom revenue transaction
-// @access  Revenue Manager, Admin
+// @access  Revenue Manager, Admin, Accounting
 router.post(
   '/transactions',
   [
     auth,
-    roles(['revenue_manager', 'admin']),
+    roles(['revenue_manager', 'admin', 'accounting']),
     check('amount', 'Amount is required and must be a positive number').isFloat({ min: 0 }),
     check('sourceType', 'Source type is required').isIn(['Registration', 'Cafeteria', 'Rental', 'Other']),
     check('description', 'Description is required').notEmpty()
