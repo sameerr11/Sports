@@ -21,7 +21,7 @@ const notificationSchema = new mongoose.Schema({
                'player_performance', 'coach_feedback', 'team_announcement', 'payment_reminder',
                'role_change', 'document_upload', 'child_account_linked', 'profile_updated', 
                'password_reset', 'training_updated', 'training_cancelled', 'match_updated',
-               'match_result', 'attendance_update', 'registration_expiry'],
+               'match_result', 'attendance_update', 'registration_expiry', 'new_registration'],
         required: true,
         default: 'system'
     },

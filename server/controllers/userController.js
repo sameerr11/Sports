@@ -90,10 +90,36 @@ exports.registerUser = async (req, res) => {
 // @access  Admin
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.find().select('-password');
+    // Extract query parameters
+    const { role, isActive } = req.query;
+    
+    // Build the query object
+    const query = {};
+    
+    if (role) {
+      // Validate role
+      const validRoles = ['admin', 'supervisor', 'coach', 'player', 'parent', 'cashier', 'support', 'accounting', 'revenue_manager'];
+      if (!validRoles.includes(role)) {
+        return res.status(400).json({ msg: 'Invalid role' });
+      }
+      query.role = role;
+    }
+    
+    // If isActive parameter is provided, convert it to boolean and add to query
+    if (isActive !== undefined) {
+      query.isActive = isActive === 'true' || isActive === '1';
+    }
+    
+    // Only allow admin or support to access this endpoint
+    if (req.user.role !== 'admin' && req.user.role !== 'support' && req.user.role !== 'supervisor') {
+      return res.status(403).json({ msg: 'Access denied. Admin, Support, or Supervisor privileges required.' });
+    }
+    
+    // Fetch users based on the query
+    const users = await User.find(query).select('-password');
     res.json(users);
   } catch (err) {
-    console.error(err.message);
+    console.error('Error in getUsers:', err);
     res.status(500).json({ msg: 'Server error' });
   }
 };

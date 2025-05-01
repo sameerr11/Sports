@@ -401,6 +401,29 @@ const Dashboard = () => {
               <TabPanel value={tabValue} index={1}>
                 <UpcomingBirthdays />
               </TabPanel>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'flex-end', 
+                mt: 2, 
+                pb: 2 
+              }}>
+                <Button 
+                  component={Link} 
+                  to="/players-with-parents" 
+                  variant="contained" 
+                  color="primary"
+                  size="small"
+                  endIcon={<ArrowUpward />}
+                  sx={{ 
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    px: 2
+                  }}
+                >
+                  View Players with Parent Details
+                </Button>
+              </Box>
             </CardContent>
           </Card>
         </Box>

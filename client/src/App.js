@@ -57,6 +57,7 @@ import GuestBookingPage from './components/guestBooking/GuestBookingPage';
 import SendNotification from './components/admin/SendNotification';
 import SingleSessionPaymentForm from './components/revenue/SingleSessionPaymentForm';
 import PlayerStatsPage from './components/admin/PlayerStatsPage';
+import PlayersWithParentsPage from './components/admin/PlayersWithParentsPage';
 
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
@@ -694,6 +695,15 @@ function AppContent() {
         
         {/* Guest Booking Route - keep this for direct access on main domain */}
         <Route path="/guest-booking" element={<GuestBookingPage />} />
+        
+        {/* Players with Parents Route */}
+        <Route path="/players-with-parents" element={
+          <ProtectedRoute requiredRole="admin">
+            <MainLayout>
+              <PlayersWithParentsPage />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
         
         {/* Catch all route */}
         <Route path="*" element={<Navigate to="/" />} />
