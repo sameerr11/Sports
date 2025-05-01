@@ -198,3 +198,25 @@ export const getUsersByRole = async (role) => {
         throw error.response?.data?.msg || `Failed to fetch ${role}s`;
     }
 };
+
+// Get upcoming birthdays
+export const getUpcomingBirthdays = async () => {
+    try {
+        const response = await api.get('/users/upcoming-birthdays');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching upcoming birthdays:', error);
+        throw error.response?.data?.msg || 'Failed to fetch upcoming birthdays';
+    }
+};
+
+// Get player statistics
+export const getPlayerStats = async () => {
+    try {
+        const response = await api.get('/users/player-stats');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching player statistics:', error);
+        throw error.response?.data?.msg || 'Failed to fetch player statistics';
+    }
+};

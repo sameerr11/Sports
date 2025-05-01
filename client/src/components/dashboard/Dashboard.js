@@ -17,7 +17,9 @@ import {
   Button,
   useTheme,
   alpha,
-  CircularProgress
+  CircularProgress,
+  Tabs,
+  Tab
 } from '@mui/material';
 import { 
   SportsSoccer, 
@@ -30,22 +32,69 @@ import {
   People,
   AccessTime,
   FitnessCenter,
-  SportsScore
+  SportsScore,
+  Cake,
+  PersonOutline
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
-import { getStoredUser, isSupervisor } from '../../services/authService';
+import { getStoredUser, isSupervisor, isAdmin } from '../../services/authService';
 import { getDashboardData } from '../../services/dashboardService';
 import { getSportIcon } from '../../utils/sportIcons';
+import UpcomingBirthdays from '../admin/UpcomingBirthdays';
+import PlayerStats from '../admin/PlayerStats';
 import './Dashboard.css';
 
-// Removed mock data as we'll use real data from the API
+// TabPanel component for admin dashboard tabs
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`admin-tabpanel-${index}`}
+      aria-labelledby={`admin-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ 
+          pt: 3,
+          pb: 2,
+          transition: 'all 0.3s ease-in-out',
+          animation: 'fadeIn 0.5s ease-in-out',
+          '@keyframes fadeIn': {
+            '0%': {
+              opacity: 0,
+              transform: 'translateY(10px)'
+            },
+            '100%': {
+              opacity: 1,
+              transform: 'translateY(0)'
+            }
+          }
+        }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
+function a11yProps(index) {
+  return {
+    id: `admin-tab-${index}`,
+    'aria-controls': `admin-tabpanel-${index}`,
+  };
+}
 
 const Dashboard = () => {
   const theme = useTheme();
   const user = getStoredUser();
   const supervisor = isSupervisor();
+  const admin = isAdmin();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [tabValue, setTabValue] = useState(0);
   const [dashboardData, setDashboardData] = useState({
     stats: {
       totalBookings: 0,
@@ -53,6 +102,11 @@ const Dashboard = () => {
     },
     upcomingBookings: []
   });
+  
+  // Handle tab change
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
   
   // Fetch real data from the API
   useEffect(() => {
@@ -257,6 +311,100 @@ const Dashboard = () => {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Admin Dashboard with Tabs */}
+      {admin && (
+        <Box sx={{ width: '100%', mb: 5 }}>
+          <Card 
+            elevation={0} 
+            className="dashboard-card" 
+            sx={{ 
+              borderRadius: 3, 
+              overflow: 'hidden',
+              border: `1px solid ${alpha(theme.palette.grey[300], 0.7)}`,
+              boxShadow: `0 10px 30px ${alpha(theme.palette.common.black, 0.06)}`,
+              background: 'white'
+            }}
+          >
+            <CardHeader
+              title={
+                <Typography 
+                  variant="h5" 
+                  sx={{ 
+                    fontWeight: 700, 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    color: theme.palette.primary.main,
+                    position: 'relative',
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      bottom: -8,
+                      left: 0,
+                      width: 60,
+                      height: 3,
+                      borderRadius: 1.5,
+                      backgroundColor: theme.palette.secondary.main
+                    }
+                  }}
+                >
+                  <PersonOutline sx={{ mr: 1.5, color: theme.palette.primary.main }} /> 
+                  Player Statistics
+                </Typography>
+              }
+              sx={{ px: 3, pt: 3, pb: 1 }}
+            />
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3 }}>
+              <Tabs 
+                value={tabValue} 
+                onChange={handleTabChange} 
+                aria-label="admin dashboard tabs"
+                sx={{
+                  '& .MuiTab-root': {
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    minHeight: 48,
+                    px: 2,
+                    mx: 1,
+                    borderRadius: 1,
+                    transition: 'all 0.2s ease-in-out'
+                  },
+                  '& .Mui-selected': {
+                    color: theme.palette.primary.main,
+                    backgroundColor: alpha(theme.palette.primary.main, 0.08)
+                  },
+                  '& .MuiTabs-indicator': {
+                    backgroundColor: theme.palette.secondary.main,
+                    height: 3,
+                    borderRadius: 1.5
+                  }
+                }}
+              >
+                <Tab 
+                  icon={<PersonOutline sx={{ fontSize: 20 }} />} 
+                  iconPosition="start" 
+                  label="Overview" 
+                  {...a11yProps(0)} 
+                />
+                <Tab 
+                  icon={<Cake sx={{ fontSize: 20 }} />} 
+                  iconPosition="start" 
+                  label="Upcoming Birthdays" 
+                  {...a11yProps(1)} 
+                />
+              </Tabs>
+            </Box>
+            <CardContent sx={{ px: 3, py: 0 }}>
+              <TabPanel value={tabValue} index={0}>
+                <PlayerStats />
+              </TabPanel>
+              <TabPanel value={tabValue} index={1}>
+                <UpcomingBirthdays />
+              </TabPanel>
+            </CardContent>
+          </Card>
+        </Box>
+      )}
 
       {/* Main Dashboard Content */}
       <Grid container spacing={4} className="dashboard-content">

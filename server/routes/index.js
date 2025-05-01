@@ -72,6 +72,13 @@ router.post(
 router.get('/users', [auth, adminSupportOrAccounting], userController.getUsers);
 router.get('/users/role/:role', [auth], userController.getUsersByRole);
 router.get('/users/parent/children', [auth, parent], userController.getParentChildren);
+
+// Add upcoming birthdays route BEFORE the :id route
+router.get('/users/upcoming-birthdays', [auth, admin], userController.getUpcomingBirthdays);
+
+// Add player statistics route
+router.get('/users/player-stats', [auth, admin], userController.getPlayerStats);
+
 router.get('/users/:id', [auth, adminOrSupport], userController.getUserById);
 router.put('/users/:id', [auth, adminOrSupport], userController.updateUser);
 router.delete('/users/:id', [auth, admin], userController.deleteUser);

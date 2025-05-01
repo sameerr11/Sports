@@ -768,4 +768,138 @@ exports.uploadProfilePicture = async (req, res) => {
     console.error('Error uploading profile picture:', err);
     res.status(500).json({ msg: 'Server error' });
   }
+};
+
+// @desc    Get upcoming birthdays
+// @route   GET /api/users/upcoming-birthdays
+// @access  Admin
+exports.getUpcomingBirthdays = async (req, res) => {
+  try {
+    // Get current date
+    const today = new Date();
+    
+    // Create a date for 30 days from now
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(today.getDate() + 30);
+    
+    // Find users with birthdays in the next 30 days
+    // We need to match based on month and day regardless of year
+    const users = await User.find({
+      birthDate: { $exists: true, $ne: null }
+    }).select('firstName lastName birthDate');
+    
+    // Filter and compute remaining days on the server side
+    const upcomingBirthdays = users
+      .filter(user => {
+        if (!user.birthDate) return false;
+        
+        const birthDate = new Date(user.birthDate);
+        
+        // Create dates for this year's birthday
+        const thisYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+        
+        // If birthday has passed this year, check next year's birthday
+        if (thisYearBirthday < today) {
+          thisYearBirthday.setFullYear(today.getFullYear() + 1);
+        }
+        
+        // Calculate days remaining
+        const diffTime = thisYearBirthday - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        // Return true if birthday is within the next 30 days
+        return diffDays >= 0 && diffDays <= 30;
+      })
+      .map(user => {
+        const birthDate = new Date(user.birthDate);
+        
+        // Create dates for this year's birthday
+        const thisYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+        
+        // If birthday has passed this year, check next year's birthday
+        if (thisYearBirthday < today) {
+          thisYearBirthday.setFullYear(today.getFullYear() + 1);
+        }
+        
+        // Calculate days remaining
+        const diffTime = thisYearBirthday - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        // Format the actual birth date
+        const formattedBirthDate = birthDate.toLocaleDateString('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric'
+        });
+        
+        // Format the upcoming birth date (without year)
+        const upcomingBirthDate = thisYearBirthday.toLocaleDateString('en-US', {
+          month: 'long',
+          day: 'numeric'
+        });
+        
+        return {
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          birthDate: formattedBirthDate,
+          upcomingBirthDate,
+          daysRemaining: diffDays
+        };
+      })
+      // Sort by days remaining (ascending)
+      .sort((a, b) => a.daysRemaining - b.daysRemaining);
+    
+    res.json(upcomingBirthdays);
+  } catch (err) {
+    console.error('Error fetching upcoming birthdays:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+// @desc    Get player statistics (active/inactive counts)
+// @route   GET /api/users/player-stats
+// @access  Admin
+exports.getPlayerStats = async (req, res) => {
+  try {
+    // Count active players
+    const activePlayers = await User.countDocuments({ 
+      role: 'player',
+      isActive: true
+    });
+    
+    // Count inactive players
+    const inactivePlayers = await User.countDocuments({ 
+      role: 'player',
+      isActive: false
+    });
+    
+    // Get total players
+    const totalPlayers = activePlayers + inactivePlayers;
+    
+    // Calculate percentages
+    const activePercentage = totalPlayers > 0 ? Math.round((activePlayers / totalPlayers) * 100) : 0;
+    const inactivePercentage = totalPlayers > 0 ? Math.round((inactivePlayers / totalPlayers) * 100) : 0;
+    
+    // Get monthly trend (players added in the last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const newPlayers = await User.countDocuments({
+      role: 'player',
+      createdAt: { $gte: thirtyDaysAgo }
+    });
+    
+    res.json({
+      activePlayers,
+      inactivePlayers,
+      totalPlayers,
+      activePercentage,
+      inactivePercentage,
+      newPlayers
+    });
+  } catch (err) {
+    console.error('Error fetching player statistics:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
 }; 

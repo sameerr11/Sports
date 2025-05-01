@@ -56,6 +56,7 @@ import RevenueDashboard from './components/revenue/RevenueDashboard';
 import GuestBookingPage from './components/guestBooking/GuestBookingPage';
 import SendNotification from './components/admin/SendNotification';
 import SingleSessionPaymentForm from './components/revenue/SingleSessionPaymentForm';
+import PlayerStatsPage from './components/admin/PlayerStatsPage';
 
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
@@ -588,6 +589,14 @@ function AppContent() {
           <ProtectedRoute requiredRole="admin">
             <MainLayout>
               <SendNotification />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/admin/player-stats" element={
+          <ProtectedRoute requiredRole="admin">
+            <MainLayout>
+              <PlayerStatsPage />
             </MainLayout>
           </ProtectedRoute>
         } />
