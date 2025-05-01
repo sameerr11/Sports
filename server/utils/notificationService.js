@@ -1,5 +1,6 @@
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const emailService = require('./emailService');
 
 /**
  * Create a notification for a specific user
@@ -10,20 +11,54 @@ const User = require('../models/User');
  * @param {String} notificationData.title - Notification title
  * @param {String} notificationData.message - Notification message
  * @param {Object} notificationData.relatedTo - Related entity (optional)
+ * @param {Boolean} notificationData.sendEmail - Whether to send email notification (default: true)
  * @returns {Promise<Object>} Created notification
  */
 const createNotification = async (notificationData) => {
   try {
+    // If sender is not provided but required, try to find a default admin user
+    if (!notificationData.senderId) {
+      // Try to find an admin user to use as a default sender
+      try {
+        const admin = await User.findOne({ role: 'admin' });
+        if (admin) {
+          notificationData.senderId = admin._id;
+        }
+      } catch (err) {
+        console.log('Could not find admin user for default sender');
+      }
+    }
+
     const notification = new Notification({
       recipient: notificationData.recipientId,
       sender: notificationData.senderId || null,
-      type: notificationData.type,
+      type: notificationData.type || 'system', // Default to 'system' if not provided
       title: notificationData.title,
       message: notificationData.message,
       relatedTo: notificationData.relatedTo || null
     });
 
     await notification.save();
+    
+    // Send email notification if enabled
+    const sendEmail = notificationData.sendEmail !== false; // Default to true if not specified
+    if (sendEmail) {
+      try {
+        // Get recipient user to get their email
+        const recipient = await User.findById(notificationData.recipientId);
+        if (recipient && recipient.email) {
+          await emailService.sendNotificationEmail({
+            email: recipient.email,
+            title: notificationData.title,
+            message: notificationData.message
+          });
+        }
+      } catch (emailError) {
+        console.error('Error sending notification email:', emailError);
+        // Don't throw error here, we still created the in-app notification
+      }
+    }
+    
     return notification;
   } catch (error) {
     console.error('Error creating notification:', error);
@@ -230,11 +265,220 @@ const createRegistrationExpiryNotifications = async (data) => {
   }
 };
 
+/**
+ * Send notification for new user registration
+ * @param {Object} userData - User data
+ * @returns {Promise<Object>} Notification and email result
+ */
+const sendRegistrationNotification = async (userData) => {
+  try {
+    // Find a system admin to use as sender
+    const admin = await User.findOne({ role: 'admin' });
+    const senderId = admin ? admin._id : undefined;
+    
+    if (!senderId) {
+      console.log('Warning: No admin user found for sender. Email will still be sent.');
+    }
+    
+    // Create in-app notification for admins
+    const adminNotifications = await createRoleNotifications({
+      role: 'admin',
+      senderId: senderId, // Use admin as sender
+      type: 'system', // Use 'system' which should be in the enum
+      title: 'New User Registration',
+      message: `New ${userData.role} registered: ${userData.firstName} ${userData.lastName} (${userData.email})`,
+      sendEmail: true
+    });
+    
+    // Send welcome email to the new user
+    const emailResult = await emailService.sendRegistrationEmail(userData);
+    
+    return {
+      notifications: adminNotifications,
+      emailSent: true,
+      emailResult
+    };
+  } catch (error) {
+    console.error('Error in registration notification:', error);
+    // Still send email even if in-app notification fails
+    try {
+      const emailResult = await emailService.sendRegistrationEmail(userData);
+      return {
+        notifications: [],
+        emailSent: true,
+        emailResult
+      };
+    } catch (emailError) {
+      console.error('Email also failed:', emailError);
+      throw error;
+    }
+  }
+};
+
+/**
+ * Send notification for booking confirmation
+ * @param {Object} bookingData - Booking data
+ * @returns {Promise<Object>} Notification and email result
+ */
+const sendBookingConfirmationNotification = async (bookingData) => {
+  try {
+    // For guest bookings, we don't create an in-app notification
+    // since guests don't have user accounts
+    let notification = null;
+    
+    // Determine payment message based on payment status
+    let paymentMessage = '';
+    if (bookingData.paymentStatus === 'Paid') {
+      paymentMessage = 'Your payment has been received and your booking is confirmed.';
+    } else if (bookingData.paymentStatus === 'Unpaid') {
+      paymentMessage = `Your booking is pending. Please complete payment at the court before your scheduled time using ${bookingData.paymentMethod || 'your preferred payment method'}.`;
+    }
+    
+    // Send booking confirmation email to the guest
+    const emailResult = await emailService.sendBookingConfirmationEmail({
+      userEmail: bookingData.guestEmail || bookingData.userEmail,
+      userName: bookingData.guestName || bookingData.userName,
+      date: bookingData.date,
+      time: bookingData.time,
+      facility: bookingData.facility,
+      bookingId: bookingData.bookingId,
+      paymentMessage
+    });
+    
+    // Send notification to admin users
+    try {
+      const adminUsers = await User.find({ role: 'admin' });
+      for (const admin of adminUsers) {
+        // Prepare an admin-specific email with booking details
+        await emailService.sendNotificationEmail({
+          email: admin.email,
+          title: 'New Guest Booking Confirmation',
+          message: `A guest booking has been ${bookingData.paymentStatus === 'Paid' ? 'confirmed and paid' : 'created with payment pending'}:
+          
+Guest: ${bookingData.guestName} (${bookingData.guestEmail})
+Facility: ${bookingData.facility}
+Date: ${bookingData.date}
+Time: ${bookingData.time}
+Payment Status: ${bookingData.paymentStatus}
+Payment Method: ${bookingData.paymentMethod || 'Not specified'}
+Booking ID: ${bookingData.bookingId}`
+        });
+      }
+    } catch (adminNotifyError) {
+      console.error('Error sending admin notification for booking:', adminNotifyError);
+      // Continue even if admin notification fails
+    }
+    
+    return {
+      notification,
+      emailSent: true,
+      emailResult
+    };
+  } catch (error) {
+    console.error('Error in booking confirmation notification:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send admin broadcast notification
+ * @param {Object} broadcastData - Broadcast data
+ * @param {String} broadcastData.adminId - Admin user ID
+ * @param {String} broadcastData.title - Notification title
+ * @param {String} broadcastData.message - Notification message
+ * @param {String} broadcastData.role - Target role (optional, if not specified, send to all users)
+ * @param {Boolean} broadcastData.sendEmail - Whether to send email notification
+ * @returns {Promise<Object>} Notification and email result
+ */
+const sendAdminBroadcastNotification = async (broadcastData) => {
+  try {
+    let notifications = [];
+    let recipients = [];
+    
+    // Determine target users
+    if (broadcastData.role) {
+      // Send to specific role
+      notifications = await createRoleNotifications({
+        role: broadcastData.role,
+        senderId: broadcastData.adminId,
+        type: 'system',
+        title: broadcastData.title,
+        message: broadcastData.message,
+        sendEmail: false // We'll handle email separately
+      });
+      
+      // Get user emails for this role
+      const users = await User.find({ role: broadcastData.role, isActive: true }).select('email');
+      recipients = users.map(user => user.email).filter(email => email);
+    } else {
+      // Send to all users
+      const users = await User.find({ isActive: true }).select('_id email');
+      
+      // Create in-app notifications
+      const notificationPromises = users.map(user => 
+        createNotification({
+          recipientId: user._id,
+          senderId: broadcastData.adminId,
+          type: 'system',
+          title: broadcastData.title,
+          message: broadcastData.message,
+          sendEmail: false // We'll handle email separately
+        })
+      );
+      
+      notifications = await Promise.all(notificationPromises);
+      recipients = users.map(user => user.email).filter(email => email);
+    }
+    
+    // Send email broadcast if enabled
+    let emailResult = null;
+    let emailSent = false;
+    
+    if (broadcastData.sendEmail && recipients.length > 0) {
+      try {
+        console.log(`Sending broadcast email to ${recipients.length} recipients`);
+        emailResult = await emailService.sendAdminBroadcastEmail({
+          recipients,
+          subject: broadcastData.title,
+          message: broadcastData.message
+        });
+        emailSent = true;
+        console.log('Broadcast email sent successfully');
+      } catch (emailError) {
+        console.error('Error sending broadcast email:', emailError);
+        // Log detailed error info for debugging
+        console.error('Email error details:', {
+          name: emailError.name,
+          message: emailError.message,
+          stack: emailError.stack
+        });
+        // Don't throw error, we still created the in-app notifications
+      }
+    } else {
+      console.log('Email broadcast skipped: ', 
+        !broadcastData.sendEmail ? 'Email sending not requested' : 'No recipients with email addresses');
+    }
+    
+    return {
+      notifications,
+      emailSent,
+      emailRecipients: recipients.length,
+      emailResult
+    };
+  } catch (error) {
+    console.error('Error in admin broadcast notification:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   createNotification,
   createRoleNotifications,
   notifyCoachesAboutPlayer,
   notifyPlayerFromCoach,
   notifyTeamPlayers,
-  createRegistrationExpiryNotifications
+  createRegistrationExpiryNotifications,
+  sendRegistrationNotification,
+  sendBookingConfirmationNotification,
+  sendAdminBroadcastNotification
 }; 

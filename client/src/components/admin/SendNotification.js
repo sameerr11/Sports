@@ -18,6 +18,7 @@ import { getUsersByRole, getAllUsers } from '../../services/userService';
 import { sendNotification } from '../../services/notificationService';
 
 const SendNotification = () => {
+    const [title, setTitle] = useState('');
     const [message, setMessage] = useState('');
     const [recipientType, setRecipientType] = useState('all');
     const [selectedRole, setSelectedRole] = useState('');
@@ -81,6 +82,17 @@ const SendNotification = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Validate title is provided
+        if (!title.trim()) {
+            setSnackbar({
+                open: true,
+                message: 'Notification title is required',
+                severity: 'error'
+            });
+            return;
+        }
+        
         setLoading(true);
 
         try {
@@ -101,6 +113,7 @@ const SendNotification = () => {
             }
 
             await sendNotification({
+                title,
                 message,
                 recipients,
                 type: recipientType,
@@ -114,6 +127,7 @@ const SendNotification = () => {
             });
 
             // Reset form
+            setTitle('');
             setMessage('');
             setRecipientType('all');
             setSelectedRole('');
@@ -151,6 +165,16 @@ const SendNotification = () => {
                 </Typography>
                 <form onSubmit={handleSubmit}>
                     <Grid container spacing={3}>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="Notification Title"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                required
+                                disabled={loading}
+                            />
+                        </Grid>
                         <Grid item xs={12}>
                             <TextField
                                 fullWidth

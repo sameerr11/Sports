@@ -3,6 +3,8 @@ const crypto = require('crypto');
 const GuestBooking = require('../models/GuestBooking');
 const Booking = require('../models/Booking');
 const Court = require('../models/Court');
+const User = require('../models/User');
+const notificationService = require('../utils/notificationService');
 
 // @desc    Create a new guest booking
 // @route   POST /api/guest-bookings
@@ -214,6 +216,27 @@ exports.createGuestBooking = async (req, res) => {
 
     const booking = await newBooking.save();
     
+    // Send notification to admins about new guest booking
+    try {
+      const adminUsers = await User.find({ role: 'admin' });
+      for (const admin of adminUsers) {
+        await notificationService.createNotification({
+          recipientId: admin._id,
+          type: 'system',
+          title: 'New Guest Booking',
+          message: `New guest booking created by ${guestName} (${guestEmail}) for ${courtDoc.name} on ${startDate.toLocaleDateString()} at ${startDate.toLocaleTimeString()}`,
+          relatedTo: {
+            model: 'GuestBooking',
+            id: booking._id
+          },
+          sendEmail: true
+        });
+      }
+    } catch (notificationError) {
+      console.error('Error sending admin notification:', notificationError);
+      // Continue with booking process even if notification fails
+    }
+    
     // Return the newly created booking with populated court
     const populatedBooking = await GuestBooking.findById(booking._id)
       .populate('court', 'name location sportType hourlyRate');
@@ -288,6 +311,25 @@ exports.updateGuestBookingPayment = async (req, res) => {
       booking.status = 'Confirmed';
     }
     
+    // Send booking confirmation email for all payment options
+    try {
+      await notificationService.sendBookingConfirmationNotification({
+        userId: booking._id, // Using booking ID as a temporary user ID
+        bookingId: booking._id.toString(),
+        date: booking.startTime.toLocaleDateString(),
+        time: `${booking.startTime.toLocaleTimeString()} - ${booking.endTime.toLocaleTimeString()}`,
+        facility: booking.court ? booking.court.name : 'the facility',
+        modelName: 'GuestBooking',
+        guestEmail: booking.guestEmail,
+        guestName: booking.guestName,
+        paymentStatus: booking.paymentStatus,
+        paymentMethod: booking.paymentMethod
+      });
+    } catch (notificationError) {
+      console.error('Error sending booking confirmation notification:', notificationError);
+      // Continue with booking process even if notification fails
+    }
+    
     // Set booking status based on payment status
     if (booking.paymentStatus === 'Paid') {
       booking.status = 'Confirmed';
@@ -301,7 +343,6 @@ exports.updateGuestBookingPayment = async (req, res) => {
       const RevenueTransaction = require('../models/revenue/RevenueTransaction');
       
       // Find default admin user for creating the transaction
-      const User = require('../models/User');
       const admin = await User.findOne({ role: 'admin' });
       
       if (admin) {

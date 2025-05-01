@@ -3,6 +3,7 @@ const Booking = require('../models/Booking');
 const Court = require('../models/Court');
 const User = require('../models/User');
 const Team = require('../models/Team');
+const notificationService = require('../utils/notificationService');
 
 // @desc    Create a new booking
 // @route   POST /api/bookings
@@ -147,38 +148,50 @@ exports.createBooking = async (req, res) => {
       totalPrice = (courtDoc.hourlyRate / 2) * halfHourIncrements;
     }
 
-    // Create new booking
+    // Create a new booking
     const newBooking = new Booking({
       court,
-      user: req.user.id,
-      team,
+      user,
       startTime: startDate,
       endTime: endDate,
       purpose,
-      totalPrice,
+      team,
       notes,
-      isRecurring: isRecurring || false,
-      recurringDay: isRecurring ? recurringDay : null
+      duration: durationHours,
+      status: 'Confirmed',
+      isRecurring,
+      recurringDay: isRecurring ? effectiveDayName : null,
+      paymentStatus: 'Unpaid',
+      hourlyRate: courtDoc.hourlyRate,
+      totalCost: totalPrice
     });
-
-    // If user is a guest, set status to pending
-    // If user is admin, supervisor, or coach, set status to confirmed
-    if (['admin', 'supervisor', 'coach'].includes(req.user.role)) {
-      newBooking.status = 'Confirmed';
-    }
 
     const booking = await newBooking.save();
     
-    // Return the newly created booking with populated fields
-    const populatedBooking = await Booking.findById(booking._id)
-      .populate('court', 'name location sportType hourlyRate')
-      .populate('user', 'firstName lastName email')
-      .populate('team', 'name sportType');
+    // Populate the court details for the response
+    await booking.populate('court', 'name location sportType hourlyRate');
+    
+    // Send booking confirmation notification with email
+    try {
+      // Get court name for the notification message
+      const courtName = courtDoc ? courtDoc.name : 'the facility';
       
-    res.status(201).json(populatedBooking);
+      await notificationService.sendBookingConfirmationNotification({
+        userId: user,
+        bookingId: booking._id.toString(),
+        date: startDate.toLocaleDateString(),
+        time: `${startDate.toLocaleTimeString()} - ${endDate.toLocaleTimeString()}`,
+        facility: courtName,
+        modelName: 'Booking'
+      });
+    } catch (notificationError) {
+      console.error('Error sending booking confirmation notification:', notificationError);
+      // Continue with booking process even if notification fails
+    }
+    
+    res.status(201).json(booking);
   } catch (err) {
-    console.error('Server error creating booking:', err.message);
-    console.error(err.stack);
+    console.error(err.message);
     res.status(500).send('Server Error');
   }
 };

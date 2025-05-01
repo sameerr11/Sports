@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
 const mongoose = require('mongoose');
+const notificationService = require('../utils/notificationService');
 
 // @desc    Register a new user
 // @route   POST /api/users
@@ -59,121 +60,18 @@ exports.registerUser = async (req, res) => {
 
     user = new User(userFields);
     await user.save();
-    console.log('New user created:', { id: user._id, email: user.email, role: user.role, parentId: user.parentId });
 
-    // Create notifications - separated to prevent notification failures from breaking user creation
+    // Send registration notification with email
     try {
-      // Create notification for supervisors if new player registration
-      if (role === 'player') {
-        // Define the player's sports if provided in the request
-        const playerSports = req.body.sports || [];
-        
-        // Get all general supervisors and admin users (they always receive notifications)
-        const generalSupervisors = await User.find({
-          $or: [
-            { role: 'supervisor', supervisorType: 'general' },
-            { role: 'admin' }
-          ]
-        });
-        
-        // Create notifications for general supervisors and admins
-        for (const supervisor of generalSupervisors) {
-          const notification = new Notification({
-            recipient: supervisor._id,
-            type: 'new_registration',
-            title: 'New Player Registration',
-            message: `${firstName} ${lastName} has registered as a new player.`,
-            relatedTo: {
-              model: 'User',
-              id: user._id
-            }
-          });
-          
-          await notification.save();
-        }
-        
-        // Get sports supervisors
-        const sportsSupervisors = await User.find({ 
-          role: 'supervisor',
-          supervisorType: 'sports'
-        });
-        
-        // Only notify sports supervisors if their assigned sports match the player's sports
-        // If player sports are not specified, notify all sports supervisors
-        for (const supervisor of sportsSupervisors) {
-          // If no player sports defined or if supervisor has no assigned sports, send notification
-          if (!playerSports.length || !supervisor.supervisorSportTypes || !supervisor.supervisorSportTypes.length) {
-            const notification = new Notification({
-              recipient: supervisor._id,
-              type: 'new_registration',
-              title: 'New Player Registration',
-              message: `${firstName} ${lastName} has registered as a new player.`,
-              relatedTo: {
-                model: 'User',
-                id: user._id
-              }
-            });
-            
-            await notification.save();
-          } 
-          // Otherwise, check if there's an overlap between player sports and supervisor sports
-          else if (playerSports.some(sport => supervisor.supervisorSportTypes.includes(sport))) {
-            const notification = new Notification({
-              recipient: supervisor._id,
-              type: 'new_registration',
-              title: 'New Player Registration',
-              message: `${firstName} ${lastName} has registered as a new player for ${playerSports.join(', ')}.`,
-              relatedTo: {
-                model: 'User',
-                id: user._id
-              }
-            });
-            
-            await notification.save();
-          }
-        }
-        
-        // Also notify support users
-        const supportUsers = await User.find({ role: 'support' });
-        
-        for (const supportUser of supportUsers) {
-          const notification = new Notification({
-            recipient: supportUser._id,
-            type: 'new_registration',
-            title: 'New Player Registration',
-            message: `${firstName} ${lastName} has registered as a new player.`,
-            relatedTo: {
-              model: 'User',
-              id: user._id
-            }
-          });
-          
-          await notification.save();
-        }
-        
-        // If parentId is provided, create notification for the parent
-        if (userFields.parentId) {
-          const parent = await User.findById(userFields.parentId);
-          if (parent) {
-            const notification = new Notification({
-              recipient: parent._id,
-              type: 'child_account_linked',
-              title: 'Child Account Linked',
-              message: `Your account has been linked to ${firstName} ${lastName}.`,
-              relatedTo: {
-                model: 'User',
-                id: user._id
-              }
-            });
-            
-            await notification.save();
-          }
-        }
-      }
+      await notificationService.sendRegistrationNotification({
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      });
     } catch (notificationError) {
-      // Log notification error but don't fail the whole request
-      console.error('Error creating notifications:', notificationError);
-      // We'll still return the created user without failing
+      console.error('Error sending registration notification:', notificationError);
+      // Continue with the registration process even if notification fails
     }
 
     // Return user without password
@@ -182,7 +80,7 @@ exports.registerUser = async (req, res) => {
 
     res.status(201).json(userResponse);
   } catch (err) {
-    console.error('Error creating user:', err);
+    console.error(err.message);
     res.status(500).json({ msg: 'Server error' });
   }
 };

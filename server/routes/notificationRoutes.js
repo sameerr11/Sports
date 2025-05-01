@@ -3,12 +3,13 @@ const router = express.Router();
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const { auth, admin } = require('../middleware/auth');
+const notificationController = require('../controllers/notificationController');
 
 // Get all notifications for the current user
 router.get('/', auth, async (req, res) => {
     try {
         const notifications = await Notification.find({
-            recipients: req.user.id
+            recipient: req.user.id
         })
         .sort({ createdAt: -1 })
         .populate('sender', 'firstName lastName');
@@ -24,54 +25,83 @@ router.get('/', auth, async (req, res) => {
 router.post('/send', [auth, admin], async (req, res) => {
     try {
         console.log('Received notification request:', req.body);
-        const { message, type, role, recipients } = req.body;
-        let finalRecipients = [];
-
-        // Determine recipients based on type
-        if (type === 'all') {
-            console.log('Fetching all users...');
-            const allUsers = await User.find({}, '_id');
-            finalRecipients = allUsers.map(user => user._id);
-            console.log(`Found ${finalRecipients.length} users`);
-        } else if (type === 'role') {
-            if (!role) {
-                return res.status(400).json({ msg: 'Role is required for role-based notifications' });
-            }
-            console.log(`Fetching users with role: ${role}`);
-            const roleUsers = await User.find({ role }, '_id');
-            finalRecipients = roleUsers.map(user => user._id);
-            console.log(`Found ${finalRecipients.length} users with role ${role}`);
-        } else if (type === 'specific') {
-            if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
-                return res.status(400).json({ msg: 'Recipients are required for specific notifications' });
-            }
-            finalRecipients = recipients;
-            console.log(`Using ${finalRecipients.length} specific recipients`);
-        } else {
-            return res.status(400).json({ msg: 'Invalid notification type' });
+        const { message, title, type, role, recipients } = req.body;
+        
+        if (!message || !title) {
+            return res.status(400).json({ msg: 'Message and title are required' });
         }
 
-        console.log('Creating notification with data:', {
-            message,
-            type,
-            role: type === 'role' ? role : undefined,
-            recipientsCount: finalRecipients.length,
-            sender: req.user.id
+        // For single recipient
+        if (recipients && recipients.length === 1) {
+            const notification = new Notification({
+                recipient: recipients[0],
+                sender: req.user.id,
+                type: type || 'system',
+                title,
+                message
+            });
+            
+            await notification.save();
+            console.log('Single notification saved successfully');
+            return res.json({ 
+                msg: 'Notification sent successfully', 
+                notification 
+            });
+        }
+        
+        // For multiple recipients, create notifications in bulk
+        if (recipients && Array.isArray(recipients) && recipients.length > 0) {
+            const notificationPromises = recipients.map(recipientId => {
+                const notification = new Notification({
+                    recipient: recipientId,
+                    sender: req.user.id,
+                    type: type || 'system',
+                    title,
+                    message
+                });
+                return notification.save();
+            });
+            
+            const savedNotifications = await Promise.all(notificationPromises);
+            console.log(`${savedNotifications.length} notifications saved successfully`);
+            return res.json({ 
+                msg: 'Notifications sent successfully', 
+                count: savedNotifications.length 
+            });
+            }
+        
+        // For role-based notifications
+        if (type === 'role' && role) {
+            const roleUsers = await User.find({ role }, '_id');
+            const recipientIds = roleUsers.map(user => user._id);
+            
+            if (recipientIds.length === 0) {
+                return res.status(404).json({ msg: `No users found with role ${role}` });
+            }
+            
+            const notificationPromises = recipientIds.map(recipientId => {
+                const notification = new Notification({
+                    recipient: recipientId,
+                    sender: req.user.id,
+                    type: 'system',
+                    role,
+                    title,
+                    message
+                });
+                return notification.save();
+            });
+            
+            const savedNotifications = await Promise.all(notificationPromises);
+            console.log(`${savedNotifications.length} role-based notifications saved successfully`);
+            return res.json({ 
+                msg: `Notifications sent to ${savedNotifications.length} users with role ${role}`, 
+                count: savedNotifications.length 
+            });
+        }
+        
+        return res.status(400).json({ 
+            msg: 'Invalid request. Please specify either recipients or role.' 
         });
-
-        // Create notification with sender
-        const notification = new Notification({
-            message,
-            type,
-            role: type === 'role' ? role : undefined,
-            recipients: finalRecipients,
-            sender: req.user.id
-        });
-
-        await notification.save();
-        console.log('Notification saved successfully');
-
-        res.json({ msg: 'Notification sent successfully', notification });
     } catch (error) {
         console.error('Error sending notification:', error);
         console.error('Error details:', {
@@ -134,5 +164,10 @@ router.get('/unread-count', auth, async (req, res) => {
         res.status(500).json({ msg: 'Server error' });
     }
 });
+
+// @desc   Broadcast notification to users (with email)
+// @route  POST /api/notifications/broadcast
+// @access Private/Admin
+router.post('/broadcast', [auth, admin], notificationController.sendBroadcastNotification);
 
 module.exports = router; 

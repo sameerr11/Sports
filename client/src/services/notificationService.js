@@ -59,3 +59,13 @@ export const sendNotification = async (notificationData) => {
     throw error.response?.data?.msg || 'Failed to send notification';
   }
 }; 
+
+// Send broadcast notification to users (with email)
+export const sendBroadcastNotification = async (broadcastData) => {
+  try {
+    const response = await api.post('/notifications/broadcast', broadcastData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'Failed to send broadcast notification';
+  }
+}; 

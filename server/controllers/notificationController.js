@@ -5,6 +5,7 @@ const Court = require('../models/Court');
 const PlayerRegistration = require('../models/PlayerRegistration');
 const TrainingPlan = require('../models/TrainingPlan');
 const PlayerStats = require('../models/PlayerStats');
+const notificationService = require('../utils/notificationService');
 
 /**
  * Helper function to check if a notification is relevant to a sports supervisor
@@ -250,6 +251,38 @@ exports.createNotification = async (req, res) => {
     res.status(201).json(notification);
   } catch (err) {
     console.error(err.message);
+    res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+// @desc    Send broadcast notification to users (with email)
+// @route   POST /api/notifications/broadcast
+// @access  Private/Admin
+exports.sendBroadcastNotification = async (req, res) => {
+  try {
+    const { title, message, role, sendEmail } = req.body;
+    
+    if (!title || !message) {
+      return res.status(400).json({ msg: 'Please include title and message' });
+    }
+
+    // Use the notification service to send broadcast
+    const result = await notificationService.sendAdminBroadcastNotification({
+      adminId: req.user.id,
+      title,
+      message,
+      role, // Optional: if specified, only send to users with this role
+      sendEmail: sendEmail !== false // Default to true if not specified
+    });
+    
+    res.status(201).json({
+      success: true,
+      notificationCount: result.notifications.length,
+      emailSent: result.emailSent,
+      emailRecipients: result.emailRecipients
+    });
+  } catch (err) {
+    console.error('Error sending broadcast notification:', err.message);
     res.status(500).json({ msg: 'Server error' });
   }
 }; 
