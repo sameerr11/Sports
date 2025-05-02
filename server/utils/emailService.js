@@ -56,20 +56,29 @@ const sendEmail = async (emailData) => {
  * @param {String} userData.firstName - User first name
  * @param {String} userData.lastName - User last name
  * @param {String} userData.role - User role
+ * @param {String} userData.password - User password (optional)
  * @returns {Promise<Object>} Send result
  */
 const sendRegistrationEmail = async (userData) => {
   const subject = 'Welcome to Sports Management Platform';
+  const passwordText = userData.password 
+    ? `\nYour password: ${userData.password}\n\nPlease keep this information secure and change your password after your first login.` 
+    : '';
+  
   const text = `Hello ${userData.firstName} ${userData.lastName},
   
 Welcome to our Sports Management Platform! Your account has been created successfully.
 
-Role: ${userData.role}
+Role: ${userData.role}${passwordText}
 
 Thank you for joining us!
 
 Best regards,
 The Sports Management Team`;
+
+  const passwordHtml = userData.password 
+    ? `<p><strong>Your password:</strong> ${userData.password}</p><p>Please keep this information secure and change your password after your first login.</p>` 
+    : '';
 
   const html = `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -77,6 +86,7 @@ The Sports Management Team`;
     <p>Hello ${userData.firstName} ${userData.lastName},</p>
     <p>Your account has been created successfully.</p>
     <p><strong>Role:</strong> ${userData.role}</p>
+    ${passwordHtml}
     <p>Thank you for joining us!</p>
     <p>Best regards,<br>The Sports Management Team</p>
   </div>

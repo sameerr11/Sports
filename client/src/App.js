@@ -58,6 +58,7 @@ import SendNotification from './components/admin/SendNotification';
 import SingleSessionPaymentForm from './components/revenue/SingleSessionPaymentForm';
 import PlayerStatsPage from './components/admin/PlayerStatsPage';
 import PlayersWithParentsPage from './components/admin/PlayersWithParentsPage';
+import SendNotificationForm from './components/admin/SendNotificationForm';
 
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
@@ -590,6 +591,14 @@ function AppContent() {
           <ProtectedRoute requiredRole="admin">
             <MainLayout>
               <SendNotification />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/admin/broadcast" element={
+          <ProtectedRoute requiredRole="admin">
+            <MainLayout>
+              <SendNotificationForm />
             </MainLayout>
           </ProtectedRoute>
         } />

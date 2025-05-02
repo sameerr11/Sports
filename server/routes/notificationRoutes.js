@@ -25,77 +25,114 @@ router.get('/', auth, async (req, res) => {
 router.post('/send', [auth, admin], async (req, res) => {
     try {
         console.log('Received notification request:', req.body);
-        const { message, title, type, role, recipients } = req.body;
+        const { message, title, type, role, recipients, sendEmail } = req.body;
         
         if (!message || !title) {
             return res.status(400).json({ msg: 'Message and title are required' });
         }
 
+        let notificationResults = [];
+        let emailSent = false;
+        let emailCount = 0;
+
         // For single recipient
         if (recipients && recipients.length === 1) {
-            const notification = new Notification({
-                recipient: recipients[0],
-                sender: req.user.id,
+            // Use notificationService to create notification with email support
+            const notificationData = {
+                recipientId: recipients[0],
+                senderId: req.user.id,
                 type: type || 'system',
                 title,
-                message
-            });
+                message,
+                sendEmail: sendEmail === true // Only send email if explicitly requested
+            };
             
-            await notification.save();
-            console.log('Single notification saved successfully');
+            const notification = await require('../utils/notificationService').createNotification(notificationData);
+            notificationResults = [notification];
+            
+            if (sendEmail) {
+                // Check if email was sent by checking if user has email
+                const User = require('../models/User');
+                const recipient = await User.findById(recipients[0]).select('email');
+                emailSent = recipient && recipient.email ? true : false;
+                emailCount = emailSent ? 1 : 0;
+            }
+            
+            console.log('Single notification saved successfully' + (emailSent ? ' with email' : ''));
             return res.json({ 
-                msg: 'Notification sent successfully', 
-                notification 
+                msg: 'Notification sent successfully' + (emailSent ? ' with email' : ''), 
+                notification: notificationResults[0],
+                emailSent,
+                emailRecipients: emailCount
             });
         }
         
         // For multiple recipients, create notifications in bulk
         if (recipients && Array.isArray(recipients) && recipients.length > 0) {
+            const notificationService = require('../utils/notificationService');
             const notificationPromises = recipients.map(recipientId => {
-                const notification = new Notification({
-                    recipient: recipientId,
-                    sender: req.user.id,
+                return notificationService.createNotification({
+                    recipientId,
+                    senderId: req.user.id,
                     type: type || 'system',
                     title,
-                    message
+                    message,
+                    sendEmail: sendEmail === true // Only send email if explicitly requested
                 });
-                return notification.save();
             });
             
-            const savedNotifications = await Promise.all(notificationPromises);
-            console.log(`${savedNotifications.length} notifications saved successfully`);
-            return res.json({ 
-                msg: 'Notifications sent successfully', 
-                count: savedNotifications.length 
-            });
+            notificationResults = await Promise.all(notificationPromises);
+            
+            if (sendEmail) {
+                // Count how many users have emails (for reporting)
+                const User = require('../models/User');
+                const users = await User.find({ _id: { $in: recipients } }).select('email');
+                emailCount = users.filter(user => user.email).length;
+                emailSent = emailCount > 0;
             }
+            
+            console.log(`${notificationResults.length} notifications saved successfully` + 
+                        (emailSent ? ` and ${emailCount} emails sent` : ''));
+            
+            return res.json({ 
+                msg: 'Notifications sent successfully' + (emailSent ? ' with email' : ''), 
+                count: notificationResults.length,
+                emailSent,
+                emailRecipients: emailCount
+            });
+        }
         
         // For role-based notifications
         if (type === 'role' && role) {
-            const roleUsers = await User.find({ role }, '_id');
-            const recipientIds = roleUsers.map(user => user._id);
-            
-            if (recipientIds.length === 0) {
-                return res.status(404).json({ msg: `No users found with role ${role}` });
-            }
-            
-            const notificationPromises = recipientIds.map(recipientId => {
-                const notification = new Notification({
-                    recipient: recipientId,
-                    sender: req.user.id,
-                    type: 'system',
-                    role,
-                    title,
-                    message
-                });
-                return notification.save();
+            const notificationService = require('../utils/notificationService');
+            const result = await notificationService.createRoleNotifications({
+                role,
+                senderId: req.user.id,
+                type: 'system',
+                title,
+                message,
+                sendEmail: sendEmail === true // Only send email if explicitly requested
             });
             
-            const savedNotifications = await Promise.all(notificationPromises);
-            console.log(`${savedNotifications.length} role-based notifications saved successfully`);
+            notificationResults = result;
+            
+            if (sendEmail) {
+                // Get count of users with email in this role
+                const User = require('../models/User');
+                const users = await User.find({ role }).select('email');
+                emailCount = users.filter(user => user.email).length;
+                emailSent = emailCount > 0;
+            }
+            
+            console.log(`${notificationResults.length} role-based notifications saved successfully` +
+                       (emailSent ? ` and ${emailCount} emails sent` : ''));
+            
             return res.json({ 
-                msg: `Notifications sent to ${savedNotifications.length} users with role ${role}`, 
-                count: savedNotifications.length 
+                msg: `Notifications sent to ${notificationResults.length} users with role ${role}` + 
+                     (emailSent ? ` and ${emailCount} emails sent` : ''), 
+                count: notificationResults.length,
+                emailSent,
+                emailRecipients: emailCount
             });
         }
         

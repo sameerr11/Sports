@@ -12,10 +12,12 @@ import {
     Grid,
     Snackbar,
     Alert,
-    CircularProgress
+    CircularProgress,
+    Checkbox,
+    FormControlLabel
 } from '@mui/material';
 import { getUsersByRole, getAllUsers } from '../../services/userService';
-import { sendNotification } from '../../services/notificationService';
+import { sendNotification, sendBroadcastNotification } from '../../services/notificationService';
 
 const SendNotification = () => {
     const [title, setTitle] = useState('');
@@ -27,6 +29,7 @@ const SendNotification = () => {
     const [users, setUsers] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [sendEmail, setSendEmail] = useState(true);
     const [snackbar, setSnackbar] = useState({
         open: false,
         message: '',
@@ -112,17 +115,41 @@ const SendNotification = () => {
                 throw new Error('No recipients selected');
             }
 
-            await sendNotification({
-                title,
-                message,
-                recipients,
-                type: recipientType,
-                role: recipientType === 'role' ? selectedRole : undefined
-            });
+            // Use sendBroadcastNotification if sending email is enabled
+            if (sendEmail) {
+                // For specific users, we need to use sendNotification as broadcast doesn't support specific users
+                if (recipientType === 'specific') {
+                    // Send individually to each user with email
+                    await sendNotification({
+                        title,
+                        message,
+                        recipients,
+                        type: recipientType,
+                        sendEmail: true
+                    });
+                } else {
+                    // For 'all' or 'role' types, use broadcast
+                    await sendBroadcastNotification({
+                        title,
+                        message,
+                        role: recipientType === 'role' ? selectedRole : undefined,
+                        sendEmail: true
+                    });
+                }
+            } else {
+                // Just use normal sendNotification when not sending emails
+                await sendNotification({
+                    title,
+                    message,
+                    recipients,
+                    type: recipientType,
+                    role: recipientType === 'role' ? selectedRole : undefined
+                });
+            }
 
             setSnackbar({
                 open: true,
-                message: 'Notification sent successfully!',
+                message: `Notification sent successfully${sendEmail ? ' with email' : ''}!`,
                 severity: 'success'
             });
 
@@ -258,6 +285,19 @@ const SendNotification = () => {
                                 )}
                             </>
                         )}
+                        <Grid item xs={12}>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={sendEmail}
+                                        onChange={(e) => setSendEmail(e.target.checked)}
+                                        disabled={loading}
+                                        color="primary"
+                                    />
+                                }
+                                label="Also send as email"
+                            />
+                        </Grid>
                         <Grid item xs={12}>
                             <Button
                                 type="submit"

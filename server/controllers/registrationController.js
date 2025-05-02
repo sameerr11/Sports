@@ -255,6 +255,7 @@ exports.approveRegistration = async (req, res) => {
     
     // If approved, notify the accounting user
     if (approved) {
+      // Create notification for the accounting user
       const notification = new Notification({
         recipient: registration.registeredBy,
         sender: req.user.id,
@@ -292,6 +293,64 @@ exports.approveRegistration = async (req, res) => {
       });
       
       await Promise.all(supportNotificationPromises);
+
+      // Send email notification to the player
+      try {
+        const { sendNotificationEmail } = require('../utils/emailService');
+        
+        // Format sports list for email
+        const sportsList = registration.sports.join(', ');
+        const startDate = new Date(registration.startDate).toLocaleDateString();
+        const endDate = new Date(registration.endDate).toLocaleDateString();
+        
+        // Send email to player
+        await sendNotificationEmail({
+          email: registration.player.email,
+          title: 'Your Sports Registration Has Been Approved',
+          message: `Hello ${registration.player.firstName} ${registration.player.lastName},
+
+We're pleased to inform you that your registration for ${sportsList} has been approved.
+
+Registration Details:
+- Sport(s): ${sportsList}
+- Period: ${registration.registrationPeriod}
+- Start Date: ${startDate}
+- End Date: ${endDate}
+- Fee: ${registration.fee.amount} ${registration.fee.currency || 'USD'}
+
+Please log in to your account to view more details about your registration.
+
+If you have any questions, please contact our support team.
+`
+        });
+        
+        console.log(`Registration approval email sent to ${registration.player.email}`);
+      } catch (emailError) {
+        console.error('Error sending registration approval email:', emailError);
+        // Don't throw the error here, just log it - we don't want to fail the approval if email fails
+      }
+    } else if (registration.status === 'Rejected') {
+      // Send rejection email notification
+      try {
+        const { sendNotificationEmail } = require('../utils/emailService');
+        
+        await sendNotificationEmail({
+          email: registration.player.email,
+          title: 'Update on Your Sports Registration',
+          message: `Hello ${registration.player.firstName} ${registration.player.lastName},
+
+We regret to inform you that your registration request could not be approved at this time.
+
+${notes ? `Additional information: ${notes}` : ''}
+
+If you have any questions, please contact our support team.
+`
+        });
+        
+        console.log(`Registration rejection email sent to ${registration.player.email}`);
+      } catch (emailError) {
+        console.error('Error sending registration rejection email:', emailError);
+      }
     }
     
     res.json(registration);
@@ -327,12 +386,15 @@ exports.createUserAccount = async (req, res) => {
       return res.status(400).json({ msg: 'Account already created for this registration' });
     }
     
+    // Generate a random password if not provided
+    const userPassword = password || Math.random().toString(36).slice(-8);
+    
     // Create user account
     const user = new User({
       firstName: registration.player.firstName,
       lastName: registration.player.lastName,
       email: registration.player.email,
-      password: password || Math.random().toString(36).slice(-8), // Generate random password if not provided
+      password: userPassword, // Use the password or generated one
       role: 'player',
       phoneNumber: registration.player.phoneNumber,
       address: registration.player.address
@@ -385,6 +447,57 @@ exports.createUserAccount = async (req, res) => {
     });
     
     await Promise.all(supportNotificationPromises);
+    
+    // Send email to the player with their account details
+    try {
+      const { sendRegistrationEmail, sendNotificationEmail } = require('../utils/emailService');
+      
+      // Send registration email with account details
+      await sendRegistrationEmail({
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        password: password ? 'the password you provided' : userPassword // Include the generated password in the email if it was auto-generated
+      });
+      
+      console.log(`Account creation email sent to ${user.email}`);
+      
+      // Get all admin users and send them notification emails
+      const adminUsers = await User.find({ role: 'admin' });
+      
+      // No need to await for all these promises since we don't want to block the response
+      // if email sending to admins takes time
+      for (const admin of adminUsers) {
+        try {
+          await sendNotificationEmail({
+            email: admin.email,
+            title: 'New Player Account Created',
+            message: `Hello ${admin.firstName},
+
+A new player account has been created following an approved registration:
+
+Player: ${user.firstName} ${user.lastName}
+Email: ${user.email}
+Sports: ${registration.sports.join(', ')}
+Registration Period: ${registration.registrationPeriod}
+Start Date: ${new Date(registration.startDate).toLocaleDateString()}
+End Date: ${new Date(registration.endDate).toLocaleDateString()}
+
+The account was created by: ${req.user.firstName} ${req.user.lastName}
+`
+          });
+          
+          console.log(`Admin notification email sent to ${admin.email}`);
+        } catch (adminEmailError) {
+          console.error(`Failed to send admin notification email to ${admin.email}:`, adminEmailError);
+          // Continue with other admins if one fails
+        }
+      }
+    } catch (emailError) {
+      console.error('Error sending account creation email:', emailError);
+      // Don't throw the error here, just log it
+    }
     
     // Remove password from response
     const userResponse = { ...user.toObject() };
