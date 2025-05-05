@@ -826,4 +826,91 @@ exports.getPlayerStats = async (req, res) => {
     console.error('Error fetching player statistics:', err);
     res.status(500).json({ msg: 'Server error' });
   }
+};
+
+// @desc    Get current user's profile
+// @route   GET /api/users/profile
+// @access  Private
+exports.getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    
+    // Make sure birthDate is properly formatted if it exists
+    let userData = user.toObject();
+    if (userData.birthDate) {
+      // Ensure it's returned as a proper ISO string
+      userData.birthDate = new Date(userData.birthDate).toISOString();
+    }
+    
+    // Return the user data
+    res.json(userData);
+  } catch (err) {
+    console.error('Error getting user profile:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+// @desc    Update current user's profile
+// @route   PUT /api/users/profile
+// @access  Private
+exports.updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    
+    // Extract fields from request body
+    const { firstName, lastName, phone, birthDate, dateOfBirth, gender, bio, address, emergencyContact } = req.body;
+    
+    // Update user fields if provided
+    if (firstName) user.firstName = firstName;
+    if (lastName) user.lastName = lastName;
+    if (phone) user.phoneNumber = phone;
+    
+    // Handle either birthDate or dateOfBirth field
+    if (birthDate || dateOfBirth) {
+      try {
+        const dateValue = birthDate || dateOfBirth;
+        // Ensure it's a valid date
+        const parsedDate = new Date(dateValue);
+        if (!isNaN(parsedDate.getTime())) {
+          user.birthDate = parsedDate;
+        }
+      } catch (dateError) {
+        console.error('Error parsing date:', dateError);
+        // If date parsing fails, don't update the birthDate field
+      }
+    }
+    
+    if (gender) user.gender = gender;
+    if (bio) user.bio = bio;
+    if (address) user.address = address;
+    if (emergencyContact) user.emergencyContact = emergencyContact;
+    
+    // Set updated timestamp
+    user.updatedAt = Date.now();
+    
+    // Save updated user
+    await user.save();
+    
+    // Return updated user data (excluding password)
+    const updatedUser = await User.findById(req.user.id).select('-password');
+    
+    // Convert to object and format birthDate
+    const userData = updatedUser.toObject();
+    if (userData.birthDate) {
+      userData.birthDate = new Date(userData.birthDate).toISOString();
+    }
+    
+    res.json(userData);
+  } catch (err) {
+    console.error('Error updating user profile:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
 }; 

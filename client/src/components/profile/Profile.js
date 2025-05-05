@@ -53,6 +53,7 @@ const Profile = () => {
                 try {
                     // Get user profile from API
                     const profileData = await getCurrentUserProfile();
+                    console.log('Profile data from API:', profileData);
                     setProfile(profileData);
                 } catch (apiError) {
                     console.warn('Could not fetch from API, using stored/mock data', apiError);
@@ -87,28 +88,38 @@ const Profile = () => {
         setEditMode(!editMode);
     };
 
-    const handleProfileUpdate = async (updatedData) => {
-        // If user is a player or parent, don't allow updates
-        if (!canEditProfile) {
-            setError('Players and parents cannot edit their profiles. Please contact an administrator.');
-            return;
-        }
-        
+    const handleSaveProfile = async (updatedData) => {
         try {
             setLoading(true);
             
-            // Try to update profile via API
-            try {
-                await updateUserProfile(updatedData);
-            } catch (apiError) {
-                console.warn('Could not update via API, updating local state only', apiError);
+            // Map dateOfBirth to birthDate if needed for API compatibility
+            const profileData = {
+                ...updatedData,
+            };
+            
+            // Ensure we send a properly formatted date if it exists
+            if (updatedData.dateOfBirth) {
+                try {
+                    const date = new Date(updatedData.dateOfBirth);
+                    if (!isNaN(date.getTime())) {
+                        // Use ISO string format for consistency
+                        profileData.birthDate = date.toISOString();
+                    }
+                } catch (dateError) {
+                    console.error('Error formatting date for API:', dateError);
+                    profileData.birthDate = updatedData.dateOfBirth;
+                }
             }
             
-            // Update local state
-            setProfile({
-                ...profile,
-                ...updatedData
-            });
+            console.log('Saving profile data:', profileData);
+            
+            // Update user profile
+            await updateUserProfile(profileData);
+            
+            // Refresh profile data
+            const refreshedProfile = await getCurrentUserProfile();
+            console.log('Refreshed profile after save:', refreshedProfile);
+            setProfile(refreshedProfile);
             
             setSuccess('Profile updated successfully!');
             setEditMode(false);
@@ -120,8 +131,13 @@ const Profile = () => {
             }, 3000);
         } catch (err) {
             console.error('Error updating profile:', err);
-            setError('Failed to update profile. Please try again.');
+            setError(err.toString());
             setLoading(false);
+            
+            // Clear error message after 3 seconds
+            setTimeout(() => {
+                setError(null);
+            }, 3000);
         }
     };
 
@@ -314,7 +330,7 @@ const Profile = () => {
                                 <PersonalInfoForm 
                                     profile={profile} 
                                     editMode={editMode && canEditProfile} 
-                                    onSave={handleProfileUpdate}
+                                    onSave={handleSaveProfile}
                                     loading={loading}
                                 />
                             )}
@@ -323,7 +339,7 @@ const Profile = () => {
                             {tabValue === 1 && (
                                 <SecurityForm 
                                     editMode={editMode && canEditProfile} 
-                                    onSave={handleProfileUpdate}
+                                    onSave={handleSaveProfile}
                                     loading={loading}
                                     userId={profile?._id}
                                 />

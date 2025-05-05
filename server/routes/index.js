@@ -54,6 +54,11 @@ router.post(
 );
 router.get('/auth/me', auth, authController.getCurrentUser);
 
+// User profile routes - place these BEFORE the parametric routes
+router.get('/users/profile', auth, userController.getUserProfile);
+router.put('/users/profile', auth, userController.updateUserProfile);
+router.post('/users/profile/picture', [auth, upload.single('profilePicture')], userController.uploadProfilePicture);
+
 // User routes
 router.post(
   '/users',
@@ -88,8 +93,6 @@ router.put('/users/:id/reset-password', [auth, admin], userController.adminReset
 // Add new profile picture upload routes
 // Admin or support uploading a profile picture for any user
 router.post('/users/:id/picture', [auth, adminOrSupport, upload.single('profilePicture')], userController.uploadUserProfilePicture);
-// Users uploading their own profile picture (only admins or support can do this after your restriction)
-router.post('/users/profile/picture', [auth, adminOrSupport, upload.single('profilePicture')], userController.uploadProfilePicture);
 
 // Document routes
 router.post(

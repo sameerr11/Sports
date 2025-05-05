@@ -48,12 +48,36 @@ const PersonalInfoForm = ({ profile, editMode, onSave, loading }) => {
 
     useEffect(() => {
         if (profile) {
+            console.log('Profile in PersonalInfoForm:', profile);
+            console.log('Original date values:', { 
+                birthDate: profile.birthDate, 
+                dateOfBirth: profile.dateOfBirth 
+            });
+            
+            // Format date properly for the input field (YYYY-MM-DD)
+            let formattedDate = '';
+            if (profile.birthDate) {
+                const date = new Date(profile.birthDate);
+                console.log('Parsed birthDate:', date);
+                if (!isNaN(date.getTime())) {
+                    formattedDate = date.toISOString().split('T')[0];
+                    console.log('Formatted for input:', formattedDate);
+                }
+            } else if (profile.dateOfBirth) {
+                const date = new Date(profile.dateOfBirth);
+                console.log('Parsed dateOfBirth:', date);
+                if (!isNaN(date.getTime())) {
+                    formattedDate = date.toISOString().split('T')[0];
+                    console.log('Formatted for input:', formattedDate);
+                }
+            }
+
             setFormData({
                 firstName: profile.firstName || '',
                 lastName: profile.lastName || '',
                 email: profile.email || '',
-                phone: profile.phone || '',
-                dateOfBirth: profile.dateOfBirth || '',
+                phone: profile.phoneNumber || profile.phone || '',
+                dateOfBirth: formattedDate,
                 gender: profile.gender || '',
                 bio: profile.bio || '',
                 address: {
