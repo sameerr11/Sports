@@ -1,23 +1,28 @@
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 /**
- * Email service for sending notifications via Gmail SMTP
+ * Email service for sending notifications via Resend API
  * Configuration should be set in environment variables:
- * - EMAIL_USER: Gmail email address
- * - EMAIL_PASS: Gmail app password (not regular password)
+ * - RESEND_API_KEY: Your Resend API key
  * - EMAIL_FROM: Sender name <email> format
  */
 
-// Create reusable transporter
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-};
+// Check if API key is available
+const apiKey = process.env.RESEND_API_KEY;
+console.log('Email configuration status:', {
+  apiKeyExists: !!apiKey, 
+  apiKeyFirstChars: apiKey ? `${apiKey.substring(0, 5)}...` : 'not set',
+  fromEmail: process.env.EMAIL_FROM || 'not set'
+});
+
+if (!apiKey) {
+  console.warn('WARNING: RESEND_API_KEY is not set in environment variables. Email sending will not work.');
+  console.warn('Please add RESEND_API_KEY to your .env file or environment variables.');
+}
+
+// Initialize Resend client if API key is available
+const resend = apiKey ? new Resend(apiKey) : null;
 
 /**
  * Send email notification
@@ -30,22 +35,34 @@ const createTransporter = () => {
  */
 const sendEmail = async (emailData) => {
   try {
-    const transporter = createTransporter();
+    // Fix any typos in email addresses
+    let recipients = Array.isArray(emailData.to) ? emailData.to : [emailData.to];
+    recipients = recipients.map(email => {
+      // Fix common typos
+      return email.replace('gmil.com', 'gmail.com');
+    });
     
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to: emailData.to,
+    // If Resend client is not initialized, log warning and return
+    if (!resend) {
+      console.error('Cannot send email: RESEND_API_KEY is not configured');
+      return { error: 'Email service not configured' };
+    }
+    
+    console.log(`Attempting to send email to: ${recipients.join(', ')}`);
+    
+    const response = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+      to: recipients,
       subject: emailData.subject,
       text: emailData.text,
       html: emailData.html || emailData.text
-    };
+    });
     
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
-    return info;
+    console.log('Email sent successfully:', response.data?.id);
+    return response;
   } catch (error) {
     console.error('Error sending email:', error);
-    throw error;
+    return { error: error.message };
   }
 };
 
@@ -108,10 +125,8 @@ The Sports Management Team`;
 const sendBookingConfirmationEmail = async (data) => {
   try {
     const { userEmail, userName, date, time, facility, bookingId, paymentMessage } = data;
-    const transporter = createTransporter();
     
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
+    const emailContent = {
       to: userEmail,
       subject: 'Booking Confirmation',
       html: `
@@ -130,7 +145,7 @@ const sendBookingConfirmationEmail = async (data) => {
       `
     };
     
-    return await transporter.sendMail(mailOptions);
+    return await sendEmail(emailContent);
   } catch (error) {
     console.error('Error sending booking confirmation email:', error);
     throw error;
@@ -147,10 +162,7 @@ const sendBookingConfirmationEmail = async (data) => {
  */
 const sendAdminBroadcastEmail = async (broadcastData) => {
   try {
-    const transporter = createTransporter();
-    
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    const emailContent = {
       to: broadcastData.recipients,
       subject: broadcastData.subject,
       text: broadcastData.message,
@@ -161,7 +173,7 @@ const sendAdminBroadcastEmail = async (broadcastData) => {
       </div>`
     };
     
-    return await transporter.sendMail(mailOptions);
+    return await sendEmail(emailContent);
   } catch (error) {
     console.error('Error sending broadcast email:', error);
     throw error;
@@ -177,10 +189,7 @@ const sendAdminBroadcastEmail = async (broadcastData) => {
  * @returns {Promise<Object>} Send result
  */
 const sendNotificationEmail = async (notificationData) => {
-  const transporter = createTransporter();
-  
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+  const emailContent = {
     to: notificationData.email,
     subject: notificationData.title,
     text: notificationData.message,
@@ -191,7 +200,7 @@ const sendNotificationEmail = async (notificationData) => {
     </div>`
   };
   
-  return await transporter.sendMail(mailOptions);
+  return await sendEmail(emailContent);
 };
 
 module.exports = {

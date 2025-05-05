@@ -1,39 +1,30 @@
 require('dotenv').config();
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-// Test email using direct nodemailer configuration
+// Test email using Resend API
 async function testEmail() {
-  console.log('Testing email with nodemailer...');
+  console.log('Testing email with Resend API...');
   console.log('Email configuration:', {
-    user: process.env.EMAIL_USER, 
     from: process.env.EMAIL_FROM,
-    // Don't log the password
-    passwordConfigured: !!process.env.EMAIL_PASS
+    apiKeyConfigured: !!process.env.RESEND_API_KEY
   });
   
   try {
-    // Create transporter manually
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
+    // Initialize Resend client
+    const resend = new Resend(process.env.RESEND_API_KEY);
     
     // Send test email
     console.log('Sending test email...');
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to: 'sms.ultrasnorthlebanon@gmail.com',
+    const response = await resend.emails.send({
+      from: process.env.EMAIL_FROM,
+      to: 'sairmub@gmail.com',
       subject: 'Test Email from Sports Management',
-      text: 'This is a test email to verify the SMTP configuration.',
-      html: '<h1>Test Email</h1><p>This is a test email to verify the SMTP configuration.</p>'
+      text: 'This is a test email to verify the Resend API configuration.',
+      html: '<h1>Test Email</h1><p>This is a test email to verify the Resend API configuration.</p>'
     });
     
     console.log('Email sent successfully!');
-    console.log('Message ID:', info.messageId);
-    console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+    console.log('Message ID:', response.id);
     
   } catch (error) {
     console.error('Error sending email:');

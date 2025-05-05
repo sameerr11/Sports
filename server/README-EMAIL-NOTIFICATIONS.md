@@ -4,7 +4,7 @@ This document explains how the email notification system works in the Sports Man
 
 ## Overview
 
-The email notification system extends the existing in-app notification system to also send emails via Gmail SMTP for important notifications including:
+The email notification system extends the existing in-app notification system to also send emails via Resend API for important notifications including:
 
 1. New player registrations
 2. Booking confirmations
@@ -18,17 +18,16 @@ The email notification system extends the existing in-app notification system to
 Email settings are configured in the `.env` file:
 
 ```env
-# Email Settings (Gmail SMTP)
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASS=your-gmail-app-password
-EMAIL_FROM="Sports Management <your-email@gmail.com>"
+# Email Settings (Resend API)
+RESEND_API_KEY=your_resend_api_key_here
+EMAIL_FROM="Sports Management <onboarding@resend.dev>"
 ```
 
-**Important:** For security, you should use an app password for Gmail, not your regular password:
-1. Enable 2-step verification on your Google account
-2. Go to https://myaccount.google.com/apppasswords
-3. Generate an app password for "Mail" and "Other (Custom name)"
-4. Use the generated 16-character password as EMAIL_PASS
+**Important:** To set up Resend:
+1. Sign up for an account at https://resend.com
+2. Create an API key in your dashboard
+3. For production, verify your domain to use custom email addresses
+4. For testing, you can use the default onboarding@resend.dev sender
 
 ### Services
 
@@ -60,12 +59,7 @@ When a new user is registered:
 
 ```javascript
 // In userController.js
-await notificationService.sendRegistrationNotification({
-  email: user.email,
-  firstName: user.firstName,
-  lastName: user.lastName,
-  role: user.role
-});
+await notificationService.sendRegistrationNotification(userData);
 ```
 
 #### Booking Confirmation
@@ -75,27 +69,26 @@ When a booking is confirmed:
 ```javascript
 // In bookingController.js
 await notificationService.sendBookingConfirmationNotification({
-  userId: user.id,
-  bookingId: booking._id.toString(),
-  date: startDate.toLocaleDateString(),
-  time: `${startDate.toLocaleTimeString()} - ${endDate.toLocaleTimeString()}`,
-  facility: courtName,
-  modelName: 'Booking'
+  userEmail: user.email,
+  userName: `${user.firstName} ${user.lastName}`,
+  date: formatDate(booking.date),
+  time: `${booking.startTime} - ${booking.endTime}`,
+  facility: facility.name,
+  bookingId: booking._id,
+  paymentMessage: booking.isPaid ? 'Payment has been completed.' : 'Payment is pending.'
 });
 ```
 
 #### Admin Broadcast
 
-Admin can send broadcast messages:
+For broadcast messages from admin:
 
 ```javascript
-// In notificationController.js
+// In adminController.js
 await notificationService.sendAdminBroadcastNotification({
-  adminId: req.user.id,
-  title: 'Important Announcement',
-  message: 'Our facility will be closed for maintenance...',
-  role: 'player', // Optional, can target specific roles
-  sendEmail: true // Whether to also send as email
+  recipients: users.map(user => user.email), 
+  subject: 'Important Announcement',
+  message: 'Our facility will be closed for maintenance next weekend.'
 });
 ```
 
@@ -124,6 +117,6 @@ To customize email templates:
 
 If emails are not being sent:
 1. Check your `.env` file configuration
-2. Verify Gmail app password is correct
+2. Verify Resend API key is correct
 3. Check logs for error messages
-4. Ensure your Gmail account doesn't have restrictions on app access 
+4. Ensure your Resend account doesn't have restrictions on app access 

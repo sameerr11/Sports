@@ -36,13 +36,13 @@ async function testNotification() {
     console.log(`Using sender: ${sender.firstName} ${sender.lastName} (${sender.email})`);
     
     // Test email directly
-    console.log('Testing direct email...');
+    console.log('Testing direct email with Resend...');
     const emailService = require('./utils/emailService');
     await emailService.sendEmail({
-      to: 'sms.ultrasnorthlebanon@gmail.com',
-      subject: 'Test Direct Email',
-      text: 'This is a test email sent directly using emailService.',
-      html: '<h1>Test Direct Email</h1><p>This is a test email sent directly using emailService.</p>'
+      to: 'sairmub@gmail.com',
+      subject: 'Test Direct Email via Resend',
+      text: 'This is a test email sent directly using emailService with Resend.',
+      html: '<h1>Test Direct Email</h1><p>This is a test email sent directly using emailService with Resend.</p>'
     });
     console.log('Direct email sent successfully!');
     

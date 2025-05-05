@@ -1,3 +1,6 @@
+// Load environment variables first, before any other imports
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -6,7 +9,6 @@ const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
 const { initScheduler } = require('./utils/scheduler');
 const { startScheduledTasks } = require('./scheduledTasks');
-require('dotenv').config();
 
 const app = express();
 
