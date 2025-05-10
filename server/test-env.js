@@ -23,8 +23,8 @@ try {
     try {
       console.log('Attempting to send test email...');
       const response = await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
-        to: 'sairmub@gmail.com',
+        from: 'Sports Management System <sms@ultrasnorthlebanon.com>',
+        to: 'System.ultrasnorthlebanon@gmail.com',
         subject: 'Test from env checker',
         text: 'This is a test email from env checker.'
       });

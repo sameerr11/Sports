@@ -16,8 +16,8 @@ async function testEmail() {
     // Send test email
     console.log('Sending test email...');
     const response = await resend.emails.send({
-      from: process.env.EMAIL_FROM,
-      to: 'sairmub@gmail.com',
+      from: 'Sports Management System <sms@ultrasnorthlebanon.com>',
+      to: 'System.ultrasnorthlebanon@gmail.com',
       subject: 'Test Email from Sports Management',
       text: 'This is a test email to verify the Resend API configuration.',
       html: '<h1>Test Email</h1><p>This is a test email to verify the Resend API configuration.</p>'

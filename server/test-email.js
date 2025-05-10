@@ -10,8 +10,9 @@ async function testEmail() {
     });
     
     const result = await emailService.sendEmail({
-      to: 'sairmub@gmail.com',
+      to: 'System.ultrasnorthlebanon@gmail.com',
       subject: 'Test Email from Sports Management via Resend',
+      from: 'Sports Management System <sms@ultrasnorthlebanon.com>',
       text: 'This is a test email to verify the Resend API configuration.',
       html: '<h1>Test Email</h1><p>This is a test email to verify the Resend API configuration.</p>'
     });

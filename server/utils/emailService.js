@@ -31,6 +31,7 @@ const resend = apiKey ? new Resend(apiKey) : null;
  * @param {String} emailData.subject - Email subject
  * @param {String} emailData.text - Plain text content
  * @param {String} emailData.html - HTML content (optional)
+ * @param {String} emailData.from - Custom from address (optional)
  * @returns {Promise<Object>} Send result
  */
 const sendEmail = async (emailData) => {
@@ -50,8 +51,11 @@ const sendEmail = async (emailData) => {
     
     console.log(`Attempting to send email to: ${recipients.join(', ')}`);
     
+    // Use the provided from address or fallback to default
+    const fromAddress = emailData.from || process.env.EMAIL_FROM || 'onboarding@resend.dev';
+    
     const response = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+      from: fromAddress,
       to: recipients,
       subject: emailData.subject,
       text: emailData.text,
@@ -112,6 +116,7 @@ The Sports Management Team`;
   return sendEmail({
     to: userData.email,
     subject,
+    from: 'Sports Management System <sms@ultrasnorthlebanon.com>',
     text,
     html
   });
@@ -129,6 +134,7 @@ const sendBookingConfirmationEmail = async (data) => {
     const emailContent = {
       to: userEmail,
       subject: 'Booking Confirmation',
+      from: 'Booking Confirmation <booking@ultrasnorthlebanon.com>',
       html: `
         <h2>Booking Confirmation</h2>
         <p>Dear ${userName},</p>
@@ -165,6 +171,7 @@ const sendAdminBroadcastEmail = async (broadcastData) => {
     const emailContent = {
       to: broadcastData.recipients,
       subject: broadcastData.subject,
+      from: 'Sports Management System <sms@ultrasnorthlebanon.com>',
       text: broadcastData.message,
       html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>${broadcastData.subject}</h2>
@@ -192,6 +199,7 @@ const sendNotificationEmail = async (notificationData) => {
   const emailContent = {
     to: notificationData.email,
     subject: notificationData.title,
+    from: 'Sports Management System <sms@ultrasnorthlebanon.com>',
     text: notificationData.message,
     html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2>${notificationData.title}</h2>
