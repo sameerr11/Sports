@@ -298,6 +298,12 @@ const BookingForm = ({ courtId, court }) => {
     }
   }, [courtId]);
 
+  // Check if any Academy slots are available
+  const hasAcademySlots = availability?.courtAvailability?.some(slot => slot.type === 'Academy') || false;
+  
+  // Check if any Rental slots are available 
+  const hasRentalSlots = availability?.courtAvailability?.some(slot => slot.type === 'Rental') || false;
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box>
@@ -392,13 +398,19 @@ const BookingForm = ({ courtId, court }) => {
                   onChange={handleChange}
                   label="Purpose"
                 >
-                  <MenuItem value="Rental">Rental</MenuItem>
-                  <MenuItem value="Training">Training</MenuItem>
-                  <MenuItem value="Match">Match</MenuItem>
+                  <MenuItem value="Rental" disabled={!hasRentalSlots}>Rental</MenuItem>
+                  <MenuItem value="Training" disabled={!hasAcademySlots}>Training</MenuItem>
+                  <MenuItem value="Match" disabled={!hasAcademySlots}>Match</MenuItem>
                 </Select>
                 <FormHelperText>
                   Note: Training and Match bookings use Academy time slots, while Rental bookings use Rental time slots. 
                   Time slots available will change based on the selected purpose.
+                  {!hasAcademySlots && formData.purpose !== 'Rental' && (
+                    <span style={{ color: 'red' }}> No Academy slots available on this day.</span>
+                  )}
+                  {!hasRentalSlots && formData.purpose === 'Rental' && (
+                    <span style={{ color: 'red' }}> No Rental slots available on this day.</span>
+                  )}
                 </FormHelperText>
               </FormControl>
             </Grid>

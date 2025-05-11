@@ -111,7 +111,8 @@ exports.createBooking = async (req, res) => {
         bookingMinutes: { start: bookingStartMinutes, end: bookingEndMinutes }
       });
       
-      // Check if booking falls completely within the slot
+      // Check if booking falls completely within the slot with a small tolerance for exact matches
+      // Use >= for start and <= for end to allow bookings that exactly match slot boundaries
       return bookingStartMinutes >= slotStartMinutes && bookingEndMinutes <= slotEndMinutes;
     });
     
@@ -159,13 +160,11 @@ exports.createBooking = async (req, res) => {
       purpose,
       team,
       notes,
-      duration: durationHours,
       status: 'Confirmed',
       isRecurring,
       recurringDay: isRecurring ? effectiveDayName : null,
-      paymentStatus: 'Unpaid',
-      hourlyRate: courtDoc.hourlyRate,
-      totalCost: totalPrice
+      paymentStatus: purpose === 'Rental' ? 'Unpaid' : 'Paid',
+      totalPrice: totalPrice
     });
 
     const booking = await newBooking.save();
