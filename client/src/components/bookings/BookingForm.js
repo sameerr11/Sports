@@ -131,10 +131,34 @@ const BookingForm = ({ courtId, court }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    if (name === 'purpose') {
+      handlePurposeChange(value);
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
+
+  const handlePurposeChange = (purpose) => {
+    // Set the new purpose
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      purpose,
+      // If switching between Rental and Academy, clear the selected times
+      // since they might not be valid for the new purpose
+      startTime: null,
+      endTime: null
     }));
+    
+    // Clear any error messages
+    setError(null);
+    
+    // If the time slots need to be refreshed for the new purpose,
+    // we can leave the availability as is since we filter it in the UI
+    console.log(`Purpose changed to: ${purpose}`);
   };
 
   const validateForm = () => {
@@ -162,6 +186,25 @@ const BookingForm = ({ courtId, court }) => {
       return false;
     }
     
+    // Filter available slots based on booking purpose
+    let availableSlots = availability.courtAvailability;
+    
+    if (formData.purpose === 'Training' || formData.purpose === 'Match') {
+      // For training or match, only use Academy slots
+      availableSlots = availability.courtAvailability.filter(slot => slot.type === 'Academy');
+      if (availableSlots.length === 0) {
+        setError('Academy bookings are not available on this day. Please select another day or purpose.');
+        return false;
+      }
+    } else if (formData.purpose === 'Rental') {
+      // For rentals, only use Rental slots
+      availableSlots = availability.courtAvailability.filter(slot => slot.type === 'Rental');
+      if (availableSlots.length === 0) {
+        setError('Rental bookings are not available on this day. Please select another day or purpose.');
+        return false;
+      }
+    }
+    
     // Check if the selected time range falls within an available slot
     const startHour = start.getHours();
     const startMinute = start.getMinutes();
@@ -171,7 +214,7 @@ const BookingForm = ({ courtId, court }) => {
     const bookingStartMinutes = startHour * 60 + startMinute;
     const bookingEndMinutes = endHour * 60 + endMinute;
     
-    const isWithinAvailableHours = availability.courtAvailability.some(slot => {
+    const isWithinAvailableHours = availableSlots.some(slot => {
       const slotStart = slot.start.split(':').map(Number);
       const slotEnd = slot.end.split(':').map(Number);
       const slotStartMinutes = slotStart[0] * 60 + slotStart[1];
@@ -181,7 +224,7 @@ const BookingForm = ({ courtId, court }) => {
     });
     
     if (!isWithinAvailableHours) {
-      setError('Selected time is outside court\'s available hours for this day');
+      setError(`Selected time is outside court's available ${formData.purpose === 'Training' || formData.purpose === 'Match' ? 'Academy' : 'Rental'} hours for this day`);
       return false;
     }
 
@@ -299,15 +342,25 @@ const BookingForm = ({ courtId, court }) => {
                   Available Time Slots for {format(formData.date, 'EEEE, MMMM d, yyyy')}:
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-                  {availability.courtAvailability.map((slot, index) => (
-                    <Chip 
-                      key={index}
-                      label={`${slot.start} - ${slot.end}`}
-                      color="primary"
-                      variant="outlined"
-                      size="small"
-                    />
-                  ))}
+                  {availability.courtAvailability
+                    .filter(slot => {
+                      // Filter slots based on booking purpose
+                      if (formData.purpose === 'Training' || formData.purpose === 'Match') {
+                        return slot.type === 'Academy';
+                      } else if (formData.purpose === 'Rental') {
+                        return slot.type === 'Rental';
+                      }
+                      return true; // Show all if no purpose selected
+                    })
+                    .map((slot, index) => (
+                      <Chip 
+                        key={index}
+                        label={`${slot.start} - ${slot.end} (${slot.type})`}
+                        color={slot.type === 'Academy' ? 'primary' : 'secondary'}
+                        variant="outlined"
+                        size="small"
+                      />
+                    ))}
                 </Stack>
               </Grid>
             )}
@@ -342,8 +395,11 @@ const BookingForm = ({ courtId, court }) => {
                   <MenuItem value="Rental">Rental</MenuItem>
                   <MenuItem value="Training">Training</MenuItem>
                   <MenuItem value="Match">Match</MenuItem>
-                  <MenuItem value="Other">Other</MenuItem>
                 </Select>
+                <FormHelperText>
+                  Note: Training and Match bookings use Academy time slots, while Rental bookings use Rental time slots. 
+                  Time slots available will change based on the selected purpose.
+                </FormHelperText>
               </FormControl>
             </Grid>
             

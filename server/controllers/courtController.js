@@ -305,6 +305,9 @@ exports.getCourtAvailability = async (req, res) => {
     // Get court availability for this day
     const courtAvailability = court.availability[dayOfWeek] || [];
 
+    // Make sure we're sending all slot types in the response
+    console.log('Court availability slots for day:', courtAvailability);
+
     // Format response
     const response = {
       date: date,
@@ -316,6 +319,7 @@ exports.getCourtAvailability = async (req, res) => {
           startTime: booking.startTime,
           endTime: booking.endTime,
           status: booking.status,
+          purpose: booking.purpose, // Add booking purpose for filtering on client
           isGuestBooking: false
         })),
         ...guestBookings.map(booking => ({

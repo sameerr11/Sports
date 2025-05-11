@@ -91,6 +91,8 @@ exports.createBooking = async (req, res) => {
       }
     }
     
+    console.log('Available slots after filtering by purpose:', availableSlots);
+    
     // Check if booking time falls within any of the available time slots
     const isWithinAvailableHours = availableSlots.some(slot => {
       // Convert slot times to comparable format (minutes since midnight)
