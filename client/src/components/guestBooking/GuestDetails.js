@@ -62,7 +62,7 @@ const GuestDetails = ({
     if (!guestDetails.guestEmail.trim()) {
       errors.guestEmail = 'Email is required';
       isValid = false;
-    } else if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(guestDetails.guestEmail)) {
+    } else if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/.test(guestDetails.guestEmail)) {
       errors.guestEmail = 'Please enter a valid email address';
       isValid = false;
     }

@@ -20,7 +20,7 @@ const GuestBookingSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email address']
+    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/, 'Please enter a valid email address']
   },
   guestPhone: {
     type: String,
