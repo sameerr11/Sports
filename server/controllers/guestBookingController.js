@@ -532,7 +532,10 @@ exports.getCourtAvailability = async (req, res) => {
       
       return {
         start: slotStart,
-        end: slotEnd
+        end: slotEnd,
+        startString: slot.start,
+        endString: slot.end,
+        type: slot.type
       };
     });
     

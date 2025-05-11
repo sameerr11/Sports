@@ -32,7 +32,19 @@ const TimeSelection = ({
 
   const formatTime = (dateTime) => {
     const date = new Date(dateTime);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // Use a more explicit approach to formatting time to ensure consistency
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    
+    // Convert to 12-hour format
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    
+    // Add leading zeros to minutes if needed
+    const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+    
+    return `${hours}:${formattedMinutes} ${ampm}`;
   };
 
   useEffect(() => {
@@ -128,35 +140,99 @@ const TimeSelection = ({
       const slotStart = new Date(slot.start);
       const slotEnd = new Date(slot.end);
       
-      // Generate half-hour slots
-      let currentStart = new Date(slotStart);
-      while (currentStart < slotEnd) {
-        const currentEnd = new Date(currentStart);
-        currentEnd.setMinutes(currentEnd.getMinutes() + 30); // Create 30-minute slots
+      // Get the original time strings if available
+      const originalStartTime = slot.startString;
+      const originalEndTime = slot.endString;
+      
+      // If we have the original strings and this is a full slot (not half hour)
+      // create fixed slots using the original boundaries
+      if (originalStartTime && originalEndTime) {
+        // Parse the HH:MM time strings
+        const [startHour, startMinute] = originalStartTime.split(':').map(Number);
+        const [endHour, endMinute] = originalEndTime.split(':').map(Number);
         
-        // If current end time exceeds slot end time, adjust
-        if (currentEnd > slotEnd) {
-          break;
-        }
+        // Calculate total minutes for time difference
+        const startTotalMinutes = startHour * 60 + startMinute;
+        const endTotalMinutes = endHour * 60 + endMinute;
         
-        // Only add if not fully booked
-        if (!isTimeSlotBooked(currentStart, currentEnd)) {
-          const hasHalfBooked = hasHalfCourtBooked(currentStart, currentEnd);
+        // Calculate number of 30-minute slots we can fit
+        const numberOfSlots = Math.floor((endTotalMinutes - startTotalMinutes) / 30);
+        
+        // Create each 30-minute slot based on the original time strings
+        for (let i = 0; i < numberOfSlots; i++) {
+          // Calculate start and end minutes for this slot
+          const thisSlotStartMinutes = startTotalMinutes + (i * 30);
+          const thisSlotEndMinutes = thisSlotStartMinutes + 30;
           
-          halfHourSlots.push({
-            start: new Date(currentStart),
-            end: new Date(currentEnd),
-            display: `${formatTime(currentStart)} - ${formatTime(currentEnd)}`,
-            hasHalfCourtBooked: hasHalfBooked
-          });
+          // Convert back to hours and minutes
+          const thisSlotStartHour = Math.floor(thisSlotStartMinutes / 60);
+          const thisSlotStartMin = thisSlotStartMinutes % 60;
+          const thisSlotEndHour = Math.floor(thisSlotEndMinutes / 60);
+          const thisSlotEndMin = thisSlotEndMinutes % 60;
+          
+          // Create Date objects for this slot
+          const thisSlotStart = new Date(slotStart);
+          thisSlotStart.setHours(thisSlotStartHour, thisSlotStartMin, 0, 0);
+          
+          const thisSlotEnd = new Date(slotStart);
+          thisSlotEnd.setHours(thisSlotEndHour, thisSlotEndMin, 0, 0);
+          
+          // Format times for display
+          const formattedStartTime = formatTimeFromHourMin(thisSlotStartHour, thisSlotStartMin);
+          const formattedEndTime = formatTimeFromHourMin(thisSlotEndHour, thisSlotEndMin);
+          
+          // Only add if not fully booked
+          if (!isTimeSlotBooked(thisSlotStart, thisSlotEnd)) {
+            const hasHalfBooked = hasHalfCourtBooked(thisSlotStart, thisSlotEnd);
+            
+            halfHourSlots.push({
+              start: thisSlotStart,
+              end: thisSlotEnd,
+              display: `${formattedStartTime} - ${formattedEndTime}`,
+              hasHalfCourtBooked: hasHalfBooked
+            });
+          }
         }
-        
-        // Move to next half hour
-        currentStart.setMinutes(currentStart.getMinutes() + 30);
+      } else {
+        // Fallback to the old method if we don't have original strings
+        // Generate half-hour slots
+        let currentStart = new Date(slotStart);
+        while (currentStart < slotEnd) {
+          const currentEnd = new Date(currentStart);
+          currentEnd.setMinutes(currentEnd.getMinutes() + 30); // Create 30-minute slots
+          
+          // If current end time exceeds slot end time, adjust
+          if (currentEnd > slotEnd) {
+            break;
+          }
+          
+          // Only add if not fully booked
+          if (!isTimeSlotBooked(currentStart, currentEnd)) {
+            const hasHalfBooked = hasHalfCourtBooked(currentStart, currentEnd);
+            
+            halfHourSlots.push({
+              start: new Date(currentStart),
+              end: new Date(currentEnd),
+              display: `${formatTime(currentStart)} - ${formatTime(currentEnd)}`,
+              hasHalfCourtBooked: hasHalfBooked
+            });
+          }
+          
+          // Move to next half hour
+          currentStart.setMinutes(currentStart.getMinutes() + 30);
+        }
       }
     });
     
     return halfHourSlots;
+  };
+  
+  // Helper function to format time from hour and minute values
+  const formatTimeFromHourMin = (hours, minutes) => {
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const hour12 = hours % 12 || 12; // Convert to 12-hour format
+    const minutesFormatted = minutes < 10 ? `0${minutes}` : minutes;
+    return `${hour12}:${minutesFormatted} ${ampm}`;
   };
 
   const timeSlots = generateHourlyTimeSlots();
