@@ -434,7 +434,10 @@ exports.getCourtAvailability = async (req, res) => {
       return res.status(404).json({ msg: 'Court not found' });
     }
     
-    const checkDate = new Date(date);
+    // Parse the date in local time without timezone conversion
+    // This way 8am-6pm will always mean 8am-6pm in the user's local time
+    const dateParts = date.split('-').map(Number);
+    const checkDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]); // Year, Month (0-based), Day
     
     if (isNaN(checkDate.getTime())) {
       return res.status(400).json({ msg: 'Invalid date format' });
@@ -448,22 +451,23 @@ exports.getCourtAvailability = async (req, res) => {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    // Compare dates by converting to YYYY-MM-DD format to ignore time component
-    const checkDateStr = checkDate.toISOString().split('T')[0];
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    // Compare dates using local representation to ignore timezone issues
+    const checkDateStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
     
     // Verify date is tomorrow or later
     if (checkDateStr < tomorrowStr) {
       return res.status(400).json({ msg: 'Availability can only be checked for dates starting from tomorrow' });
     }
     
-    // Beginning and end of the requested date
+    // Beginning and end of the requested date in local time
     const startOfDay = new Date(checkDate);
     startOfDay.setHours(0, 0, 0, 0);
     
     const endOfDay = new Date(checkDate);
     endOfDay.setHours(23, 59, 59, 999);
     
+    // Get day of week using local time
     const dayOfWeek = checkDate.getDay(); // 0 = Sunday, 1 = Monday, ...
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayName = days[dayOfWeek];
@@ -515,7 +519,7 @@ exports.getCourtAvailability = async (req, res) => {
       ...processedBookings
     ];
     
-    // Transform rental slots into available time slots
+    // Transform rental slots into available time slots - ensuring time is treated as local
     const availableTimes = rentalSlots.map(slot => {
       const [startHour, startMinute] = slot.start.split(':').map(Number);
       const [endHour, endMinute] = slot.end.split(':').map(Number);
@@ -564,7 +568,10 @@ exports.getAvailableCourts = async (req, res) => {
     }
     
     const { date } = req.params;
-    const checkDate = new Date(date);
+    
+    // Parse the date in local time without timezone conversion
+    const dateParts = date.split('-').map(Number);
+    const checkDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]); // Year, Month (0-based), Day
     
     if (isNaN(checkDate.getTime())) {
       return res.status(400).json({ msg: 'Invalid date format' });
@@ -578,16 +585,16 @@ exports.getAvailableCourts = async (req, res) => {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    // Compare dates by converting to YYYY-MM-DD format to ignore time component
-    const checkDateStr = checkDate.toISOString().split('T')[0];
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    // Compare dates using local representation to ignore timezone issues
+    const checkDateStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
     
     // Verify date is tomorrow or later
     if (checkDateStr < tomorrowStr) {
       return res.status(400).json({ msg: 'Courts can only be checked for dates starting from tomorrow' });
     }
     
-    // Get day of week
+    // Get day of week in local time
     const dayOfWeek = checkDate.getDay();
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayName = days[dayOfWeek];

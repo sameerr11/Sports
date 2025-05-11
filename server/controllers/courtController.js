@@ -273,13 +273,21 @@ exports.getCourtAvailability = async (req, res) => {
     }
 
     // Get date from query params or use today
-    const date = req.query.date ? new Date(req.query.date) : new Date();
+    // IMPORTANT: When creating a date from a string, we need to ensure it's treated as local time
+    let date;
+    if (req.query.date) {
+      // Parse the date in local time without timezone conversion
+      const parts = req.query.date.split('-').map(Number);
+      date = new Date(parts[0], parts[1] - 1, parts[2]); // Year, Month (0-based), Day
+    } else {
+      date = new Date();
+    }
     
-    // Set time to beginning of day
+    // Set time to beginning of day in local time
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
     
-    // Set time to end of day
+    // Set time to end of day in local time
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
@@ -299,7 +307,7 @@ exports.getCourtAvailability = async (req, res) => {
       status: { $ne: 'Cancelled' }
     }).sort({ startTime: 1 });
 
-    // Get day of week
+    // Get day of week (in local time - critical for correct scheduling)
     const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][date.getDay()];
     
     // Get court availability for this day

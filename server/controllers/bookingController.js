@@ -28,9 +28,48 @@ exports.createBooking = async (req, res) => {
       return res.status(404).json({ msg: 'Court not found' });
     }
     
-    // Parse dates
-    const startDate = new Date(startTime);
-    const endDate = new Date(endTime);
+    // Parse dates ensuring they are treated as local time
+    // This prevents timezone differences from affecting scheduling
+    let startDate, endDate;
+    
+    try {
+      // Extract the date and time parts from the ISO strings
+      const [startDatePart, startTimePart] = startTime.split('T');
+      const [endDatePart, endTimePart] = endTime.split('T');
+      
+      // Parse the date parts
+      const startDateComponents = startDatePart.split('-').map(Number);
+      const endDateComponents = endDatePart.split('-').map(Number);
+      
+      // Parse the time parts
+      const startTimeComponents = startTimePart.split(':').map(Number);
+      const endTimeComponents = endTimePart.split(':').map(Number);
+      
+      // Create new Date objects with the components (treating them as local)
+      startDate = new Date(
+        startDateComponents[0], // year
+        startDateComponents[1] - 1, // month (0-based)
+        startDateComponents[2], // day
+        startTimeComponents[0], // hour
+        startTimeComponents[1], // minute
+        startTimeComponents[2] || 0 // second (default to 0 if not provided)
+      );
+      
+      endDate = new Date(
+        endDateComponents[0], // year
+        endDateComponents[1] - 1, // month (0-based)
+        endDateComponents[2], // day
+        endTimeComponents[0], // hour
+        endTimeComponents[1], // minute
+        endTimeComponents[2] || 0 // second (default to 0 if not provided)
+      );
+    } catch (dateParseError) {
+      // Fallback to default parsing if the custom parsing fails
+      console.log('Custom date parsing failed, using default parser:', dateParseError);
+      startDate = new Date(startTime);
+      endDate = new Date(endTime);
+    }
+    
     console.log('Parsed dates:', { startDate, endDate });
     
     // Verify end time is after start time
@@ -39,7 +78,7 @@ exports.createBooking = async (req, res) => {
       return res.status(400).json({ msg: 'End time must be after start time' });
     }
     
-    // Get day of week (0 = Sunday, 1 = Monday, etc.)
+    // Get day of week (0 = Sunday, 1 = Monday, etc.) - using local time
     const dayOfWeek = startDate.getDay();
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayName = days[dayOfWeek];
@@ -57,7 +96,7 @@ exports.createBooking = async (req, res) => {
       return res.status(400).json({ msg: `Court is not available on ${effectiveDayName}` });
     }
     
-    // Convert booking time to HH:MM format for comparison
+    // Convert booking time to HH:MM format for comparison - using local time values
     const startHour = startDate.getHours();
     const startMinute = startDate.getMinutes();
     const bookingStartTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
