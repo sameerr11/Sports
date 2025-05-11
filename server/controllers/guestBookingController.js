@@ -25,21 +25,59 @@ exports.createGuestBooking = async (req, res) => {
       return res.status(404).json({ msg: 'Court not found' });
     }
     
-    // Parse dates
-    const startDate = new Date(startTime);
-    const endDate = new Date(endTime);
+    // Parse dates ensuring they are treated as local time
+    // This prevents timezone differences from affecting scheduling
+    let startDate, endDate;
     
-    // Get current date (without time)
+    try {
+      // Extract the date and time parts from the ISO strings
+      const [startDatePart, startTimePart] = startTime.split('T');
+      const [endDatePart, endTimePart] = endTime.split('T');
+      
+      // Parse the date parts
+      const startDateComponents = startDatePart.split('-').map(Number);
+      const endDateComponents = endDatePart.split('-').map(Number);
+      
+      // Parse the time parts
+      const startTimeComponents = startTimePart.split(':').map(Number);
+      const endTimeComponents = endTimePart.split(':').map(Number);
+      
+      // Create new Date objects with the components (treating them as local)
+      startDate = new Date(
+        startDateComponents[0], // year
+        startDateComponents[1] - 1, // month (0-based)
+        startDateComponents[2], // day
+        startTimeComponents[0], // hour
+        startTimeComponents[1], // minute
+        startTimeComponents[2] || 0 // second (default to 0 if not provided)
+      );
+      
+      endDate = new Date(
+        endDateComponents[0], // year
+        endDateComponents[1] - 1, // month (0-based)
+        endDateComponents[2], // day
+        endTimeComponents[0], // hour
+        endTimeComponents[1], // minute
+        endTimeComponents[2] || 0 // second (default to 0 if not provided)
+      );
+    } catch (dateParseError) {
+      // Fallback to default parsing if the custom parsing fails
+      console.log('Custom date parsing failed, using default parser:', dateParseError);
+      startDate = new Date(startTime);
+      endDate = new Date(endTime);
+    }
+    
+    // Get current date (without time) in local time
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    // Get tomorrow's date
+    // Get tomorrow's date in local time
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    // Compare dates by converting to YYYY-MM-DD format to ignore time component
-    const startDateStr = startDate.toISOString().split('T')[0];
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    // Compare dates using local representation to ignore timezone issues
+    const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
     
     // Verify booking is for tomorrow or later
     if (startDateStr < tomorrowStr) {
@@ -51,7 +89,7 @@ exports.createGuestBooking = async (req, res) => {
       return res.status(400).json({ msg: 'End time must be after start time' });
     }
     
-    // Get day of week (0 = Sunday, 1 = Monday, etc.)
+    // Get day of week (0 = Sunday, 1 = Monday, etc.) in local time
     const dayOfWeek = startDate.getDay();
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayName = days[dayOfWeek];
@@ -63,7 +101,7 @@ exports.createGuestBooking = async (req, res) => {
       return res.status(400).json({ msg: `Court is not available on ${dayName}` });
     }
     
-    // Convert booking time to HH:MM format for comparison
+    // Convert booking time to HH:MM format for comparison (using local time values)
     const startHour = startDate.getHours();
     const startMinute = startDate.getMinutes();
     const bookingStartTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
@@ -72,8 +110,16 @@ exports.createGuestBooking = async (req, res) => {
     const endMinute = endDate.getMinutes();
     const bookingEndTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
     
+    console.log('Booking time (local):', {
+      startHour, startMinute, endHour, endMinute,
+      bookingStartTime, bookingEndTime,
+      dayName
+    });
+    
     // Filter available slots for rentals only
     let availableSlots = dayAvailability.filter(slot => slot.type === 'Rental');
+    
+    console.log('Available slots for this day:', availableSlots);
     
     if (availableSlots.length === 0) {
       return res.status(400).json({ 
@@ -93,6 +139,12 @@ exports.createGuestBooking = async (req, res) => {
       // Convert booking times to minutes since midnight
       const bookingStartMinutes = startHour * 60 + startMinute;
       const bookingEndMinutes = endHour * 60 + endMinute;
+      
+      console.log('Comparing times:', {
+        slot: { start: slot.start, end: slot.end, type: slot.type },
+        slotMinutes: { start: slotStartMinutes, end: slotEndMinutes },
+        bookingMinutes: { start: bookingStartMinutes, end: bookingEndMinutes }
+      });
       
       // Check if booking falls completely within the slot
       return bookingStartMinutes >= slotStartMinutes && bookingEndMinutes <= slotEndMinutes;

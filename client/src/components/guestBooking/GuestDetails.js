@@ -87,15 +87,37 @@ const GuestDetails = ({
     setError('');
 
     try {
-      // Prepare booking data
+      // Format dates properly to ensure consistent timezone handling
+      const formatTimeForBackend = (dateObj) => {
+        const date = new Date(dateObj);
+        // Format as YYYY-MM-DDTHH:MM:SS
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        
+        // Return ISO-like string but without timezone info
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+      };
+      
+      // Prepare booking data with properly formatted times
       const bookingData = {
         court: selectedCourt.id,
-        startTime: selectedTimeSlot.start,
-        endTime: selectedTimeSlot.end,
+        startTime: formatTimeForBackend(selectedTimeSlot.start),
+        endTime: formatTimeForBackend(selectedTimeSlot.end),
         ...guestDetails,
         notes: '',
         courtType: isBasketballCourt ? courtType : 'Full Court'
       };
+      
+      console.log('Submitting booking with times:', {
+        originalStart: selectedTimeSlot.start,
+        originalEnd: selectedTimeSlot.end,
+        formattedStart: bookingData.startTime,
+        formattedEnd: bookingData.endTime
+      });
 
       // Create booking
       const response = await createGuestBooking(bookingData);

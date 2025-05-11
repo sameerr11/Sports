@@ -328,10 +328,17 @@ const TimeSelection = ({
     );
     
     // Create a single time slot from earliest start to latest end
+    // We don't want any timezone conversion here, just raw Date objects
+    // that will later be formatted correctly in the GuestDetails component
     const combinedTimeSlot = {
       start: sortedSlots[0].start,
-      end: sortedSlots[sortedSlots.length - 1].end
+      end: sortedSlots[sortedSlots.length - 1].end,
+      // Store the original display texts for debugging
+      displayStart: sortedSlots[0].display.split(' - ')[0],
+      displayEnd: sortedSlots[sortedSlots.length - 1].display.split(' - ')[1]
     };
+    
+    console.log('Selected time slot:', combinedTimeSlot);
     
     setSelectedTimeSlot(combinedTimeSlot);
     onNext();
