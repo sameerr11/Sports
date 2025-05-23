@@ -150,39 +150,39 @@ router.post('/send', [auth, admin], async (req, res) => {
     }
 });
 
+// Mark all notifications as read
+router.put('/read-all', auth, async (req, res) => {
+    try {
+        await Notification.updateMany(
+            { recipient: req.user.id, isRead: false },
+            { $set: { isRead: true } }
+        );
+
+        res.json({ msg: 'All notifications marked as read' });
+    } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+        res.status(500).json({ msg: 'Server error' });
+    }
+});
+
 // Mark notification as read
 router.put('/:id', auth, async (req, res) => {
     try {
         const notification = await Notification.findOne({
             _id: req.params.id,
-            recipients: req.user._id
+            recipient: req.user.id
         });
 
         if (!notification) {
             return res.status(404).json({ msg: 'Notification not found' });
         }
 
-        notification.read = true;
+        notification.isRead = true;
         await notification.save();
 
         res.json({ msg: 'Notification marked as read' });
     } catch (error) {
         console.error('Error marking notification as read:', error);
-        res.status(500).json({ msg: 'Server error' });
-    }
-});
-
-// Mark all notifications as read
-router.put('/read-all', auth, async (req, res) => {
-    try {
-        await Notification.updateMany(
-            { recipients: req.user._id, read: false },
-            { $set: { read: true } }
-        );
-
-        res.json({ msg: 'All notifications marked as read' });
-    } catch (error) {
-        console.error('Error marking all notifications as read:', error);
         res.status(500).json({ msg: 'Server error' });
     }
 });
@@ -198,6 +198,26 @@ router.get('/unread-count', auth, async (req, res) => {
         res.json({ count });
     } catch (error) {
         console.error('Error getting unread count:', error);
+        res.status(500).json({ msg: 'Server error' });
+    }
+});
+
+// Delete notification
+router.delete('/:id', auth, async (req, res) => {
+    try {
+        const notification = await Notification.findOne({
+            _id: req.params.id,
+            recipient: req.user.id
+        });
+
+        if (!notification) {
+            return res.status(404).json({ msg: 'Notification not found' });
+        }
+
+        await Notification.deleteOne({ _id: req.params.id });
+        res.json({ msg: 'Notification deleted' });
+    } catch (error) {
+        console.error('Error deleting notification:', error);
         res.status(500).json({ msg: 'Server error' });
     }
 });

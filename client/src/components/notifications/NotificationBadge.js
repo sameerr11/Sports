@@ -13,7 +13,8 @@ import {
   ListItemText,
   ListItemAvatar,
   Avatar,
-  Button
+  Button,
+  Tooltip
 } from '@mui/material';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import PersonIcon from '@mui/icons-material/Person';
@@ -32,10 +33,12 @@ import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import GroupsIcon from '@mui/icons-material/Groups';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
 import { 
   getUserNotifications, 
   getUnreadCount, 
-  markAsRead 
+  markAsRead,
+  markAllAsRead 
 } from '../../services/notificationService';
 
 const NotificationBadge = () => {
@@ -103,6 +106,18 @@ const NotificationBadge = () => {
       setUnreadCount(Math.max(0, unreadCount - 1));
     } catch (err) {
       console.error('Failed to mark notification as read:', err);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllAsRead();
+      setNotifications(
+        notifications.map(notification => ({ ...notification, isRead: true }))
+      );
+      setUnreadCount(0);
+    } catch (err) {
+      console.error('Failed to mark all notifications as read:', err);
     }
   };
 
@@ -221,13 +236,14 @@ const NotificationBadge = () => {
         onClose={handleClose}
         MenuListProps={{
           'aria-labelledby': 'notification-button',
+          sx: { padding: 0 }
         }}
         PaperProps={{
           elevation: 3,
           sx: {
-            maxHeight: '400px',
-            width: 360,
-            overflow: 'visible',
+            maxHeight: '420px',
+            width: 320,
+            overflow: 'hidden',
             filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.15))',
             mt: 1.5,
             '&:before': {
@@ -247,97 +263,144 @@ const NotificationBadge = () => {
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
-        <Box sx={{ p: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontSize: '0.9rem', fontWeight: 600 }}>Notifications</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ 
-            fontSize: '0.75rem',
-            fontWeight: 500,
-            padding: '2px 6px',
-            borderRadius: '12px',
-            backgroundColor: unreadCount > 0 ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
-          }}>
-            {unreadCount} unread
+        <Box sx={{ 
+          p: 1.5, 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.08)'
+        }}>
+          <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600 }}>
+            Notifications
           </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ 
+              fontSize: '0.75rem',
+              fontWeight: 500,
+              padding: '2px 6px',
+              borderRadius: '12px',
+              backgroundColor: unreadCount > 0 ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
+            }}>
+              {unreadCount} unread
+            </Typography>
+            {unreadCount > 0 && (
+              <Tooltip title="Mark all as read">
+                <IconButton 
+                  size="small" 
+                  onClick={handleMarkAllAsRead}
+                  sx={{ p: 0.5 }}
+                >
+                  <DoneAllIcon fontSize="small" color="primary" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
         </Box>
-        <Divider />
-        {notifications.length === 0 ? (
-          <MenuItem disabled>
-            <Typography variant="body2" sx={{ py: 1, textAlign: 'center', width: '100%' }}>No notifications</Typography>
-          </MenuItem>
-        ) : (
-          <List sx={{ width: '100%', p: 0 }}>
-            {notifications.map((notification) => (
-              <MenuItem 
-                key={notification._id} 
-                onClick={() => handleNotificationClick(notification._id)}
-                sx={{
-                  bgcolor: notification.isRead ? 'inherit' : 'rgba(25, 118, 210, 0.08)',
-                  whiteSpace: 'normal',
-                  py: 0.75,
-                  px: 1.5,
-                  borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
-                }}
-              >
-                <ListItemAvatar>
-                  <Avatar sx={{ 
-                    bgcolor: notification.isRead ? 'grey.200' : 'primary.main',
-                    color: notification.isRead ? 'grey.700' : 'white',
-                    width: 32,
-                    height: 32
-                  }}>
-                    {getNotificationIcon(
-                      notification.type, 
-                      notification.relatedTo?.model
-                    )}
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={
-                    <Typography
-                      variant="subtitle2"
-                      color="text.primary"
-                      fontWeight={notification.isRead ? 500 : 600}
-                      sx={{ fontSize: '0.8rem', mb: 0.25 }}
-                    >
-                      {notification.title}
-                    </Typography>
-                  }
-                  secondary={
-                    <>
+        <Box sx={{ 
+          maxHeight: '320px', 
+          overflowY: 'auto',
+          '&::-webkit-scrollbar': {
+            width: '4px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'rgba(0,0,0,0.05)',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(0,0,0,0.2)',
+            borderRadius: '4px',
+          }
+        }}>
+          {notifications.length === 0 ? (
+            <Box sx={{ py: 3, px: 2, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                No notifications
+              </Typography>
+            </Box>
+          ) : (
+            <List sx={{ width: '100%', p: 0 }}>
+              {notifications.map((notification) => (
+                <MenuItem 
+                  key={notification._id} 
+                  onClick={() => handleNotificationClick(notification._id)}
+                  sx={{
+                    bgcolor: notification.isRead ? 'inherit' : 'rgba(25, 118, 210, 0.08)',
+                    whiteSpace: 'normal',
+                    py: 1,
+                    px: 1.5,
+                    borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
+                    transition: 'background-color 0.2s',
+                    '&:hover': {
+                      backgroundColor: notification.isRead ? 'rgba(0, 0, 0, 0.04)' : 'rgba(25, 118, 210, 0.12)',
+                    }
+                  }}
+                >
+                  <ListItemAvatar sx={{ minWidth: '42px' }}>
+                    <Avatar sx={{ 
+                      bgcolor: notification.isRead ? 'grey.200' : 'primary.main',
+                      color: notification.isRead ? 'grey.700' : 'white',
+                      width: 32,
+                      height: 32
+                    }}>
+                      {getNotificationIcon(
+                        notification.type, 
+                        notification.relatedTo?.model
+                      )}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={
                       <Typography
-                        variant="body2"
+                        variant="subtitle2"
                         color="text.primary"
-                        component="span"
-                        sx={{
-                          display: 'inline',
+                        fontWeight={notification.isRead ? 500 : 600}
+                        sx={{ 
+                          fontSize: '0.8rem', 
+                          mb: 0.25,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 1,
-                          WebkitBoxOrient: 'vertical',
-                          fontSize: '0.75rem',
-                          opacity: notification.isRead ? 0.7 : 0.9
+                          whiteSpace: 'nowrap'
                         }}
                       >
-                        {notification.message}
+                        {notification.title}
                       </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        component="div"
-                        sx={{ mt: 0.25, fontSize: '0.7rem' }}
-                      >
-                        {formatDate(notification.createdAt)}
-                      </Typography>
-                    </>
-                  }
-                />
-              </MenuItem>
-            ))}
-          </List>
-        )}
-        <Divider />
-        <Box sx={{ p: 1 }}>
+                    }
+                    secondary={
+                      <Box>
+                        <Typography
+                          variant="body2"
+                          color="text.primary"
+                          component="span"
+                          sx={{
+                            display: 'block',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            fontSize: '0.75rem',
+                            opacity: notification.isRead ? 0.7 : 0.9,
+                            lineHeight: 1.3
+                          }}
+                        >
+                          {notification.message}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          component="div"
+                          sx={{ mt: 0.25, fontSize: '0.7rem' }}
+                        >
+                          {formatDate(notification.createdAt)}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </MenuItem>
+              ))}
+            </List>
+          )}
+        </Box>
+        <Box sx={{ p: 1.5, borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
           <Button
             component={Link}
             to="/notifications"
@@ -349,7 +412,7 @@ const NotificationBadge = () => {
               textTransform: 'none', 
               fontWeight: 500,
               borderRadius: '8px',
-              py: 0.5
+              py: 0.75
             }}
           >
             View All Notifications
