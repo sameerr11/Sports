@@ -305,13 +305,13 @@ const syncTransactionsFromSources = async () => {
         expenseType: 'Utility',
         expenseId: bill._id,
         expenseModel: 'UtilityBill',
-        description: `${bill.billType} bill - ${bill.vendor}`,
+        description: `${bill.billType} bill - ${bill.sportType !== 'General' ? bill.sportType : bill.vendor}`,
         date: bill.paidDate || bill.updatedAt,
         paymentStatus: 'Paid',
         paidDate: bill.paidDate || bill.updatedAt,
         createdBy: creatorId,
         paidBy: bill.paidBy ? bill.paidBy._id : creatorId,
-        notes: `Bill #${bill.billNumber}, Due date: ${new Date(bill.dueDate).toLocaleDateString()}`
+        notes: `Bill #${bill.billNumber}, Due date: ${new Date(bill.dueDate).toLocaleDateString()}, Sport: ${bill.sportType}`
       });
       
       await expenseTransaction.save();
@@ -614,7 +614,7 @@ exports.getExpenseTransactions = async (req, res) => {
     // Sync transactions from other sources
     await syncTransactionsFromSources();
     
-    const { startDate, endDate, expenseType, paymentStatus, limit = 20, page = 1 } = req.query;
+    const { startDate, endDate, expenseType, paymentStatus, sportType, limit = 20, page = 1 } = req.query;
     
     // Build query object
     const query = {};
@@ -637,6 +637,22 @@ exports.getExpenseTransactions = async (req, res) => {
     // Expense type filter
     if (expenseType) {
       query.expenseType = expenseType;
+    }
+    
+    // Sport type filter (for utility bills only)
+    if (expenseType === 'Utility' && sportType) {
+      if (sportType === 'General') {
+        // For General sport type, we need to match transactions where:
+        // 1. Notes field does NOT contain "Sport:" (older records created before this feature)
+        // 2. OR notes field explicitly contains "Sport: General"
+        query.$or = [
+          { notes: { $not: /Sport:/ } },
+          { notes: new RegExp(`Sport: General\\b`, 'i') }
+        ];
+      } else {
+        // For other sport types, match the specific sport in notes field
+        query.notes = new RegExp(`Sport: ${sportType}\\b`, 'i');
+      }
     }
     
     // Payment status filter

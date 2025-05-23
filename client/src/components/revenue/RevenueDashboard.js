@@ -172,7 +172,8 @@ const RevenueDashboard = () => {
   // Prepare chart data
   const getChartData = () => {
     // Safety check for data availability
-    if (!dashboardData || !dashboardData.monthlyRevenue || !dashboardData.monthlyExpenses) {
+    if ((!dashboardData || !dashboardData.monthlyRevenue || !dashboardData.monthlyExpenses) ||
+        (dashboardData.monthlyRevenue.length === 0 && dashboardData.monthlyExpenses.length === 0)) {
       console.log("Missing dashboard data for chart:", dashboardData);
       return {
         labels: ['No Data'],
@@ -201,8 +202,17 @@ const RevenueDashboard = () => {
       console.log("Preparing chart data with:", dashboardData.monthlyRevenue);
       
       // Create arrays of the original data
-      let revenueData = [...dashboardData.monthlyRevenue];
-      let expenseData = [...dashboardData.monthlyExpenses];
+      let revenueData = [...(dashboardData.monthlyRevenue || [])];
+      let expenseData = [...(dashboardData.monthlyExpenses || [])];
+      
+      // If we have expense data but no revenue data, create revenue data points 
+      // with matching dates and 0 values
+      if (revenueData.length === 0 && expenseData.length > 0) {
+        revenueData = expenseData.map(item => ({
+          date: item.date,
+          total: 0
+        }));
+      }
       
       // Ensure expense data has matching dates with revenue data
       if (revenueData.length > 0 && expenseData.length === 0) {
@@ -613,7 +623,8 @@ const RevenueDashboard = () => {
                     Revenue vs Expenses
                   </Typography>
                   <Box sx={{ height: 350, mt: 2, position: 'relative' }}>
-                    {!dashboardData.monthlyRevenue || dashboardData.monthlyRevenue.length === 0 ? (
+                    {(!dashboardData.monthlyRevenue || dashboardData.monthlyRevenue.length === 0) && 
+                     (!dashboardData.monthlyExpenses || dashboardData.monthlyExpenses.length === 0) ? (
                       <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: '100%' }}>
                         <Typography color="text.secondary">No data available for the selected period</Typography>
                       </Box>

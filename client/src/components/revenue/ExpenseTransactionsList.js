@@ -24,6 +24,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
 import Button from '@mui/material/Button';
 import DownloadIcon from '@mui/icons-material/Download';
+import Tooltip from '@mui/material/Tooltip';
 import ultrasLogo from '../../assets/images/ultras_logo.png';
 
 const ExpenseTransactionsList = ({ dateRange, onSuccess }) => {
@@ -40,16 +41,41 @@ const ExpenseTransactionsList = ({ dateRange, onSuccess }) => {
   const [filters, setFilters] = useState({
     expenseType: '',
     paymentStatus: '',
+    sportType: '',
     startDate: dateRange?.startDate || '',
     endDate: dateRange?.endDate || ''
   });
+
+  // Sport types list for Utility bills
+  const sportTypes = [
+    'General',
+    'Basketball', 
+    'Football', 
+    'Volleyball',
+    'Self Defense',
+    'Karate',
+    'Gymnastics',
+    'Gym',
+    'Zumba',
+    'Swimming',
+    'Ping Pong'
+  ];
 
   // Fetch expense transactions
   const fetchTransactions = async () => {
     try {
       setLoading(true);
+      
+      // Create a copy of filters for API request
+      const apiFilters = {...filters};
+      
+      // Only include sportType if expenseType is Utility
+      if (apiFilters.expenseType !== 'Utility') {
+        delete apiFilters.sportType;
+      }
+      
       const { transactions, pagination: paginationData, totalAmount } = await getExpenseTransactions({
-        ...filters,
+        ...apiFilters,
         page: pagination.page,
         limit: pagination.limit
       });
@@ -86,7 +112,18 @@ const ExpenseTransactionsList = ({ dateRange, onSuccess }) => {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
+    
+    // If changing expense type and not selecting Utility, reset sport type
+    if (name === 'expenseType' && value !== 'Utility') {
+      setFilters(prev => ({ 
+        ...prev, 
+        [name]: value,
+        sportType: '' 
+      }));
+    } else {
+      setFilters(prev => ({ ...prev, [name]: value }));
+    }
+    
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page when filters change
   };
 
@@ -238,6 +275,7 @@ const ExpenseTransactionsList = ({ dateRange, onSuccess }) => {
                 ${!filters.startDate && !filters.endDate ? 'All Time' : ''}
               </div>
               ${filters.expenseType ? `<div>Expense Type: ${filters.expenseType}</div>` : ''}
+              ${filters.expenseType === 'Utility' && filters.sportType ? `<div>Sport Type: ${filters.sportType}</div>` : ''}
               ${filters.paymentStatus ? `<div>Payment Status: ${filters.paymentStatus}</div>` : ''}
             </div>
 
@@ -287,7 +325,11 @@ const ExpenseTransactionsList = ({ dateRange, onSuccess }) => {
                           ${transaction.expenseType}
                         </span>
                       </td>
-                      <td>${transaction.description}</td>
+                      <td>${transaction.description}
+                      ${transaction.notes && transaction.notes.includes('Sport:') ? 
+                        `<br><small style="color: #666;">${transaction.notes.split('Sport:')[1].trim()}</small>` : 
+                        ''}
+                      </td>
                       <td>
                         <span class="chip chip-${transaction.paymentStatus.toLowerCase()}">
                           ${transaction.paymentStatus}
@@ -373,6 +415,28 @@ const ExpenseTransactionsList = ({ dateRange, onSuccess }) => {
               </Select>
             </FormControl>
           </Grid>
+          
+          {filters.expenseType === 'Utility' && (
+            <Grid item xs={12} md={3} lg={3}>
+              <FormControl fullWidth variant="outlined" size="small">
+                <InputLabel id="sport-type-label">Sport Type</InputLabel>
+                <Select
+                  labelId="sport-type-label"
+                  id="sport-type"
+                  name="sportType"
+                  value={filters.sportType}
+                  onChange={handleFilterChange}
+                  label="Sport Type"
+                >
+                  <MenuItem value="">All Sports</MenuItem>
+                  {sportTypes.map(sport => (
+                    <MenuItem key={sport} value={sport}>{sport}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          )}
+          
           <Grid item xs={12} md={3} lg={3}>
             <FormControl fullWidth variant="outlined" size="small">
               <InputLabel id="payment-status-label">Status</InputLabel>
@@ -390,7 +454,7 @@ const ExpenseTransactionsList = ({ dateRange, onSuccess }) => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={3} lg={3}>
+          <Grid item xs={12} md={filters.expenseType === 'Utility' ? 3 : 6} lg={filters.expenseType === 'Utility' ? 3 : 6} sx={{ display: 'flex', gap: 2 }}>
             <TextField
               fullWidth
               id="start-date"
@@ -404,8 +468,6 @@ const ExpenseTransactionsList = ({ dateRange, onSuccess }) => {
               }}
               size="small"
             />
-          </Grid>
-          <Grid item xs={12} md={3} lg={3}>
             <TextField
               fullWidth
               id="end-date"
@@ -454,7 +516,15 @@ const ExpenseTransactionsList = ({ dateRange, onSuccess }) => {
                   <TableRow key={transaction._id} hover>
                     <TableCell>{formatDate(transaction.date)}</TableCell>
                     <TableCell>{getExpenseTypeChip(transaction.expenseType)}</TableCell>
-                    <TableCell>{transaction.description}</TableCell>
+                    <TableCell>
+                      {transaction.notes && transaction.notes.includes('Sport:') ? (
+                        <Tooltip title={transaction.notes} placement="top" arrow>
+                          <span>{transaction.description}</span>
+                        </Tooltip>
+                      ) : (
+                        transaction.description
+                      )}
+                    </TableCell>
                     <TableCell>{getStatusChip(transaction.paymentStatus)}</TableCell>
                     <TableCell>
                       {transaction.createdBy ? 
