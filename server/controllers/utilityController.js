@@ -155,7 +155,7 @@ exports.deleteUtilityBill = async (req, res) => {
       return res.status(404).json({ msg: 'Utility bill not found' });
     }
 
-    await utilityBill.remove();
+    await UtilityBill.deleteOne({ _id: req.params.id });
 
     return res.json({ msg: 'Utility bill removed' });
   } catch (err) {
