@@ -335,6 +335,9 @@ exports.getDashboardData = async (req, res) => {
     // Remove orphaned revenue entries (those without corresponding source records)
     await cleanOrphanedTransactions();
     
+    // Remove orphaned expense entries (those without corresponding source records)
+    await cleanOrphanedExpenseTransactions();
+    
     const { startDate, endDate } = req.query;
     const start = startDate ? new Date(startDate) : new Date(new Date().setDate(new Date().getDate() - 30));
     const end = endDate ? new Date(endDate) : new Date();
@@ -932,5 +935,56 @@ const cleanOrphanedTransactions = async () => {
     }
   } catch (error) {
     console.error('Error cleaning orphaned transactions:', error);
+  }
+};
+
+// Remove expense transactions that don't have a corresponding source record
+const cleanOrphanedExpenseTransactions = async () => {
+  try {
+    console.log('Checking for orphaned expense transactions...');
+    
+    // Use the models already imported at the top of the file
+    const UtilityBill = require('../models/UtilityBill');
+    
+    // Get all expense transactions
+    const transactions = await ExpenseTransaction.find();
+    let removedCount = 0;
+    
+    for (const transaction of transactions) {
+      let sourceExists = false;
+      
+      // Skip transactions with no expenseModel or expenseId
+      if (!transaction.expenseModel || !transaction.expenseId) {
+        continue;
+      }
+      
+      // Check if the source record exists based on expenseModel
+      switch (transaction.expenseModel) {
+        case 'UtilityBill':
+          sourceExists = await UtilityBill.exists({ _id: transaction.expenseId });
+          break;
+        case 'SalaryInvoice':
+          sourceExists = await SalaryInvoice.exists({ _id: transaction.expenseId });
+          break;
+        default:
+          // For unknown expenseModel, keep the transaction
+          sourceExists = true;
+      }
+      
+      // If source doesn't exist, remove the transaction
+      if (!sourceExists) {
+        console.log(`Removing orphaned expense transaction ${transaction._id} with expenseModel ${transaction.expenseModel} and expenseId ${transaction.expenseId}`);
+        await ExpenseTransaction.deleteOne({ _id: transaction._id });
+        removedCount++;
+      }
+    }
+    
+    if (removedCount > 0) {
+      console.log(`Removed ${removedCount} orphaned expense transactions`);
+    } else {
+      console.log('No orphaned expense transactions found');
+    }
+  } catch (error) {
+    console.error('Error cleaning orphaned expense transactions:', error);
   }
 }; 

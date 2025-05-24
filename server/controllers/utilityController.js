@@ -155,7 +155,15 @@ exports.deleteUtilityBill = async (req, res) => {
       return res.status(404).json({ msg: 'Utility bill not found' });
     }
 
+    // Delete the utility bill
     await UtilityBill.deleteOne({ _id: req.params.id });
+
+    // Delete any associated expense transactions
+    const ExpenseTransaction = require('../models/revenue/ExpenseTransaction');
+    await ExpenseTransaction.deleteMany({
+      expenseModel: 'UtilityBill',
+      expenseId: req.params.id
+    });
 
     return res.json({ msg: 'Utility bill removed' });
   } catch (err) {

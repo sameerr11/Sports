@@ -78,4 +78,51 @@ router.put(
   revenueController.updateExpenseStatus
 );
 
+// @route   GET /api/revenue/cleanup-expenses
+// @desc    Clean up orphaned expense transactions
+// @access  Admin
+router.get('/cleanup-expenses', auth, roles(['Admin']), async (req, res) => {
+  try {
+    const ExpenseTransaction = require('../models/revenue/ExpenseTransaction');
+    const UtilityBill = require('../models/UtilityBill');
+    
+    // Get all expense transactions for utility bills
+    const transactions = await ExpenseTransaction.find({ expenseModel: 'UtilityBill' });
+    console.log(`Found ${transactions.length} utility bill expense transactions`);
+    
+    let removedCount = 0;
+    let deletedItems = [];
+    
+    for (const transaction of transactions) {
+      // Skip transactions with no expenseId
+      if (!transaction.expenseId) {
+        continue;
+      }
+      
+      // Check if the utility bill exists
+      const utilityBillExists = await UtilityBill.exists({ _id: transaction.expenseId });
+      
+      // If utility bill doesn't exist, remove the transaction
+      if (!utilityBillExists) {
+        console.log(`Removing orphaned expense transaction ${transaction._id} for utility bill ${transaction.expenseId}`);
+        await ExpenseTransaction.deleteOne({ _id: transaction._id });
+        deletedItems.push({
+          transactionId: transaction._id,
+          description: transaction.description,
+          amount: transaction.amount
+        });
+        removedCount++;
+      }
+    }
+    
+    return res.json({
+      msg: `Cleanup completed. Removed ${removedCount} orphaned expense transactions.`,
+      deletedItems
+    });
+  } catch (error) {
+    console.error('Error cleaning orphaned expense transactions:', error);
+    return res.status(500).json({ msg: 'Server error during cleanup' });
+  }
+});
+
 module.exports = router; 
