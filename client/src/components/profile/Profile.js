@@ -338,7 +338,7 @@ const Profile = () => {
                             {/* Security Tab */}
                             {tabValue === 1 && (
                                 <SecurityForm 
-                                    editMode={editMode && canEditProfile} 
+                                    editMode={true}
                                     onSave={handleSaveProfile}
                                     loading={loading}
                                     userId={profile?._id}
