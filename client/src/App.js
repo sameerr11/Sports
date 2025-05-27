@@ -34,6 +34,7 @@ import AdminFeedbackList from './components/feedback/AdminFeedbackList';
 import DocumentManagement from './components/support/DocumentManagement';
 import SupportDashboard from './components/support/SupportDashboard';
 import PlayerStats from './components/support/PlayerStats';
+import SupportAttendanceReport from './components/support/SupportAttendanceReport';
 // Import registration components
 import RegistrationList from './components/registration/RegistrationList';
 import RegistrationForm from './components/registration/RegistrationForm';
@@ -631,6 +632,14 @@ function AppContent() {
           <ProtectedRoute requiredRole={["admin", "support"]}>
             <MainLayout>
               <DocumentManagement />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/support/attendance-report" element={
+          <ProtectedRoute requiredRole={["admin", "support"]}>
+            <MainLayout>
+              <SupportAttendanceReport />
             </MainLayout>
           </ProtectedRoute>
         } />

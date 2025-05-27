@@ -50,6 +50,7 @@ import {
     MonetizationOn as MonetizationOnIcon,
     Notifications as NotificationsIcon
 } from '@mui/icons-material';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import { 
     isAdmin, 
     isSupervisor, 
@@ -170,6 +171,11 @@ const Sidebar = ({ open, toggleSidebar }) => {
             text: 'Players',
             path: '/users/role/player',
             icon: <PeopleIcon />
+        },
+        {
+            text: 'Attendance Report',
+            path: '/support/attendance-report',
+            icon: <CalendarMonthIcon />
         },
         {
             text: 'Feedback Management',

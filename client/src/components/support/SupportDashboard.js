@@ -15,6 +15,7 @@ import {
   FitnessCenter,
   HowToReg
 } from '@mui/icons-material';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 // Add a helper function to format address objects
 const formatAddress = (address) => {
@@ -161,6 +162,29 @@ const SupportDashboard = () => {
                 color="secondary"
               >
                 Manage Stats
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={4}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <CalendarMonthIcon sx={{ mr: 1, color: 'info.main' }} />
+                <Typography variant="h6">Attendance Report</Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Generate attendance reports for all teams to track player participation.
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button 
+                component={Link} 
+                to="/support/attendance-report" 
+                color="info"
+              >
+                Generate Reports
               </Button>
             </CardActions>
           </Card>
