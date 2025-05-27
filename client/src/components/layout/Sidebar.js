@@ -186,6 +186,11 @@ const Sidebar = ({ open, toggleSidebar }) => {
             text: 'Documents',
             path: '/support/documents',
             icon: <DescriptionIcon />
+        },
+        {
+            text: 'Broadcast',
+            path: '/admin/broadcast',
+            icon: <NotificationsIcon />
         }
     ];
 

@@ -13,7 +13,8 @@ import {
   Assessment, 
   SportsSoccer, 
   FitnessCenter,
-  HowToReg
+  HowToReg,
+  Notifications as NotificationsIcon
 } from '@mui/icons-material';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
@@ -185,6 +186,29 @@ const SupportDashboard = () => {
                 color="info"
               >
                 Generate Reports
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={4}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <NotificationsIcon sx={{ mr: 1, color: 'warning.main' }} />
+                <Typography variant="h6">Broadcast</Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Send notifications and announcements to users throughout the system.
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button 
+                component={Link} 
+                to="/admin/broadcast" 
+                color="warning"
+              >
+                Send Notifications
               </Button>
             </CardActions>
           </Card>

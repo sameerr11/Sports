@@ -597,9 +597,9 @@ function AppContent() {
         } />
         
         <Route path="/admin/broadcast" element={
-          <ProtectedRoute requiredRole="admin">
+          <ProtectedRoute requiredRole={["admin", "support"]}>
             <MainLayout>
-              <SendNotificationForm />
+              <SendNotification />
             </MainLayout>
           </ProtectedRoute>
         } />

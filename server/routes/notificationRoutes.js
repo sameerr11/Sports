@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Notification = require('../models/Notification');
 const User = require('../models/User');
-const { auth, admin } = require('../middleware/auth');
+const { auth, admin, adminOrSupport } = require('../middleware/auth');
 const notificationController = require('../controllers/notificationController');
 
 // Get all notifications for the current user
@@ -22,7 +22,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Send notification
-router.post('/send', [auth, admin], async (req, res) => {
+router.post('/send', [auth, adminOrSupport], async (req, res) => {
     try {
         console.log('Received notification request:', req.body);
         const { message, title, type, role, recipients, sendEmail } = req.body;
@@ -224,7 +224,7 @@ router.delete('/:id', auth, async (req, res) => {
 
 // @desc   Broadcast notification to users (with email)
 // @route  POST /api/notifications/broadcast
-// @access Private/Admin
-router.post('/broadcast', [auth, admin], notificationController.sendBroadcastNotification);
+// @access Private/Admin and Support
+router.post('/broadcast', [auth, adminOrSupport], notificationController.sendBroadcastNotification);
 
 module.exports = router; 
