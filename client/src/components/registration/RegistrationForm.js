@@ -26,7 +26,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { createPlayerRegistration, getRegistrationFees } from '../../services/registrationService';
 import { useAuth } from '../../contexts/AuthContext';
-import { isAdmin } from '../../services/authService';
+import { isAdmin, isAccounting } from '../../services/authService';
 
 // Add a function to generate invoice number
 const generateInvoiceNumber = () => {
@@ -215,7 +215,7 @@ const RegistrationForm = () => {
           setTimeout(() => {
             setSnackbar({
               open: true,
-              message: `Missing fee configuration for: ${missingFees.join(', ')}. ${isAdmin() ? 'Please configure these fees.' : 'Total may be incomplete.'}`,
+              message: `Missing fee configuration for: ${missingFees.join(', ')}. ${(isAdmin() || isAccounting()) ? 'Please configure these fees or adjust manually.' : 'Total may be incomplete.'}`,
               severity: 'warning'
             });
           }, 3000);
@@ -226,7 +226,7 @@ const RegistrationForm = () => {
         // Show a warning if no matching fee was found
         setSnackbar({
           open: true,
-          message: `No configured fees found for selected sports with period ${formData.registrationPeriod}. ${isAdmin() ? 'Please set the fees manually.' : 'Please contact an administrator.'}`,
+          message: `No configured fees found for selected sports with period ${formData.registrationPeriod}. ${(isAdmin() || isAccounting()) ? 'Please set the fees manually.' : 'Please contact an administrator.'}`,
           severity: 'warning'
         });
       }
@@ -264,9 +264,9 @@ const RegistrationForm = () => {
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
       
-      // Check if the fee amount is being changed manually (by non-admin)
-      if (name === 'fee.amount' && !isAdmin()) {
-        // Prevent manual changes for non-admin users
+      // Check if the fee amount is being changed manually (by non-admin/non-accounting)
+      if (name === 'fee.amount' && !isAdmin() && !isAccounting()) {
+        // Prevent manual changes for users who are not admin or accounting
         return;
       }
       
@@ -716,7 +716,7 @@ const RegistrationForm = () => {
                   type="number"
                   InputProps={{ 
                     inputProps: { min: 0, step: "0.01" },
-                    readOnly: !isAdmin(),
+                    readOnly: !isAdmin() && !isAccounting(),
                     endAdornment: feeLoading && <CircularProgress size={20} />
                   }}
                   margin="normal"
@@ -724,26 +724,14 @@ const RegistrationForm = () => {
                   name="fee.amount"
                   value={formData.fee.amount}
                   onChange={handleChange}
-                  disabled={!isAdmin()}
-                  helperText={isAdmin() 
+                  disabled={!isAdmin() && !isAccounting()}
+                  helperText={(isAdmin() || isAccounting()) 
                     ? "Fee will auto-populate based on sports and period if configured" 
                     : "Fee is automatically set based on sports and period configured by admin"
                   }
                 />
                 
-                {isAdmin() && (
-                  <Alert 
-                    severity="info" 
-                    sx={{ mt: 1 }}
-                    icon={<InfoIcon />}
-                  >
-                    You can configure default fees for each sport and period in the{' '}
-                    <Link component={RouterLink} to="/admin/registration-fees">
-                      Registration Fee Configuration
-                    </Link>{' '}
-                    page.
-                  </Alert>
-                )}
+
               </Box>
             </Grid>
           </Grid>
