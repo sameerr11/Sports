@@ -60,6 +60,7 @@ import SingleSessionPaymentForm from './components/revenue/SingleSessionPaymentF
 import PlayerStatsPage from './components/admin/PlayerStatsPage';
 import PlayersWithParentsPage from './components/admin/PlayersWithParentsPage';
 import CoachReportPage from './components/admin/CoachReportPage';
+import TeamsReportPage from './components/admin/TeamsReportPage';
 import SendNotificationForm from './components/admin/SendNotificationForm';
 
 // Placeholder components for routes
@@ -729,6 +730,15 @@ function AppContent() {
           <ProtectedRoute requiredRole="admin">
             <MainLayout>
               <CoachReportPage />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        {/* Teams Report Route */}
+        <Route path="/teams-report" element={
+          <ProtectedRoute requiredRole="admin">
+            <MainLayout>
+              <TeamsReportPage />
             </MainLayout>
           </ProtectedRoute>
         } />

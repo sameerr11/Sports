@@ -404,9 +404,10 @@ const Dashboard = () => {
               <Box sx={{ 
                 display: 'flex', 
                 justifyContent: 'flex-end', 
-                gap: 2,
+                gap: 1,
                 mt: 2, 
-                pb: 2 
+                pb: 2,
+                flexWrap: 'wrap'
               }}>
                 <Button 
                   component={Link} 
@@ -422,7 +423,7 @@ const Dashboard = () => {
                     px: 2
                   }}
                 >
-                  View Players with Parent Details
+                  Player Report
                 </Button>
                 <Button 
                   component={Link} 
@@ -438,7 +439,23 @@ const Dashboard = () => {
                     px: 2
                   }}
                 >
-                  View Coach Report
+                  Coach Report
+                </Button>
+                <Button 
+                  component={Link} 
+                  to="/teams-report" 
+                  variant="outlined" 
+                  color="primary"
+                  size="small"
+                  endIcon={<ArrowUpward />}
+                  sx={{ 
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    px: 2
+                  }}
+                >
+                  Teams Report
                 </Button>
               </Box>
             </CardContent>

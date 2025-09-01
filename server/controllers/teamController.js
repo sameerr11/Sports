@@ -53,7 +53,16 @@ exports.createTeam = async (req, res) => {
 // @access  Public
 exports.getTeams = async (req, res) => {
   try {
-    let query = { isActive: true };
+    let query = {};
+    
+    // Check if we should include inactive teams (admin reports)
+    if (req.query.includeInactive === 'true' && req.user && req.user.role === 'admin') {
+      // Admin can see all teams (active and inactive)
+      // No isActive filter needed
+    } else {
+      // Default behavior - only active teams
+      query.isActive = true;
+    }
     
     // Filter teams by sport type for sports supervisors
     if (req.user && req.user.role === 'supervisor') {
@@ -72,6 +81,7 @@ exports.getTeams = async (req, res) => {
     
     const teams = await Team.find(query)
       .populate('coaches.coach', 'firstName lastName email')
+      .populate('players.player', 'firstName lastName email')
       .sort({ createdAt: -1 });
     
     res.json(teams);
