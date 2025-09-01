@@ -31,7 +31,7 @@ router.post(
   [
     auth,
     roles(['admin']),
-    check('sportType', 'Sport type is required').isIn(['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong']),
+    check('sportType', 'Sport type is required').isIn(['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong', 'Fitness', 'Crossfit']),
     check('amount', 'Amount is required and must be a positive number').isFloat({ min: 0 })
   ],
   singleSessionFeeController.createSingleSessionFee

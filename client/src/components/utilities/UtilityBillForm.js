@@ -32,7 +32,9 @@ const SPORT_TYPES = [
   { value: 'Gym', label: 'Gym' },
   { value: 'Zumba', label: 'Zumba' },
   { value: 'Swimming', label: 'Swimming' },
-  { value: 'Ping Pong', label: 'Ping Pong' }
+  { value: 'Ping Pong', label: 'Ping Pong' },
+  { value: 'Fitness', label: 'Fitness' },
+  { value: 'Crossfit', label: 'Crossfit' }
 ];
 
 const UtilityBillForm = () => {

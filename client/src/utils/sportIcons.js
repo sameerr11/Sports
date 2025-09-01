@@ -42,6 +42,10 @@ export const getSportIcon = (sportType) => {
     case 'ping pong':
     case 'table tennis':
       return <TableBar />;
+    case 'fitness':
+      return <FitnessCenter />;
+    case 'crossfit':
+      return <FitnessCenter />;
     default:
       return <Sports />;
   }

@@ -106,7 +106,7 @@ const PlayerStatsSchema = new mongoose.Schema({
   sportType: {
     type: String,
     required: true,
-    enum: ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong']
+    enum: ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong', 'Fitness', 'Crossfit']
   },
   // Common stats for all players
   common: commonStatsSchema,

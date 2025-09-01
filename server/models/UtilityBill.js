@@ -16,7 +16,7 @@ const UtilityBillSchema = new mongoose.Schema({
   },
   sportType: {
     type: String,
-    enum: ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong', 'General'],
+    enum: ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong', 'Fitness', 'Crossfit', 'General'],
     default: 'General'
   },
   amount: {

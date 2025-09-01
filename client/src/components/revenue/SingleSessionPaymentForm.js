@@ -35,7 +35,7 @@ const SingleSessionPaymentForm = () => {
     severity: 'success'
   });
 
-  const sportOptions = ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong'];
+  const sportOptions = ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong', 'Fitness', 'Crossfit'];
 
   const [formData, setFormData] = useState({
     visitorName: '',

@@ -57,7 +57,7 @@ const SingleSessionFeeConfig = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [sportToDelete, setSportToDelete] = useState(null);
 
-  const sportOptions = ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong'];
+  const sportOptions = ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong', 'Fitness', 'Crossfit'];
 
   useEffect(() => {
     fetchFees();

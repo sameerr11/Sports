@@ -284,6 +284,8 @@ const CourtForm = () => {
                   <MenuItem value="Zumba">Zumba</MenuItem>
                   <MenuItem value="Swimming">Swimming</MenuItem>
                   <MenuItem value="Ping Pong">Ping Pong</MenuItem>
+                  <MenuItem value="Fitness">Fitness</MenuItem>
+                  <MenuItem value="Crossfit">Crossfit</MenuItem>
                 </Select>
                 {validationErrors.sportType && (
                   <FormHelperText>{validationErrors.sportType}</FormHelperText>

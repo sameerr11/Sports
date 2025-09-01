@@ -35,7 +35,8 @@ import { formatCurrency } from '../../utils/format';
 
 const sportOptions = [
   'Basketball', 'Football', 'Volleyball', 'Self Defense', 
-  'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong'
+  'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong',
+  'Fitness', 'Crossfit'
 ];
 
 const periodOptions = ['1 Month', '3 Months', '6 Months', '1 Year'];

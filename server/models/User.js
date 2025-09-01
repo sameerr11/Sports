@@ -40,7 +40,7 @@ const UserSchema = new mongoose.Schema({
   },
   supervisorSportTypes: {
     type: [String],
-    enum: ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong'],
+    enum: ['Basketball', 'Football', 'Volleyball', 'Self Defense', 'Karate', 'Gymnastics', 'Gym', 'Zumba', 'Swimming', 'Ping Pong', 'Fitness', 'Crossfit'],
     default: []
   },
   parentId: {
