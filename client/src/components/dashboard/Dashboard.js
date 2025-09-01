@@ -404,6 +404,7 @@ const Dashboard = () => {
               <Box sx={{ 
                 display: 'flex', 
                 justifyContent: 'flex-end', 
+                gap: 2,
                 mt: 2, 
                 pb: 2 
               }}>
@@ -422,6 +423,22 @@ const Dashboard = () => {
                   }}
                 >
                   View Players with Parent Details
+                </Button>
+                <Button 
+                  component={Link} 
+                  to="/coach-report" 
+                  variant="contained" 
+                  color="secondary"
+                  size="small"
+                  endIcon={<ArrowUpward />}
+                  sx={{ 
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    px: 2
+                  }}
+                >
+                  View Coach Report
                 </Button>
               </Box>
             </CardContent>

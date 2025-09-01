@@ -141,7 +141,8 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'User Salary Config', icon: <SettingsIcon />, path: '/admin/user-salary-config' },
         { text: 'Utility Bills', icon: <ReceiptIcon />, path: '/utilities' },
         { text: 'Broadcast', icon: <NotificationsIcon />, path: '/admin/send-notification' },
-        { text: 'Player Report', icon: <FamilyRestroomIcon />, path: '/players-with-parents' }
+        { text: 'Player Report', icon: <FamilyRestroomIcon />, path: '/players-with-parents' },
+        { text: 'Coach Report', icon: <SportsSoccerIcon />, path: '/coach-report' }
     ];
 
     const adminRevenueItems = [

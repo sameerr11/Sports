@@ -59,6 +59,7 @@ import SendNotification from './components/admin/SendNotification';
 import SingleSessionPaymentForm from './components/revenue/SingleSessionPaymentForm';
 import PlayerStatsPage from './components/admin/PlayerStatsPage';
 import PlayersWithParentsPage from './components/admin/PlayersWithParentsPage';
+import CoachReportPage from './components/admin/CoachReportPage';
 import SendNotificationForm from './components/admin/SendNotificationForm';
 
 // Placeholder components for routes
@@ -719,6 +720,15 @@ function AppContent() {
           <ProtectedRoute requiredRole="admin">
             <MainLayout>
               <PlayersWithParentsPage />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        {/* Coach Report Route */}
+        <Route path="/coach-report" element={
+          <ProtectedRoute requiredRole="admin">
+            <MainLayout>
+              <CoachReportPage />
             </MainLayout>
           </ProtectedRoute>
         } />
