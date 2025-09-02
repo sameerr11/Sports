@@ -12,6 +12,7 @@ const Notification = require('../models/Notification');
 const checkRegistrationExpiry = async () => {
   try {
     console.log('Checking for player registrations about to expire...');
+    console.log(`Current time: ${new Date().toISOString()}`);
     
     const now = new Date();
     
@@ -28,6 +29,9 @@ const checkRegistrationExpiry = async () => {
     
     const startOfOneDayLater = new Date(oneDayLater.setHours(0, 0, 0, 0));
     const endOfOneDayLater = new Date(oneDayLater.setHours(23, 59, 59, 999));
+    
+    console.log(`Checking for registrations expiring on: ${startOfOneWeekLater.toISOString()} to ${endOfOneWeekLater.toISOString()}`);
+    console.log(`Checking for registrations expiring on: ${startOfOneDayLater.toISOString()} to ${endOfOneDayLater.toISOString()}`);
     
     // Find registrations expiring in one week
     const registrationsExpiringInOneWeek = await PlayerRegistration.find({
@@ -47,6 +51,9 @@ const checkRegistrationExpiry = async () => {
       status: { $nin: ['Cancelled', 'Completed'] }
     });
     
+    console.log(`Found ${registrationsExpiringInOneWeek.length} registrations expiring in one week`);
+    console.log(`Found ${registrationsExpiringInOneDay.length} registrations expiring in one day`);
+    
     // Process one week notifications
     let oneWeekNotificationsSent = 0;
     for (const registration of registrationsExpiringInOneWeek) {
@@ -56,16 +63,31 @@ const checkRegistrationExpiry = async () => {
         const user = await User.findOne({ email: registration.player.email });
         
         if (user) {
-          // Send notification to player and parent
-          await createRegistrationExpiryNotifications({
-            playerId: user._id,
-            registrationId: registration._id,
+          // Check if we already sent a notification for this registration today
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          const existingNotification = await Notification.findOne({
+            recipient: user._id,
             type: 'registration_expiry',
-            title: 'Registration Expires in One Week',
-            message: `Your registration for ${registration.sports.join(', ')} will expire in one week. Please renew to continue enjoying our services.`
+            'relatedTo.id': registration._id,
+            createdAt: { $gte: today }
           });
           
-          oneWeekNotificationsSent++;
+          if (!existingNotification) {
+            // Send notification to player and parent
+            await createRegistrationExpiryNotifications({
+              playerId: user._id,
+              registrationId: registration._id,
+              type: 'registration_expiry',
+              title: 'Registration Expires in One Week',
+              message: `Your registration for ${registration.sports.join(', ')} will expire in one week. Please renew to continue enjoying our services.`
+            });
+            
+            oneWeekNotificationsSent++;
+          } else {
+            console.log(`Skipping one-week notification for registration ${registration._id} - already sent today`);
+          }
         }
       } catch (error) {
         console.error(`Error processing one week notification for registration ${registration._id}:`, error);
@@ -79,16 +101,31 @@ const checkRegistrationExpiry = async () => {
         const user = await User.findOne({ email: registration.player.email });
         
         if (user) {
-          // Send notification to player and parent
-          await createRegistrationExpiryNotifications({
-            playerId: user._id,
-            registrationId: registration._id,
+          // Check if we already sent a notification for this registration today
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          const existingNotification = await Notification.findOne({
+            recipient: user._id,
             type: 'registration_expiry',
-            title: 'Registration Expires Tomorrow',
-            message: `Your registration for ${registration.sports.join(', ')} will expire tomorrow. Please renew immediately to avoid service interruption.`
+            'relatedTo.id': registration._id,
+            createdAt: { $gte: today }
           });
           
-          oneDayNotificationsSent++;
+          if (!existingNotification) {
+            // Send notification to player and parent
+            await createRegistrationExpiryNotifications({
+              playerId: user._id,
+              registrationId: registration._id,
+              type: 'registration_expiry',
+              title: 'Registration Expires Tomorrow',
+              message: `Your registration for ${registration.sports.join(', ')} will expire tomorrow. Please renew immediately to avoid service interruption.`
+            });
+            
+            oneDayNotificationsSent++;
+          } else {
+            console.log(`Skipping one-day notification for registration ${registration._id} - already sent today`);
+          }
         }
       } catch (error) {
         console.error(`Error processing one day notification for registration ${registration._id}:`, error);
