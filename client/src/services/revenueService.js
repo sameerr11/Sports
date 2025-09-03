@@ -97,3 +97,15 @@ export const updateExpenseStatus = async (expenseId, paymentStatus) => {
     throw error.response?.data?.message || 'Failed to update expense status';
   }
 }; 
+
+// Get daily accounting report
+export const getDailyAccountingReport = async (date = null) => {
+  try {
+    const params = date ? `?date=${date}` : '';
+    const response = await api.get(`/revenue/daily-report${params}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error fetching daily accounting report:', error);
+    throw error;
+  }
+}; 

@@ -199,6 +199,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     // New registration items for accounting
     const accountingItems = [
         { text: 'Dashboard', icon: <DashboardIcon />, path: '/registrations' },
+        { text: 'Daily Report', icon: <BarChartIcon />, path: '/revenue/daily-report' },
         { text: 'New Registration', icon: <HowToRegIcon />, path: '/registrations/new' },
         { text: 'Single Session Payment', icon: <PaymentIcon />, path: '/revenue/single-session' },
         { text: 'Salary Invoices', icon: <PaymentIcon />, path: '/registrations/salary/list' },
@@ -210,6 +211,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     // Revenue Manager items
     const revenueManagerItems = [
         { text: 'Revenue Dashboard', icon: <BarChartIcon />, path: '/revenue/dashboard' },
+        { text: 'Daily Report', icon: <BarChartIcon />, path: '/revenue/daily-report' },
         { text: 'Single Session Payment', icon: <PaymentIcon />, path: '/revenue/single-session' },
     ];
 

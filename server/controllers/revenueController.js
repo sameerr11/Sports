@@ -10,6 +10,7 @@ const SalaryInvoice = require('../models/SalaryInvoice');
 const UtilityBill = require('../models/UtilityBill');
 const User = require('../models/User');
 const ApiResponse = require('../utils/ApiResponse');
+const SingleSessionFee = require('../models/SingleSessionFee'); // Added for daily report
 
 // Get or create a default admin user for transactions with missing creator
 const getDefaultAdminUser = async () => {
@@ -987,4 +988,112 @@ const cleanOrphanedExpenseTransactions = async () => {
   } catch (error) {
     console.error('Error cleaning orphaned expense transactions:', error);
   }
+}; 
+
+// @desc    Get daily accounting report
+// @route   GET /api/revenue/daily-report
+// @access  Revenue Manager, Admin, Accounting
+exports.getDailyAccountingReport = async (req, res) => {
+  try {
+    const { date } = req.query;
+    const currentUserId = req.user.id;
+    
+    // If no date provided, use today's date
+    const reportDate = date ? new Date(date) : new Date();
+    
+    // Set time to start and end of day
+    const startOfDay = new Date(reportDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(reportDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Get utility bills paid on this date by the current accounting user
+    const utilityBills = await UtilityBill.find({
+      paidDate: { $gte: startOfDay, $lte: endOfDay },
+      paymentStatus: 'Paid',
+      paidBy: currentUserId
+    }).populate('paidBy', 'firstName lastName email');
+
+    // Get salary invoices paid on this date by the current accounting user
+    const salaryInvoices = await SalaryInvoice.find({
+      paidDate: { $gte: startOfDay, $lte: endOfDay },
+      paymentStatus: 'Paid',
+      issuedBy: currentUserId
+    }).populate('userId', 'firstName lastName email role')
+      .populate('issuedBy', 'firstName lastName');
+
+    // Get player registrations processed on this date by the current accounting user
+    const playerRegistrations = await PlayerRegistration.find({
+      'fee.paymentStatus': 'Paid',
+      createdAt: { $gte: startOfDay, $lte: endOfDay },
+      registeredBy: currentUserId
+    }).populate('registeredBy', 'firstName lastName email');
+
+    // Get single session fees processed on this date by the current accounting user
+    const singleSessionRevenueTransactions = await RevenueTransaction.find({
+      sourceType: 'Registration',
+      date: { $gte: startOfDay, $lte: endOfDay },
+      description: { $regex: /Single session payment/i },
+      createdBy: currentUserId
+    });
+
+    // Calculate totals
+    const utilityBillsTotal = utilityBills.reduce((sum, bill) => sum + bill.amount, 0);
+    const salaryInvoicesTotal = salaryInvoices.reduce((sum, invoice) => sum + invoice.amount + (invoice.bonus || 0), 0);
+    const playerRegistrationsTotal = playerRegistrations.reduce((sum, reg) => sum + reg.fee.amount, 0);
+    const singleSessionFeesTotal = singleSessionRevenueTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+
+    const grandTotal = utilityBillsTotal + salaryInvoicesTotal + playerRegistrationsTotal + singleSessionFeesTotal;
+
+    // Prepare the response data
+    const dailyReport = {
+      date: reportDate.toISOString().split('T')[0],
+      accountant: {
+        id: currentUserId,
+        name: req.user.firstName + ' ' + req.user.lastName,
+        role: req.user.role
+      },
+      summary: {
+        utilityBills: {
+          count: utilityBills.length,
+          total: utilityBillsTotal
+        },
+        salaryInvoices: {
+          count: salaryInvoices.length,
+          total: salaryInvoicesTotal
+        },
+        playerRegistrations: {
+          count: playerRegistrations.length,
+          total: playerRegistrationsTotal
+        },
+        singleSessionFees: {
+          count: singleSessionRevenueTransactions.length,
+          total: singleSessionFeesTotal
+        },
+        grandTotal
+      },
+      details: {
+        utilityBills,
+        salaryInvoices,
+        playerRegistrations,
+        singleSessionFees: singleSessionRevenueTransactions
+      }
+    };
+
+    return ApiResponse.success(res, dailyReport);
+  } catch (error) {
+    console.error('Error getting daily accounting report:', error);
+    return ApiResponse.error(res, 'Error getting daily accounting report', 500);
+  }
+};
+
+module.exports = {
+  getDashboardData: exports.getDashboardData,
+  getRevenueTransactions: exports.getRevenueTransactions,
+  addRevenueTransaction: exports.addRevenueTransaction,
+  updateExpenseStatus: exports.updateExpenseStatus,
+  getExpenseTransactions: exports.getExpenseTransactions,
+  addExpenseTransaction: exports.addExpenseTransaction,
+  getDailyAccountingReport: exports.getDailyAccountingReport
 }; 

@@ -62,6 +62,7 @@ import PlayersWithParentsPage from './components/admin/PlayersWithParentsPage';
 import CoachReportPage from './components/admin/CoachReportPage';
 import TeamsReportPage from './components/admin/TeamsReportPage';
 import SendNotificationForm from './components/admin/SendNotificationForm';
+import DailyAccountingReport from './components/revenue/DailyAccountingReport';
 
 // Placeholder components for routes
 const Tournaments = () => <div>Tournaments Page</div>;
@@ -709,6 +710,14 @@ function AppContent() {
           <ProtectedRoute requiredRole={['revenue_manager', 'admin', 'accounting']}>
             <MainLayout>
               <SingleSessionPaymentForm />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/revenue/daily-report" element={
+          <ProtectedRoute requiredRole={['revenue_manager', 'admin', 'accounting']}>
+            <MainLayout>
+              <DailyAccountingReport />
             </MainLayout>
           </ProtectedRoute>
         } />

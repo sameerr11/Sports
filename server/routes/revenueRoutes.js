@@ -125,4 +125,14 @@ router.get('/cleanup-expenses', auth, roles(['Admin']), async (req, res) => {
   }
 });
 
+// Daily Accounting Report
+// @route   GET /api/revenue/daily-report
+// @desc    Get daily accounting report for bills, salaries, and registrations
+// @access  Revenue Manager, Admin, Accounting
+router.get(
+  '/daily-report',
+  [auth, roles(['revenue_manager', 'admin', 'accounting'])],
+  revenueController.getDailyAccountingReport
+);
+
 module.exports = router; 
