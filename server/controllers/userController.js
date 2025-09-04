@@ -110,9 +110,9 @@ exports.getUsers = async (req, res) => {
       query.isActive = isActive === 'true' || isActive === '1';
     }
     
-    // Only allow admin or support to access this endpoint
-    if (req.user.role !== 'admin' && req.user.role !== 'support' && req.user.role !== 'supervisor') {
-      return res.status(403).json({ msg: 'Access denied. Admin, Support, or Supervisor privileges required.' });
+    // Only allow admin, support, supervisor, or accounting to access this endpoint
+    if (req.user.role !== 'admin' && req.user.role !== 'support' && req.user.role !== 'supervisor' && req.user.role !== 'accounting') {
+      return res.status(403).json({ msg: 'Access denied. Admin, Support, Supervisor, or Accounting privileges required.' });
     }
     
     // Fetch users based on the query
