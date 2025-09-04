@@ -38,7 +38,7 @@ const recurringScheduleController = require('../controllers/recurringScheduleCon
 const singleSessionFeeRoutes = require('./singleSessionFeeRoutes');
 
 // Middleware
-const { auth, admin, supervisor, coach, player, parent, adminOrSupport, adminSupportOrAccounting, support, teamSupervisor, checkRole } = require('../middleware/auth');
+const { auth, admin, supervisor, coach, player, parent, adminOrSupport, adminSupportOrAccounting, support, teamSupervisor, accounting } = require('../middleware/auth');
 
 // Import notification routes
 const notificationRoutes = require('./notificationRoutes');
@@ -282,6 +282,27 @@ router.put(
 
 // Registration routes
 router.use('/registrations', registrationRoutes);
+
+// Registration Renewal routes
+const registrationRenewalController = require('../controllers/registrationRenewalController');
+router.get('/registration-renewals/expired', [auth, accounting], registrationRenewalController.getExpiredRegistrations);
+router.get('/registration-renewals/fees', [auth, accounting], registrationRenewalController.getRegistrationFees);
+router.post('/registration-renewals', [
+  auth,
+  accounting,
+  check('originalRegistrationId', 'Original registration ID is required').not().isEmpty(),
+  check('sports', 'Sports are required').isArray({ min: 1 }),
+  check('registrationPeriod', 'Registration period is required').not().isEmpty(),
+  check('startDate', 'Start date is required').not().isEmpty(),
+  check('fee.amount', 'Fee amount is required').isNumeric(),
+  check('fee.invoiceNumber', 'Invoice number is required').not().isEmpty()
+], registrationRenewalController.createRenewal);
+router.get('/registration-renewals', [auth, adminSupportOrAccounting], registrationRenewalController.getRenewals);
+router.get('/registration-renewals/:id', [auth, adminSupportOrAccounting], registrationRenewalController.getRenewalById);
+router.put('/registration-renewals/:id/cancel', [
+  auth,
+  adminSupportOrAccounting
+], registrationRenewalController.cancelRenewal);
 
 // Player Stats Routes
 router.use('/player-stats', playerStatsRoutes);

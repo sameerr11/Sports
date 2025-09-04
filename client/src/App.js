@@ -42,6 +42,7 @@ import RegistrationDetail from './components/registration/RegistrationDetail';
 import RegistrationFeeManager from './components/registration/RegistrationFeeManager';
 import SalaryInvoice from './components/registration/SalaryInvoice';
 import SalaryInvoiceList from './components/registration/SalaryInvoiceList';
+import RegistrationRenewalManagement from './components/registration/RegistrationRenewalManagement';
 import './App.css';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
 import { Box, CircularProgress } from '@mui/material';
@@ -323,6 +324,14 @@ function AppContent() {
           <EnhancedProtectedRoute>
             <MainLayout>
               <RegistrationFeeManager />
+            </MainLayout>
+          </EnhancedProtectedRoute>
+        } />
+        
+        <Route path="/registration-renewals" element={
+          <EnhancedProtectedRoute requiredRole="accounting">
+            <MainLayout>
+              <RegistrationRenewalManagement />
             </MainLayout>
           </EnhancedProtectedRoute>
         } />

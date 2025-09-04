@@ -9,7 +9,6 @@ import {
     Divider, 
     IconButton, 
     Box, 
-    Description,
     Typography, 
     Avatar,
     useTheme,
@@ -25,30 +24,19 @@ import {
     HowToReg as HowToRegIcon,
     Settings as SettingsIcon,
     Sports,
-    Person as PersonIcon,
     FamilyRestroom as FamilyRestroomIcon,
-    Menu as MenuIcon,
-    Close as CloseIcon,
     ChevronLeft as ChevronLeftIcon,
-    Home as HomeIcon,
-    LibraryBooks as LibraryBooksIcon,
     SportsSoccer as SportsSoccerIcon,
-    SportsBasketball,
-    FitnessCenter as FitnessCenterIcon,
     Fastfood as FastfoodIcon,
     Description as DescriptionIcon,
-    HealthAndSafety as HealthAndSafetyIcon,
     Payment as PaymentIcon,
     LocationOn as LocationOnIcon,
-    AdminPanelSettings as AdminPanelSettingsIcon,
     Restaurant as RestaurantIcon,
-    Support as SupportIcon,
     Receipt as ReceiptIcon,
     Add,
-    AttachMoney as AttachMoneyIcon,
     BarChart as BarChartIcon,
-    MonetizationOn as MonetizationOnIcon,
-    Notifications as NotificationsIcon
+    Notifications as NotificationsIcon,
+    Refresh as RefreshIcon
 } from '@mui/icons-material';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import { 
@@ -62,11 +50,9 @@ import {
     isSportsSupervisor,
     isGeneralSupervisor,
     isSupport,
-    isAdminOrSupport,
     isAccounting,
     isBookingSupervisor,
-    isRevenueManager,
-    getStoredUser
+    isRevenueManager
 } from '../../services/authService';
 import './Sidebar.css';
 
@@ -88,7 +74,6 @@ const Sidebar = ({ open, toggleSidebar }) => {
     const accounting = isAccounting() && !admin;
     const revenueManager = isRevenueManager() && !admin;
     const theme = useTheme();
-    const user = getStoredUser();
 
     // Regular menu items - not shown to cafeteria supervisors or revenue managers
     const menuItems = [
@@ -201,6 +186,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
         { text: 'Dashboard', icon: <DashboardIcon />, path: '/registrations' },
         { text: 'Daily Report', icon: <BarChartIcon />, path: '/revenue/daily-report' },
         { text: 'New Registration', icon: <HowToRegIcon />, path: '/registrations/new' },
+        { text: 'Registration Renewals', icon: <RefreshIcon />, path: '/registration-renewals' },
         { text: 'Single Session Payment', icon: <PaymentIcon />, path: '/revenue/single-session' },
         { text: 'Salary Invoices', icon: <PaymentIcon />, path: '/registrations/salary/list' },
         { text: 'New Salary Invoice', icon: <PaymentIcon />, path: '/registrations/salary' },
