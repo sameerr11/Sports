@@ -105,7 +105,7 @@ exports.createRenewal = async (req, res) => {
     }
 
     // Check if registration is expired
-    if (originalRegistration.endDate >= new Date()) {
+    if (originalRegistration.endDate > new Date()) {
       return ApiResponse.error(res, 'Registration is not yet expired', 400);
     }
 

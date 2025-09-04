@@ -112,15 +112,6 @@ const RegistrationRenewalSchema = new mongoose.Schema({
     trim: true
   },
   
-  // Timestamps
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
 }, {
   timestamps: true
 });
