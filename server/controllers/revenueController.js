@@ -11,6 +11,7 @@ const UtilityBill = require('../models/UtilityBill');
 const User = require('../models/User');
 const ApiResponse = require('../utils/ApiResponse');
 const SingleSessionFee = require('../models/SingleSessionFee'); // Added for daily report
+const RegistrationRenewal = require('../models/RegistrationRenewal'); // Added for daily report
 
 // Get or create a default admin user for transactions with missing creator
 const getDefaultAdminUser = async () => {
@@ -1038,13 +1039,28 @@ exports.getDailyAccountingReport = async (req, res) => {
       createdBy: currentUserId
     });
 
+    // Get registration renewals processed on this date by the current accounting user
+    const registrationRenewals = await RegistrationRenewal.find({
+      createdAt: { $gte: startOfDay, $lte: endOfDay },
+      renewedBy: currentUserId,
+      status: 'Completed'
+    }).populate('renewedBy', 'firstName lastName email')
+      .populate('originalRegistration', 'player');
+
     // Calculate totals
+    // Expenses (should be subtracted)
     const utilityBillsTotal = utilityBills.reduce((sum, bill) => sum + bill.amount, 0);
     const salaryInvoicesTotal = salaryInvoices.reduce((sum, invoice) => sum + invoice.amount + (invoice.bonus || 0), 0);
+    
+    // Revenue (should be added)
     const playerRegistrationsTotal = playerRegistrations.reduce((sum, reg) => sum + reg.fee.amount, 0);
     const singleSessionFeesTotal = singleSessionRevenueTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+    const registrationRenewalsTotal = registrationRenewals.reduce((sum, renewal) => sum + renewal.fee.amount, 0);
 
-    const grandTotal = utilityBillsTotal + salaryInvoicesTotal + playerRegistrationsTotal + singleSessionFeesTotal;
+    // Calculate grand total: Revenue (positive) - Expenses (negative)
+    const revenueTotal = playerRegistrationsTotal + singleSessionFeesTotal + registrationRenewalsTotal;
+    const expenseTotal = utilityBillsTotal + salaryInvoicesTotal;
+    const grandTotal = revenueTotal - expenseTotal;
 
     // Prepare the response data
     const dailyReport = {
@@ -1071,13 +1087,20 @@ exports.getDailyAccountingReport = async (req, res) => {
           count: singleSessionRevenueTransactions.length,
           total: singleSessionFeesTotal
         },
+        registrationRenewals: {
+          count: registrationRenewals.length,
+          total: registrationRenewalsTotal
+        },
+        revenueTotal,
+        expenseTotal,
         grandTotal
       },
       details: {
         utilityBills,
         salaryInvoices,
         playerRegistrations,
-        singleSessionFees: singleSessionRevenueTransactions
+        singleSessionFees: singleSessionRevenueTransactions,
+        registrationRenewals
       }
     };
 

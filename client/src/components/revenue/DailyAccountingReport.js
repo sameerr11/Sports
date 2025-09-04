@@ -49,6 +49,7 @@ const DailyAccountingReport = () => {
     salaryInvoices: false,
     playerRegistrations: false,
     singleSessionFees: false,
+    registrationRenewals: false,
     cafeteriaOrders: false
   });
 
@@ -105,6 +106,7 @@ const DailyAccountingReport = () => {
       case 'salaryInvoices': return <PaymentIcon />;
       case 'playerRegistrations': return <HowToRegIcon />;
       case 'singleSessionFees': return <SportsIcon />;
+      case 'registrationRenewals': return <HowToRegIcon />;
       case 'cafeteriaOrders': return <RestaurantIcon />;
       default: return <AttachMoneyIcon />;
     }
@@ -117,6 +119,7 @@ const DailyAccountingReport = () => {
       case 'salaryInvoices': return 'Salary Invoices';
       case 'playerRegistrations': return 'Player Registrations';
       case 'singleSessionFees': return 'Single Session Fees';
+      case 'registrationRenewals': return 'Registration Renewals';
       case 'cafeteriaOrders': return 'Cafeteria Orders';
       default: return section;
     }
@@ -252,7 +255,24 @@ const DailyAccountingReport = () => {
               </Card>
             </Grid>
 
-
+            <Grid item xs={12} md={6} lg={2}>
+              <Card sx={{ 
+                bgcolor: alpha(theme.palette.warning.main, 0.1),
+                border: `1px solid ${alpha(theme.palette.warning.main, 0.3)}`
+              }}>
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <Typography variant="h6" color="warning.main" gutterBottom>
+                    {reportData.summary.registrationRenewals?.count || 0}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Renewals
+                  </Typography>
+                  <Typography variant="h5" color="warning.main" sx={{ mt: 1 }}>
+                    {formatCurrency(reportData.summary.registrationRenewals?.total || 0)}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
 
             <Grid item xs={12} md={6} lg={2}>
               <Card sx={{ 
@@ -332,6 +352,18 @@ const DailyAccountingReport = () => {
                                     <TableCell>Notes</TableCell>
                                   </>
                                 )}
+                                {section === 'registrationRenewals' && (
+                                  <>
+                                    <TableCell>Player</TableCell>
+                                    <TableCell>Sports</TableCell>
+                                    <TableCell>Amount</TableCell>
+                                    <TableCell>Period</TableCell>
+                                    <TableCell>Start Date</TableCell>
+                                    <TableCell>End Date</TableCell>
+                                    <TableCell>Invoice #</TableCell>
+                                    <TableCell>Renewed By</TableCell>
+                                  </>
+                                )}
 
                               </TableRow>
                             </TableHead>
@@ -382,6 +414,24 @@ const DailyAccountingReport = () => {
                                       <TableCell>{formatCurrency(item.amount)}</TableCell>
                                       <TableCell>{formatDate(item.date)}</TableCell>
                                       <TableCell>{item.notes || 'N/A'}</TableCell>
+                                    </>
+                                  )}
+                                  {section === 'registrationRenewals' && (
+                                    <>
+                                      <TableCell>
+                                        {item.player ? `${item.player.firstName} ${item.player.lastName}` : 'N/A'}
+                                      </TableCell>
+                                      <TableCell>
+                                        {item.sports ? item.sports.join(', ') : 'N/A'}
+                                      </TableCell>
+                                      <TableCell>{formatCurrency(item.fee?.amount || 0)}</TableCell>
+                                      <TableCell>{item.registrationPeriod || 'N/A'}</TableCell>
+                                      <TableCell>{formatDate(item.startDate)}</TableCell>
+                                      <TableCell>{formatDate(item.endDate)}</TableCell>
+                                      <TableCell>{item.fee?.invoiceNumber || 'N/A'}</TableCell>
+                                      <TableCell>
+                                        {item.renewedBy ? `${item.renewedBy.firstName} ${item.renewedBy.lastName}` : 'N/A'}
+                                      </TableCell>
                                     </>
                                   )}
 
