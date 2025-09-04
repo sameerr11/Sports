@@ -702,10 +702,11 @@ exports.updateSalaryInvoice = async (req, res) => {
     }
     
     // Update the payment status
+    const previousStatus = salaryInvoice.paymentStatus;
     salaryInvoice.paymentStatus = paymentStatus;
     
     // If status is changed to Paid, update paidDate
-    if (paymentStatus === 'Paid' && salaryInvoice.paymentStatus !== 'Paid') {
+    if (paymentStatus === 'Paid' && previousStatus !== 'Paid') {
       salaryInvoice.paidDate = new Date();
     }
     

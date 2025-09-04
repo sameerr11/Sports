@@ -118,10 +118,11 @@ exports.updateUtilityBill = async (req, res) => {
 
     // Update the payment status
     if (paymentStatus) {
+      const previousStatus = utilityBill.paymentStatus;
       utilityBill.paymentStatus = paymentStatus;
       
       // If status is changed to Paid, update paidDate and paidBy
-      if (paymentStatus === 'Paid' && utilityBill.paymentStatus !== 'Paid') {
+      if (paymentStatus === 'Paid' && previousStatus !== 'Paid') {
         utilityBill.paidDate = new Date();
         utilityBill.paidBy = req.user.id;
       }
