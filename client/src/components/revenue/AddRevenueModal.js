@@ -93,6 +93,7 @@ const AddRevenueModal = ({ show, onHide, onSuccess }) => {
               required
             >
               <option value="Registration">Registration</option>
+              <option value="Registration Renewal">Registration Renewal</option>
               <option value="Cafeteria">Cafeteria</option>
               <option value="Rental">Rental</option>
               <option value="Other">Other</option>

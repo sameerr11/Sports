@@ -8,7 +8,7 @@ const RevenueTransactionSchema = new mongoose.Schema({
   },
   sourceType: {
     type: String,
-    enum: ['Registration', 'Cafeteria', 'Rental', 'Other'],
+    enum: ['Registration', 'Registration Renewal', 'Cafeteria', 'Rental', 'Other'],
     required: true
   },
   sourceId: {
@@ -17,7 +17,7 @@ const RevenueTransactionSchema = new mongoose.Schema({
   },
   sourceModel: {
     type: String,
-    enum: ['PlayerRegistration', 'CafeteriaOrder', 'Booking', 'GuestBooking', 'RevenueSourceType'],
+    enum: ['PlayerRegistration', 'RegistrationRenewal', 'CafeteriaOrder', 'Booking', 'GuestBooking', 'RevenueSourceType'],
     required: true
   },
   description: {

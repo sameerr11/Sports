@@ -34,7 +34,7 @@ router.post(
     auth,
     roles(['revenue_manager', 'admin', 'accounting']),
     check('amount', 'Amount is required and must be a positive number').isFloat({ min: 0 }),
-    check('sourceType', 'Source type is required').isIn(['Registration', 'Cafeteria', 'Rental', 'Other']),
+    check('sourceType', 'Source type is required').isIn(['Registration', 'Registration Renewal', 'Cafeteria', 'Rental', 'Other']),
     check('description', 'Description is required').notEmpty()
   ],
   revenueController.addRevenueTransaction
@@ -133,6 +133,16 @@ router.get(
   '/daily-report',
   [auth, roles(['revenue_manager', 'admin', 'accounting'])],
   revenueController.getDailyAccountingReport
+);
+
+// Force Sync Transactions
+// @route   POST /api/revenue/sync
+// @desc    Force full synchronization of all transactions
+// @access  Revenue Manager, Admin, Accounting
+router.post(
+  '/sync',
+  [auth, roles(['revenue_manager', 'admin', 'accounting'])],
+  revenueController.forceSyncTransactions
 );
 
 module.exports = router; 

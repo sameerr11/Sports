@@ -224,6 +224,50 @@ const syncTransactionsFromSources = async () => {
       console.log(`Created revenue transaction for guest booking: ${booking._id}`);
     }
     
+    // 5. Registration Renewals - Get all completed renewals
+    const registrationRenewals = await RegistrationRenewal.find({
+      status: 'Completed',
+      'fee.paymentStatus': 'Paid',
+      // Only get renewals that don't have a corresponding revenue entry
+      $nor: [
+        { 
+          _id: { 
+            $in: await RevenueTransaction.find({
+              sourceModel: 'RegistrationRenewal'
+            }).distinct('sourceId')
+          } 
+        }
+      ]
+    }).populate('renewedBy', 'firstName lastName');
+    
+    console.log(`Found ${registrationRenewals.length} new registration renewals to sync...`);
+    
+    // Create revenue transactions for each registration renewal
+    for (const renewal of registrationRenewals) {
+      // Use default admin if renewedBy is missing
+      const creatorId = renewal.renewedBy ? renewal.renewedBy._id : defaultAdminId;
+      
+      // Skip if we can't find a valid creator ID
+      if (!creatorId) {
+        console.log(`Skipping registration renewal ${renewal._id} due to missing renewedBy and no default admin`);
+        continue;
+      }
+      
+      const revenueTransaction = new RevenueTransaction({
+        amount: renewal.fee.amount,
+        sourceType: 'Registration Renewal',
+        sourceId: renewal._id,
+        sourceModel: 'RegistrationRenewal',
+        description: `Registration renewal for ${renewal.player.firstName} ${renewal.player.lastName} - ${renewal.sports.join(', ')}`,
+        date: renewal.createdAt,
+        createdBy: creatorId,
+        notes: `Invoice #${renewal.fee.invoiceNumber}, ${renewal.registrationPeriod} period, Receipt #${renewal.fee.receiptNumber || 'N/A'}`
+      });
+      
+      await revenueTransaction.save();
+      console.log(`Created revenue transaction for registration renewal: ${renewal._id}`);
+    }
+    
     // ======= EXPENSE SOURCES =======
     
     // 1. Salary Invoices - Get all paid salary invoices
@@ -326,19 +370,84 @@ const syncTransactionsFromSources = async () => {
   }
 };
 
+// Quick sync function that only processes new renewals and registrations
+const quickSyncNewTransactions = async () => {
+  try {
+    console.log('Running quick sync for new transactions...');
+    
+    // Get default admin user for transactions with missing creator
+    const defaultAdminId = await getDefaultAdminUser();
+    if (!defaultAdminId) {
+      console.error('Could not find a default admin user. Skipping sync.');
+      return;
+    }
+    
+    // Only sync new registration renewals (most likely to be new)
+    const registrationRenewals = await RegistrationRenewal.find({
+      status: 'Completed',
+      'fee.paymentStatus': 'Paid',
+      // Only get renewals that don't have a corresponding revenue entry
+      $nor: [
+        { 
+          _id: { 
+            $in: await RevenueTransaction.find({
+              sourceModel: 'RegistrationRenewal'
+            }).distinct('sourceId')
+          } 
+        }
+      ]
+    }).populate('renewedBy', 'firstName lastName');
+    
+    console.log(`Found ${registrationRenewals.length} new registration renewals to sync...`);
+    
+    // Create revenue transactions for each registration renewal
+    for (const renewal of registrationRenewals) {
+      // Use default admin if renewedBy is missing
+      const creatorId = renewal.renewedBy ? renewal.renewedBy._id : defaultAdminId;
+      
+      // Skip if we can't find a valid creator ID
+      if (!creatorId) {
+        console.log(`Skipping registration renewal ${renewal._id} due to missing renewedBy and no default admin`);
+        continue;
+      }
+      
+      const revenueTransaction = new RevenueTransaction({
+        amount: renewal.fee.amount,
+        sourceType: 'Registration Renewal',
+        sourceId: renewal._id,
+        sourceModel: 'RegistrationRenewal',
+        description: `Registration renewal for ${renewal.player.firstName} ${renewal.player.lastName} - ${renewal.sports.join(', ')}`,
+        date: renewal.createdAt,
+        createdBy: creatorId,
+        notes: `Invoice #${renewal.fee.invoiceNumber}, ${renewal.registrationPeriod} period, Receipt #${renewal.fee.receiptNumber || 'N/A'}`
+      });
+      
+      await revenueTransaction.save();
+      console.log(`Created revenue transaction for registration renewal: ${renewal._id}`);
+    }
+    
+    console.log('Quick sync completed successfully.');
+  } catch (error) {
+    console.error('Error in quick sync:', error);
+  }
+};
+
 // @desc    Get revenue dashboard data
 // @route   GET /api/revenue/dashboard
 // @access  Revenue Manager, Admin, Accounting
 exports.getDashboardData = async (req, res) => {
   try {
-    // Sync transactions from other sources
-    await syncTransactionsFromSources();
-    
-    // Remove orphaned revenue entries (those without corresponding source records)
-    await cleanOrphanedTransactions();
-    
-    // Remove orphaned expense entries (those without corresponding source records)
-    await cleanOrphanedExpenseTransactions();
+    // Only sync if explicitly requested or if it's been a while since last sync
+    const { forceSync } = req.query;
+    if (forceSync === 'true') {
+      console.log('Force sync requested - running full synchronization...');
+      await syncTransactionsFromSources();
+      await cleanOrphanedTransactions();
+      await cleanOrphanedExpenseTransactions();
+    } else {
+      // Quick sync - only check for new renewals and registrations
+      await quickSyncNewTransactions();
+    }
     
     const { startDate, endDate } = req.query;
     const start = startDate ? new Date(startDate) : new Date(new Date().setDate(new Date().getDate() - 30));
@@ -419,6 +528,23 @@ exports.getDashboardData = async (req, res) => {
       } else {
         // Just rename Court Rental to Rental
         revenueBySource[courtRentalIndex].sourceType = 'Rental';
+      }
+    }
+    
+    // Check if both "Registration" and "Registration Renewal" exist in the results
+    // If so, merge them into a single "Registration" category
+    const registrationRenewalIndex = revenueBySource.findIndex(item => item.sourceType === 'Registration Renewal');
+    if (registrationRenewalIndex !== -1) {
+      const registrationIndex = revenueBySource.findIndex(item => item.sourceType === 'Registration');
+      
+      if (registrationIndex !== -1) {
+        // Add Registration Renewal amount to Registration
+        revenueBySource[registrationIndex].total += revenueBySource[registrationRenewalIndex].total;
+        // Remove Registration Renewal entry
+        revenueBySource.splice(registrationRenewalIndex, 1);
+      } else {
+        // Just rename Registration Renewal to Registration
+        revenueBySource[registrationRenewalIndex].sourceType = 'Registration';
       }
     }
 
@@ -548,8 +674,8 @@ exports.getDashboardData = async (req, res) => {
 // @access  Revenue Manager, Admin, Accounting
 exports.getRevenueTransactions = async (req, res) => {
   try {
-    // Sync transactions from other sources
-    await syncTransactionsFromSources();
+    // Use quick sync for better performance
+    await quickSyncNewTransactions();
     
     const { startDate, endDate, sourceType, limit = 20, page = 1 } = req.query;
     
@@ -917,6 +1043,9 @@ const cleanOrphanedTransactions = async () => {
         case 'CafeteriaOrder':
           sourceExists = await CafeteriaOrder.exists({ _id: transaction.sourceId });
           break;
+        case 'RegistrationRenewal':
+          sourceExists = await RegistrationRenewal.exists({ _id: transaction.sourceId });
+          break;
         default:
           // For unknown sourceModel, keep the transaction
           sourceExists = true;
@@ -1111,6 +1240,23 @@ exports.getDailyAccountingReport = async (req, res) => {
   }
 };
 
+// @desc    Force full synchronization of all transactions
+// @route   POST /api/revenue/sync
+// @access  Revenue Manager, Admin, Accounting
+exports.forceSyncTransactions = async (req, res) => {
+  try {
+    console.log('Force sync requested by user...');
+    await syncTransactionsFromSources();
+    await cleanOrphanedTransactions();
+    await cleanOrphanedExpenseTransactions();
+    
+    return ApiResponse.success(res, { message: 'Full synchronization completed successfully' });
+  } catch (error) {
+    console.error('Error in force sync:', error);
+    return ApiResponse.error(res, 'Error during synchronization', 500);
+  }
+};
+
 module.exports = {
   getDashboardData: exports.getDashboardData,
   getRevenueTransactions: exports.getRevenueTransactions,
@@ -1118,5 +1264,6 @@ module.exports = {
   updateExpenseStatus: exports.updateExpenseStatus,
   getExpenseTransactions: exports.getExpenseTransactions,
   addExpenseTransaction: exports.addExpenseTransaction,
-  getDailyAccountingReport: exports.getDailyAccountingReport
+  getDailyAccountingReport: exports.getDailyAccountingReport,
+  forceSyncTransactions: exports.forceSyncTransactions
 }; 

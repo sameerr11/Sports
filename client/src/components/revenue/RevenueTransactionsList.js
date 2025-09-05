@@ -143,6 +143,7 @@ const RevenueTransactionsList = ({ dateRange, onSuccess }) => {
               >
                 <MenuItem value="">All Types</MenuItem>
                 <MenuItem value="Registration">Registration</MenuItem>
+                <MenuItem value="Registration Renewal">Registration Renewal</MenuItem>
                 <MenuItem value="Cafeteria">Cafeteria</MenuItem>
                 <MenuItem value="Rental">Rental</MenuItem>
                 <MenuItem value="Other">Other</MenuItem>
