@@ -6,23 +6,30 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const ApiResponse = require('../utils/ApiResponse');
 
-// @desc    Get expired registrations for renewal
+// @desc    Get all registrations for renewal/extension (expired and active)
 // @route   GET /api/registration-renewals/expired
 // @access  Accounting
 exports.getExpiredRegistrations = async (req, res) => {
   try {
-    const { sport, limit = 50, page = 1 } = req.query;
+    const { sport, search, status = 'all', limit = 50, page = 1 } = req.query;
     
-    // Build query for expired registrations
+    // Build query for registrations
     const query = {
-      endDate: { $lt: new Date() }, // Expired
       status: { $nin: ['Cancelled'] }, // Not cancelled
       accountCreated: true // Only registrations with user accounts
     };
     
+    // Filter by status (expired, active, or all)
+    if (status === 'expired') {
+      query.endDate = { $lt: new Date() }; // Expired
+    } else if (status === 'active') {
+      query.endDate = { $gte: new Date() }; // Active
+    }
+    // If status is 'all', no date filter is applied
+    
     // Filter by sport if provided
     if (sport) {
-      query.sports = sport;
+      query.sports = { $in: [sport] };
     }
     
     // Calculate pagination
@@ -31,16 +38,56 @@ exports.getExpiredRegistrations = async (req, res) => {
     // Get total count
     const total = await PlayerRegistration.countDocuments(query);
     
-    // Get expired registrations with user info
-    const expiredRegistrations = await PlayerRegistration.find(query)
+    // Get registrations with user info
+    let registrationsQuery = PlayerRegistration.find(query)
       .populate('userId', 'firstName lastName email phoneNumber')
       .populate('registeredBy', 'firstName lastName')
       .sort({ endDate: -1 })
       .skip(skip)
       .limit(parseInt(limit));
     
+    // Apply search filter if provided
+    if (search) {
+      // First get all matching user IDs based on search
+      const matchingUsers = await User.find({
+        $or: [
+          { firstName: { $regex: search, $options: 'i' } },
+          { lastName: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      }).select('_id');
+      
+      const userIds = matchingUsers.map(user => user._id);
+      
+      // Add user ID filter to the query
+      query.userId = { $in: userIds };
+      
+      // Re-execute the query with search filter
+      registrationsQuery = PlayerRegistration.find(query)
+        .populate('userId', 'firstName lastName email phoneNumber')
+        .populate('registeredBy', 'firstName lastName')
+        .sort({ endDate: -1 })
+        .skip(skip)
+        .limit(parseInt(limit));
+    }
+    
+    const registrations = await registrationsQuery;
+    
+    // Add status information to each registration
+    const registrationsWithStatus = registrations.map(reg => {
+      const isExpired = reg.endDate < new Date();
+      const daysUntilExpiry = Math.ceil((reg.endDate - new Date()) / (1000 * 60 * 60 * 24));
+      
+      return {
+        ...reg.toObject(),
+        isExpired,
+        daysUntilExpiry: isExpired ? 0 : daysUntilExpiry,
+        statusText: isExpired ? 'Expired' : (daysUntilExpiry <= 7 ? 'Expiring Soon' : 'Active')
+      };
+    });
+    
     return ApiResponse.success(res, {
-      registrations: expiredRegistrations,
+      registrations: registrationsWithStatus,
       pagination: {
         total,
         page: parseInt(page),
@@ -49,8 +96,8 @@ exports.getExpiredRegistrations = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching expired registrations:', error);
-    return ApiResponse.error(res, 'Error fetching expired registrations', 500);
+    console.error('Error fetching registrations:', error);
+    return ApiResponse.error(res, 'Error fetching registrations', 500);
   }
 };
 
@@ -104,10 +151,8 @@ exports.createRenewal = async (req, res) => {
       return ApiResponse.error(res, 'Original registration not found', 404);
     }
 
-    // Check if registration is expired
-    if (originalRegistration.endDate > new Date()) {
-      return ApiResponse.error(res, 'Registration is not yet expired', 400);
-    }
+    // Allow both expired and active registrations for renewals/extensions
+    // No need to check if registration is expired - we support advance renewals
 
     // Check if user account exists
     if (!originalRegistration.userId) {
@@ -115,8 +160,24 @@ exports.createRenewal = async (req, res) => {
     }
 
     // Calculate end date based on registration period
-    const renewalStartDate = new Date(startDate);
-    const endDate = new Date(renewalStartDate);
+    // For advance renewals, extend from the current registration's end date
+    // For expired registrations, use the provided start date
+    const currentDate = new Date();
+    const isExpired = originalRegistration.endDate < currentDate;
+    
+    let renewalStartDate, endDate;
+    
+    if (isExpired) {
+      // For expired registrations, use the provided start date
+      renewalStartDate = new Date(startDate);
+      endDate = new Date(renewalStartDate);
+    } else {
+      // For active registrations, extend from the current end date
+      renewalStartDate = originalRegistration.endDate;
+      endDate = new Date(originalRegistration.endDate);
+    }
+    
+    // Add the renewal period to the end date
     switch (registrationPeriod) {
       case '1 Month':
         endDate.setMonth(endDate.getMonth() + 1);
@@ -155,9 +216,16 @@ exports.createRenewal = async (req, res) => {
 
     await renewal.save();
 
-    // Update the original registration to extend its end date
+    // Update the original registration to extend its end date and merge sports
     originalRegistration.endDate = endDate;
     originalRegistration.status = 'Completed';
+    
+    // Merge new sports with existing sports (avoid duplicates)
+    const existingSports = originalRegistration.sports || [];
+    const newSports = sports || [];
+    const mergedSports = [...new Set([...existingSports, ...newSports])];
+    originalRegistration.sports = mergedSports;
+    
     await originalRegistration.save();
 
     // Create notifications
@@ -190,7 +258,7 @@ exports.getRenewals = async (req, res) => {
     
     // Filter by sport if provided
     if (sport) {
-      query.sports = sport;
+      query.sports = { $in: [sport] };
     }
     
     // Calculate pagination

@@ -485,6 +485,75 @@ exports.getUsersByRole = async (req, res) => {
   }
 };
 
+// @desc    Get players with their registration data for player report
+// @route   GET /api/users/players-with-registrations
+// @access  Admin
+exports.getPlayersWithRegistrations = async (req, res) => {
+  try {
+    const PlayerRegistration = require('../models/PlayerRegistration');
+    
+    // Get all active players
+    const players = await User.find({ 
+      role: 'player', 
+      isActive: true 
+    }).select('-password');
+    
+    // Get all registrations for these players
+    const playerIds = players.map(player => player._id);
+    const registrations = await PlayerRegistration.find({
+      userId: { $in: playerIds },
+      status: { $nin: ['Cancelled'] }
+    }).populate('userId', 'firstName lastName email phoneNumber');
+    
+    // Create a map of player registrations
+    const registrationsMap = {};
+    registrations.forEach(reg => {
+      const playerId = reg.userId._id.toString();
+      if (!registrationsMap[playerId]) {
+        registrationsMap[playerId] = [];
+      }
+      registrationsMap[playerId].push(reg);
+    });
+    
+    // Combine player data with their registrations
+    const playersWithRegistrations = players.map(player => {
+      const playerId = player._id.toString();
+      const playerRegistrations = registrationsMap[playerId] || [];
+      
+      // Get all sports from all registrations
+      const allSports = [];
+      playerRegistrations.forEach(reg => {
+        if (reg.sports && Array.isArray(reg.sports)) {
+          allSports.push(...reg.sports);
+        }
+      });
+      
+      // Remove duplicates
+      const uniqueSports = [...new Set(allSports)];
+      
+      // Get the most recent registration for display
+      const mostRecentRegistration = playerRegistrations.length > 0 
+        ? playerRegistrations.sort((a, b) => new Date(b.endDate) - new Date(a.endDate))[0]
+        : null;
+      
+      return {
+        ...player.toObject(),
+        registrations: playerRegistrations,
+        sports: uniqueSports,
+        mostRecentRegistration: mostRecentRegistration ? {
+          endDate: mostRecentRegistration.endDate,
+          registrationPeriod: mostRecentRegistration.registrationPeriod
+        } : null
+      };
+    });
+    
+    res.json(playersWithRegistrations);
+  } catch (err) {
+    console.error('Error fetching players with registrations:', err.message);
+    res.status(500).json({ msg: 'Server error' });
+  }
+};
+
 // @desc    Get children of a parent user
 // @route   GET /api/users/parent/children
 // @access  Private (Parent)

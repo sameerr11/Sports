@@ -84,6 +84,9 @@ router.get('/users/upcoming-birthdays', [auth, admin], userController.getUpcomin
 // Add player statistics route
 router.get('/users/player-stats', [auth, admin], userController.getPlayerStats);
 
+// Add players with registrations route for player report
+router.get('/users/players-with-registrations', [auth, admin], userController.getPlayersWithRegistrations);
+
 router.get('/users/:id', [auth, adminOrSupport], userController.getUserById);
 router.put('/users/:id', [auth, adminOrSupport], userController.updateUser);
 router.delete('/users/:id', [auth, admin], userController.deleteUser);

@@ -188,7 +188,7 @@ exports.getRegistrations = async (req, res) => {
     
     // Filter by sport if provided
     if (sport) {
-      query.sports = sport;
+      query.sports = { $in: [sport] };
     }
     
     const registrations = await PlayerRegistration.find(query)

@@ -79,17 +79,22 @@ const getSportIcon = (sport) => {
 const RegistrationRenewalManagement = () => {
   const theme = useTheme();
   const [activeTab, setActiveTab] = useState(0);
-  const [expiredRegistrations, setExpiredRegistrations] = useState([]);
+  const [registrations, setRegistrations] = useState([]);
   const [renewals, setRenewals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [renewalsCount, setRenewalsCount] = useState(0);
   
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'expired', 'active'
+  const [sportFilter, setSportFilter] = useState('');
+  
   // Pagination states
-  const [expiredPage, setExpiredPage] = useState(1);
+  const [registrationsPage, setRegistrationsPage] = useState(1);
   const [renewalsPage, setRenewalsPage] = useState(1);
-  const [expiredTotalPages, setExpiredTotalPages] = useState(1);
+  const [registrationsTotalPages, setRegistrationsTotalPages] = useState(1);
   const [renewalsTotalPages, setRenewalsTotalPages] = useState(1);
   
   // Dialog states
@@ -98,18 +103,25 @@ const RegistrationRenewalManagement = () => {
   const [renewalDetailsOpen, setRenewalDetailsOpen] = useState(false);
   const [selectedRenewal, setSelectedRenewal] = useState(null);
 
-  // Fetch expired registrations
-  const fetchExpiredRegistrations = async (page = 1) => {
+  // Fetch registrations with search and filters
+  const fetchRegistrations = async (page = 1) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getExpiredRegistrations({ page, limit: 10 });
-      setExpiredRegistrations(response.data.registrations);
-      setExpiredTotalPages(response.data.pagination.pages);
-      setExpiredPage(page);
+      const params = { 
+        page, 
+        limit: 10,
+        status: statusFilter,
+        sport: sportFilter || undefined,
+        search: searchTerm || undefined
+      };
+      const response = await getExpiredRegistrations(params);
+      setRegistrations(response.data.registrations);
+      setRegistrationsTotalPages(response.data.pagination.pages);
+      setRegistrationsPage(page);
     } catch (err) {
-      setError('Failed to load expired registrations');
-      console.error('Error fetching expired registrations:', err);
+      setError('Failed to load registrations');
+      console.error('Error fetching registrations:', err);
     } finally {
       setLoading(false);
     }
@@ -135,11 +147,22 @@ const RegistrationRenewalManagement = () => {
 
   useEffect(() => {
     if (activeTab === 0) {
-      fetchExpiredRegistrations();
+      fetchRegistrations();
     } else {
       fetchRenewals();
     }
-  }, [activeTab]);
+  }, [activeTab, statusFilter, sportFilter, searchTerm]);
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (activeTab === 0) {
+        fetchRegistrations(1); // Reset to first page when searching
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   // Fetch renewals count on page load to show in tab header
   useEffect(() => {
@@ -175,7 +198,7 @@ const RegistrationRenewalManagement = () => {
     setTimeout(() => setSuccess(null), 5000);
     
     // Refresh both tabs
-    fetchExpiredRegistrations(expiredPage);
+    fetchRegistrations(registrationsPage);
     fetchRenewals(renewalsPage);
     
     // Also refresh the renewals count for the tab header
@@ -226,7 +249,7 @@ const RegistrationRenewalManagement = () => {
           Registration Renewal & Extension Management
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Manage expired player registrations, process renewals, and add new sports to existing registrations
+          Manage all player registrations, process renewals, extensions, and add new sports. Support for advance renewals before expiry.
         </Typography>
       </Box>
 
@@ -246,8 +269,8 @@ const RegistrationRenewalManagement = () => {
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={activeTab} onChange={handleTabChange}>
             <Tab 
-              label={`Expired Registrations (${expiredRegistrations.length})`} 
-              icon={<Cancel />}
+              label={`All Registrations (${registrations.length})`} 
+              icon={<Add />}
               iconPosition="start"
             />
             <Tab 
@@ -259,31 +282,77 @@ const RegistrationRenewalManagement = () => {
         </Box>
 
         <CardContent sx={{ p: 0 }}>
-          {/* Expired Registrations Tab */}
+          {/* All Registrations Tab */}
           {activeTab === 0 && (
             <Box sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Typography variant="h6">
-                  Expired Registrations
+                  All Registrations
                 </Typography>
                 <Button
                   variant="outlined"
                   startIcon={<Refresh />}
-                  onClick={() => fetchExpiredRegistrations(expiredPage)}
+                  onClick={() => fetchRegistrations(registrationsPage)}
                   disabled={loading}
                 >
                   Refresh
                 </Button>
               </Box>
 
+              {/* Search and Filter Controls */}
+              <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+                <TextField
+                  label="Search by name or email"
+                  variant="outlined"
+                  size="small"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  sx={{ minWidth: 250 }}
+                />
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    value={statusFilter}
+                    label="Status"
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <MenuItem value="all">All</MenuItem>
+                    <MenuItem value="expired">Expired</MenuItem>
+                    <MenuItem value="active">Active</MenuItem>
+                  </Select>
+                </FormControl>
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <InputLabel>Sport</InputLabel>
+                  <Select
+                    value={sportFilter}
+                    label="Sport"
+                    onChange={(e) => setSportFilter(e.target.value)}
+                  >
+                    <MenuItem value="">All Sports</MenuItem>
+                    <MenuItem value="Basketball">Basketball</MenuItem>
+                    <MenuItem value="Football">Football</MenuItem>
+                    <MenuItem value="Volleyball">Volleyball</MenuItem>
+                    <MenuItem value="Self Defense">Self Defense</MenuItem>
+                    <MenuItem value="Karate">Karate</MenuItem>
+                    <MenuItem value="Gymnastics">Gymnastics</MenuItem>
+                    <MenuItem value="Gym">Gym</MenuItem>
+                    <MenuItem value="Zumba">Zumba</MenuItem>
+                    <MenuItem value="Swimming">Swimming</MenuItem>
+                    <MenuItem value="Ping Pong">Ping Pong</MenuItem>
+                    <MenuItem value="Fitness">Fitness</MenuItem>
+                    <MenuItem value="Crossfit">Crossfit</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+
               {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                   <CircularProgress />
                 </Box>
-              ) : expiredRegistrations.length === 0 ? (
+              ) : registrations.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
                   <Typography variant="body1" color="text.secondary">
-                    No expired registrations found
+                    No registrations found
                   </Typography>
                 </Box>
               ) : (
@@ -294,13 +363,14 @@ const RegistrationRenewalManagement = () => {
                         <TableRow>
                           <TableCell>Player</TableCell>
                           <TableCell>Sports</TableCell>
-                          <TableCell>Expired Date</TableCell>
+                          <TableCell>End Date</TableCell>
+                          <TableCell>Status</TableCell>
                           <TableCell>Original Period</TableCell>
                           <TableCell>Actions</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {expiredRegistrations.map((registration) => (
+                        {registrations.map((registration) => (
                           <TableRow key={registration._id}>
                             <TableCell>
                               <Box>
@@ -328,11 +398,30 @@ const RegistrationRenewalManagement = () => {
                             <TableCell>
                               <Typography 
                                 variant="body2" 
-                                color="error.main"
+                                color={registration.isExpired ? "error.main" : "text.primary"}
                                 fontWeight={600}
                               >
                                 {formatDate(registration.endDate)}
                               </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={registration.statusText}
+                                color={
+                                  registration.isExpired 
+                                    ? "error" 
+                                    : registration.daysUntilExpiry <= 7 
+                                      ? "warning" 
+                                      : "success"
+                                }
+                                size="small"
+                                variant="filled"
+                              />
+                              {!registration.isExpired && registration.daysUntilExpiry <= 7 && (
+                                <Typography variant="caption" color="warning.main" display="block">
+                                  {registration.daysUntilExpiry} days left
+                                </Typography>
+                              )}
                             </TableCell>
                             <TableCell>
                               <Typography variant="body2">
@@ -356,12 +445,12 @@ const RegistrationRenewalManagement = () => {
                     </Table>
                   </TableContainer>
 
-                  {expiredTotalPages > 1 && (
+                  {registrationsTotalPages > 1 && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                       <Pagination
-                        count={expiredTotalPages}
-                        page={expiredPage}
-                        onChange={(event, value) => fetchExpiredRegistrations(value)}
+                        count={registrationsTotalPages}
+                        page={registrationsPage}
+                        onChange={(event, value) => fetchRegistrations(value)}
                         color="primary"
                       />
                     </Box>

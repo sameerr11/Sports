@@ -80,8 +80,8 @@ const PlayersWithParents = () => {
     try {
       setLoading(true);
       
-      // Get active players
-      const activeResponse = await api.get('/users/role/player');
+      // Get active players with their registration data
+      const activeResponse = await api.get('/users/players-with-registrations');
       
       // Get inactive players using the modified endpoint
       const inactiveResponse = await api.get('/users', {

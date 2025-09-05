@@ -37,6 +37,7 @@ const RegistrationRenewalForm = ({ open, onClose, onSuccess, originalRegistratio
   const [error, setError] = useState(null);
   const [fees, setFees] = useState([]);
   const [selectedSports, setSelectedSports] = useState([]);
+  const [availableSports, setAvailableSports] = useState([]);
   const [formData, setFormData] = useState({
     registrationPeriod: '',
     startDate: new Date(),
@@ -70,9 +71,18 @@ const RegistrationRenewalForm = ({ open, onClose, onSuccess, originalRegistratio
     if (open && originalRegistration) {
       // Initialize form with original registration data
       setSelectedSports(originalSports);
+      
+      // Set available sports (all sports, not just original ones)
+      setAvailableSports(allAvailableSports);
+      
+      // For advance renewals, set start date to current registration end date
+      // For expired registrations, use current date
+      const isExpired = new Date(originalRegistration.endDate) < new Date();
+      const startDate = isExpired ? new Date() : new Date(originalRegistration.endDate);
+      
       setFormData(prev => ({
         ...prev,
-        startDate: new Date(),
+        startDate: startDate,
         fee: {
           ...prev.fee,
           invoiceNumber: `REN-${Date.now()}`
@@ -276,7 +286,7 @@ const RegistrationRenewalForm = ({ open, onClose, onSuccess, originalRegistratio
             ({originalRegistration.userId?.email})
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            You can renew existing sports or add new ones to the registration
+            You can renew existing sports, add new ones, or extend active registrations before expiry
           </Typography>
         </DialogTitle>
 
