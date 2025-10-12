@@ -13,7 +13,7 @@ const PaymentConfirmation = ({ booking, onBack, onNext, setError }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('Card');
+  const [paymentMethod, setPaymentMethod] = useState('Cash');
 
   if (!booking) {
     return (
@@ -278,31 +278,49 @@ const PaymentConfirmation = ({ booking, onBack, onNext, setError }) => {
         >
           <FormControlLabel 
             value="Card" 
+            disabled
             control={
               <Radio 
                 sx={{
-                  color: 'rgba(14, 0, 81, 0.6)',
+                  color: 'rgba(14, 0, 81, 0.3)',
                   '&.Mui-checked': {
                     color: '#f7931e',
                   },
+                  '&.Mui-disabled': {
+                    color: 'rgba(14, 0, 81, 0.2)',
+                  }
                 }}
               />
             } 
-            label="Credit Card" 
+            label="Credit Card (Coming Soon)" 
+            sx={{
+              '& .MuiFormControlLabel-label': {
+                color: 'rgba(14, 0, 81, 0.4)'
+              }
+            }}
           />
           <FormControlLabel 
             value="Mobile" 
+            disabled
             control={
               <Radio 
                 sx={{
-                  color: 'rgba(14, 0, 81, 0.6)',
+                  color: 'rgba(14, 0, 81, 0.3)',
                   '&.Mui-checked': {
                     color: '#f7931e',
                   },
+                  '&.Mui-disabled': {
+                    color: 'rgba(14, 0, 81, 0.2)',
+                  }
                 }}
               />
             } 
-            label="Mobile Payment" 
+            label="Mobile Payment (Coming Soon)" 
+            sx={{
+              '& .MuiFormControlLabel-label': {
+                color: 'rgba(14, 0, 81, 0.4)'
+              }
+            }}
           />
           <FormControlLabel 
             value="Cash" 
