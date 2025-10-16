@@ -52,28 +52,33 @@ app.get('/api/health', (req, res) => {
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
-    const buildPath = path.join(__dirname, '../client/build');
-    console.log('Production mode - Static files path:', buildPath);
+  const buildPath = path.join(__dirname, '../client/build');
+  console.log('Production mode - Static files path:', buildPath);
+
+  // Set static folder - it's important this comes BEFORE the catchall route
+  app.use(express.static(buildPath));
+
+  // Don't handle .well-known paths - let Traefik handle them for SSL certificates
+  app.use('/.well-known', (req, res, next) => {
+    // Return 404 so Traefik can handle it
+    return res.status(404).send('Not found');
+  });
+
+  // Handle subdomain routing for booking
+  app.get('*', (req, res) => {
+    // Log the request for debugging
+    console.log(`Request: ${req.method} ${req.url}, Hostname: ${req.hostname}`);
     
-    // Set static folder - it's important this comes BEFORE the catchall route
-    app.use(express.static(buildPath));
-
-    // Handle subdomain routing for booking
-    app.get('*', (req, res) => {
-        // Log the request for debugging
-        console.log(`Request: ${req.method} ${req.url}, Hostname: ${req.hostname}`);
-        
-        // If it's the booking subdomain or the guest-booking path
-        if (req.isBookingSubdomain || req.path === '/guest-booking') {
-            console.log('Booking subdomain or path detected, serving index.html');
-            return res.sendFile(path.resolve(buildPath, 'index.html'));
-        }
-
-        // Normal routing for the main domain
-        res.sendFile(path.resolve(buildPath, 'index.html'));
-    });
+    // If it's the booking subdomain or the guest-booking path
+    if (req.isBookingSubdomain || req.path === '/guest-booking') {
+      console.log('Booking subdomain or path detected, serving index.html');
+      return res.sendFile(path.resolve(buildPath, 'index.html'));
+    }
+    
+    // Normal routing for the main domain
+    res.sendFile(path.resolve(buildPath, 'index.html'));
+  });
 }
-
 // Error handling
 app.use(errorHandler);
 
