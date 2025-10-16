@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 
 // MongoDB connection string (copied from db.js)
-const MONGODB_URI = "mmongodb://localhost:27017/sports";
+const MONGODB_URI = "mMONGODB_URI=mongodb://10.0.1.1:27017/sports";
 
 // Connect to MongoDB
 mongoose.connect(MONGODB_URI, {

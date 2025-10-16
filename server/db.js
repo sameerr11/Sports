@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/sports";
+const MONGODB_URI = process.env.MONGODB_URI || "MONGODB_URI=mongodb://10.0.1.1:27017/sports";
 
 
 const connectDB = async () => {
